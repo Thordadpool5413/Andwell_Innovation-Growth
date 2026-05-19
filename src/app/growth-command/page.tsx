@@ -1,6 +1,6 @@
 "use client"
 
-import { TrendingUp, DollarSign, Users, Calendar } from "lucide-react"
+import { DollarSign, Users, Calendar } from "lucide-react"
 import { mockScenarios, mockCounties } from "@/lib/data"
 
 export default function GrowthCommandPage() {

@@ -1,6 +1,6 @@
 "use client"
 
-import { Rocket, CheckCircle, Clock, Circle } from "lucide-react"
+import { CheckCircle, Clock, Circle } from "lucide-react"
 import { mockLaunchPlanSteps, mockScenarios } from "@/lib/data"
 
 export default function LaunchPlanPage() {

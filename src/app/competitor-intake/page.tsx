@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Globe, Plus, Trash2, RefreshCw, CheckCircle, Clock, AlertCircle } from "lucide-react"
+import { Plus, Trash2, RefreshCw, CheckCircle, Clock, AlertCircle } from "lucide-react"
 import { mockCompetitors } from "@/lib/data"
 import type { Competitor } from "@/lib/types"
 
