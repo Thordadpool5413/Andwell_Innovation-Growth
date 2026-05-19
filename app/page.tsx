@@ -179,8 +179,8 @@ export default function Page() {
     const link = document.createElement('a'); link.href = url; link.download = 'andwell-competitive-intelligence-report.json'; link.click(); URL.revokeObjectURL(url);
   }
 
-  return <div className="shell proShell" style={{ minHeight: 'calc(100vh - 56px)' }}>
-    <aside className="side proSide" style={{ height: 'calc(100vh - 56px)', top: 0 }}>
+  return <div className="proShell">
+    <aside className="side">
       <div className="brand proBrand"><p>Andwell Innovation</p><h1>Intelligence Command Center</h1><span>Competitive evidence, growth planning, staffing logic, and board-ready strategy in one operating system.</span></div>
       <div className="roleBox">
         <label>Lens</label>
