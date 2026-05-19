@@ -109,7 +109,7 @@ function Dashboard() {
         </div>
       </aside>
       <div className="container-main">
-        <header className="container-header" style={{ background: "linear-gradient(135deg, rgba(31, 41, 55, 0.3) 0%, rgba(15, 23, 42, 0.15) 100%)" }}>
+        <header className="container-header">
           <div>
             <h1 className="text-3xl font-bold m-0" style={{ color: "var(--color-text-primary)" }}>{activeTab}</h1>
             <p className="text-sm mt-2" style={{ color: "var(--color-text-tertiary)" }}>Professional healthcare analytics & insights</p>

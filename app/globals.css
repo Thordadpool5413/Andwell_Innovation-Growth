@@ -395,7 +395,7 @@ a {
 .container-header {
   @apply border-b px-8 py-5 flex items-center justify-between;
   border-color: var(--color-border);
-  background: rgba(15, 23, 42, 0.6);
+  background: linear-gradient(135deg, rgba(31, 41, 55, 0.3) 0%, rgba(15, 23, 42, 0.15) 100%);
   backdrop-filter: blur(12px);
 }
 .container-content {
@@ -708,28 +708,6 @@ a {
   background: rgba(16, 185, 129, 0.1);
   border-color: rgba(16, 185, 129, 0.2);
   color: #6ee7b7;
-}
-.progressRail {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 18px;
-}
-.progressRail span {
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius);
-  padding: 10px 12px;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 950;
-  color: var(--color-text-tertiary);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
-}
-.progressRail span.active {
-  background: var(--color-bg-sidebar);
-  color: #fff;
-  border-color: var(--color-bg-sidebar);
 }
 .proHero {
   background: linear-gradient(135deg, #07111f, #123154 46%, #0f766e 78%, #854d0e);
@@ -1202,9 +1180,6 @@ td {
   .scoreGrid {
     grid-template-columns: 1fr 1fr;
   }
-  .progressRail {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
   .countyRow {
     grid-template-columns: 1fr;
   }
@@ -1236,7 +1211,7 @@ td {
   .metricCard strong {
     font-size: 32px;
   }
-  .scoreGrid, .progressRail {
+  .scoreGrid {
     grid-template-columns: 1fr;
   }
   .card, .metricCard, .promptCard, .battleCard, .catalogCard, .evidenceCard {
@@ -1265,7 +1240,7 @@ td {
 }
 
 @media print {
-  .side, .head, .btn, .progressRail {
+  .side, .head, .btn {
     display: none !important;
   }
   .shell {
