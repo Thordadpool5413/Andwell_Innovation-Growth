@@ -1,27 +1,52 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Trash2, RefreshCw, CheckCircle, Clock, AlertCircle } from "lucide-react"
+import { Plus, Trash2, RefreshCw, CheckCircle, Clock, AlertCircle, MapPin, FileText } from "lucide-react"
 import { mockCompetitors } from "@/lib/data"
-import type { Competitor } from "@/lib/types"
+import type { Competitor, ScrapeResult } from "@/lib/types"
 
 export default function CompetitorIntakePage() {
   const [competitors, setCompetitors] = useState<Competitor[]>(mockCompetitors)
   const [url, setUrl] = useState("")
+  const [scraping, setScraping] = useState<string | null>(null)
+  const [results, setResults] = useState<Record<string, ScrapeResult>>({})
 
-  const addCompetitor = () => {
+  const addCompetitor = async () => {
     if (!url.trim()) return
     const name = url.replace(/https?:\/\/(www\.)?/, "").split(".")[0]
+    const id = `c${Date.now()}`
     const newComp: Competitor = {
-      id: `c${Date.now()}`,
+      id,
       name: name.charAt(0).toUpperCase() + name.slice(1),
       website: url,
-      url: url,
-      lastScraped: "-",
-      status: "pending",
+      url,
+      lastScraped: new Date().toISOString().split("T")[0],
+      status: "scraping",
+      mainePresence: "unknown",
     }
     setCompetitors([...competitors, newComp])
     setUrl("")
+    setScraping(id)
+
+    try {
+      const res = await fetch("/api/competitors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, competitorId: id }),
+      })
+      const data: ScrapeResult = await res.json()
+      setResults((prev) => ({ ...prev, [id]: data }))
+      setCompetitors((prev) =>
+        prev.map((c) =>
+          c.id === id
+            ? { ...c, status: "complete", mainePresence: data.countiesMentioned.length > 0 ? "yes" : "no", maineCounties: data.countiesMentioned }
+            : c
+        )
+      )
+    } catch {
+      setCompetitors((prev) => prev.map((c) => (c.id === id ? { ...c, status: "error" } : c)))
+    }
+    setScraping(null)
   }
 
   const statusIcon = (s: Competitor["status"]) => {
@@ -37,7 +62,7 @@ export default function CompetitorIntakePage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-white">Competitor Intake</h2>
-        <p className="text-zinc-500 text-sm mt-1">Monitor up to 25 public competitor websites for intelligence</p>
+        <p className="text-zinc-500 text-sm mt-1">Add competitor URLs to research their Maine market presence</p>
       </div>
       <div className="flex gap-3">
         <input
@@ -47,39 +72,72 @@ export default function CompetitorIntakePage() {
           placeholder="https://competitor.com"
           className="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500"
         />
-        <button onClick={addCompetitor} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-          <Plus className="w-4 h-4" /> Add
+        <button onClick={addCompetitor} disabled={scraping !== null} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+          {scraping ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+          {scraping ? "Researching..." : "Add & Research"}
         </button>
       </div>
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-zinc-800 text-left text-zinc-500">
-              <th className="p-4 font-medium">Status</th>
-              <th className="p-4 font-medium">Name</th>
-              <th className="p-4 font-medium">Website</th>
-              <th className="p-4 font-medium">Last Scraped</th>
-              <th className="p-4 font-medium"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {competitors.map((c) => (
-              <tr key={c.id} className="border-b border-zinc-800 last:border-0 text-zinc-300">
-                <td className="p-4">{statusIcon(c.status)}</td>
-                <td className="p-4 font-medium">{c.name}</td>
-                <td className="p-4 text-zinc-500">{c.website}</td>
-                <td className="p-4 text-zinc-500">{c.lastScraped}</td>
-                <td className="p-4">
-                  <button className="text-zinc-600 hover:text-red-400 transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+      <div className="grid grid-cols-1 gap-4">
+        {competitors.map((c) => {
+          const result = results[c.id]
+          return (
+            <div key={c.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+              <div className="p-5 flex items-start justify-between">
+                <div className="flex items-start gap-4">
+                  <div className="mt-1">{statusIcon(c.status)}</div>
+                  <div>
+                    <h3 className="font-semibold text-white">{c.name}</h3>
+                    <p className="text-sm text-zinc-500">{c.website}</p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="text-xs text-zinc-600">Last scraped: {c.lastScraped}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        c.mainePresence === "yes" ? "bg-green-900 text-green-300"
+                        : c.mainePresence === "no" ? "bg-red-900 text-red-300"
+                        : "bg-zinc-800 text-zinc-500"
+                      }`}>
+                        {c.mainePresence === "yes" ? "Maine presence" : c.mainePresence === "no" ? "No Maine presence" : "Unknown"}
+                      </span>
+                    </div>
+                    {c.maineCounties && c.maineCounties.length > 0 && (
+                      <div className="flex items-center gap-1 mt-2 text-xs text-zinc-500">
+                        <MapPin className="w-3 h-3" />
+                        {c.maineCounties.join(", ")}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <button className="text-zinc-600 hover:text-red-400 transition-colors p-1">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+
+              {result && (
+                <div className="border-t border-zinc-800 px-5 py-4 bg-zinc-950">
+                  <div className="flex items-center gap-2 text-xs text-zinc-500 mb-3">
+                    <FileText className="w-3.5 h-3.5" />
+                    AI Research Summary
+                  </div>
+                  <p className="text-sm text-zinc-300 mb-3">{result.summary}</p>
+                  {result.servicesFound.length > 0 && (
+                    <div className="mb-2">
+                      <span className="text-xs text-zinc-600">Services: </span>
+                      <span className="text-xs text-zinc-400">{result.servicesFound.join(", ")}</span>
+                    </div>
+                  )}
+                  {result.maineMentions.length > 0 && (
+                    <div>
+                      <span className="text-xs text-zinc-600">Maine mentions: </span>
+                      <span className="text-xs text-zinc-400">{result.maineMentions.length} found on their website</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
-      <p className="text-xs text-zinc-600">{competitors.length}/25 URLs used</p>
+      <p className="text-xs text-zinc-600">{competitors.length} competitor(s) tracked</p>
     </div>
   )
 }

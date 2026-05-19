@@ -7,6 +7,8 @@ export interface Competitor {
   url: string
   lastScraped: string
   status: "pending" | "scraping" | "complete" | "error"
+  mainePresence: "yes" | "no" | "unknown"
+  maineCounties?: string[]
 }
 
 export interface ServiceLine {
@@ -23,6 +25,7 @@ export interface Evidence {
   snippet: string
   date: string
   relevance: number
+  maineRelevance: boolean
 }
 
 export interface Battlecard {
@@ -34,6 +37,7 @@ export interface Battlecard {
   andwellAdvantage: string[]
   winRate: number
   lastUpdated: string
+  maineMarketShare?: number
 }
 
 export interface Report {
@@ -42,6 +46,15 @@ export interface Report {
   type: "competitive" | "growth" | "board"
   createdAt: string
   summary: string
+}
+
+export interface MaineCounty {
+  name: string
+  population: number
+  over65Percent: number
+  medianIncome: number
+  ruralPercent: number
+  homeHealthAgencies: number
 }
 
 export interface CountyDemand {
@@ -84,4 +97,14 @@ export interface CatalogItem {
 export type Message = {
   role: "user" | "assistant"
   content: string
+}
+
+export interface ScrapeResult {
+  competitorId: string
+  url: string
+  pagesScraped: number
+  maineMentions: { page: string; snippet: string }[]
+  servicesFound: string[]
+  countiesMentioned: string[]
+  summary: string
 }
