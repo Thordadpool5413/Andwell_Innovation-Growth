@@ -74,7 +74,7 @@ export default function DashboardPage() {
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
           <h3 className="font-semibold text-white mb-4">Maine Market Share</h3>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={300} minHeight={256}>
               <BarChart data={shareData} layout="vertical">
                 <XAxis type="number" tick={{ fill: "#71717a", fontSize: 12 }} />
                 <YAxis dataKey="name" type="category" tick={{ fill: "#d4d4d8", fontSize: 11 }} width={100} />
@@ -89,7 +89,7 @@ export default function DashboardPage() {
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
           <h3 className="font-semibold text-white mb-4">Win Rate vs Competitors</h3>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={300} minHeight={256}>
               <BarChart data={shareData}>
                 <XAxis dataKey="name" tick={{ fill: "#d4d4d8", fontSize: 10 }} angle={-20} textAnchor="end" height={60} />
                 <YAxis domain={[0, 100]} tick={{ fill: "#71717a", fontSize: 12 }} />
@@ -106,7 +106,7 @@ export default function DashboardPage() {
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
         <h3 className="font-semibold text-white mb-4">Top Priority Maine Counties by Demand</h3>
         <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={300} minHeight={256}>
             <BarChart data={countyData}>
               <XAxis dataKey="county" tick={{ fill: "#d4d4d8", fontSize: 11 }} />
               <YAxis tick={{ fill: "#71717a", fontSize: 12 }} />

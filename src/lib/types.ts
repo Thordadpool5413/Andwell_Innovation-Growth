@@ -120,3 +120,49 @@ export interface CatalogItem {
   id: string; name: string; description: string
   category: string; evidence: string[]
 }
+
+export interface RagDocument {
+  id: string
+  content: string
+  source: string
+  competitorId?: string
+  competitorName?: string
+  date?: string
+  type: "evidence" | "battlecard" | "report" | "competitor" | "cms" | "dhhs" | "crawl"
+  embedding?: number[]
+}
+
+export interface CrawlHash {
+  url: string
+  hash: string
+  lastChecked: string
+  changed: boolean
+}
+
+export interface CmsStarRating {
+  competitorId: string
+  competitorName: string
+  overallRating: number
+  qualityRating: number
+  patientSurveyRating: number
+  date: string
+}
+
+export interface DhhsFiling {
+  id: string
+  type: "certificate-of-need" | "license" | "notice"
+  filerName: string
+  description: string
+  county: string
+  date: string
+  status: "pending" | "approved" | "denied"
+}
+
+export interface ScheduledJob {
+  id: string
+  name: string
+  cron: string
+  handler: string
+  lastRun?: string
+  enabled: boolean
+}

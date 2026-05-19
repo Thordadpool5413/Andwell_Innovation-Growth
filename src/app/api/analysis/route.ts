@@ -57,8 +57,10 @@ function buildContext(query: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  let query = ""
   try {
-    const { query } = await req.json()
+    const body = await req.json()
+    query = body.query || ""
     if (!query) return NextResponse.json({ answer: "Please provide a question." })
 
     const context = buildContext(query)
@@ -92,7 +94,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ answer: data.choices?.[0]?.message?.content || fallbackAnswer(query) })
   } catch (err) {
     console.error("Analysis error:", err)
-    return NextResponse.json({ answer: fallbackAnswer("") })
+    return NextResponse.json({ answer: fallbackAnswer(query) })
   }
 }
 

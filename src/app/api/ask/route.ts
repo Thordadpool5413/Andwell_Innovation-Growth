@@ -1,21 +1,38 @@
 import { NextRequest, NextResponse } from "next/server"
+import { retrieveRelevant, buildContextFromDocs, extractSources } from "@/lib/rag"
 
-const SYSTEM_PROMPT = `You are Andwell's competitive intelligence analyst, focused on Maine's home healthcare market.
-Answer questions using ONLY the provided intelligence data. Never fabricate information.
-Use "Not found publicly" for anything without evidence.
-Key competitors: Northern Light Home Care (22% share), MaineHealth Home Health (18%), Gentiva (8%), Amedisys (5%).
+const SYSTEM_PROMPT = `You are Andwell's competitive intelligence analyst for Maine's home healthcare market.
+Answer using ONLY the intelligence data provided below. Never fabricate information.
+Use "Not found publicly" when the data doesn't support a claim.
+Be specific — mention competitor names, Maine counties, and data points when available.
 Andwell covers all 16 Maine counties with Home Healthcare, Mobile Wound Care, and Therapy Care.`
 
 export async function POST(req: NextRequest) {
   try {
-    const { query, context } = await req.json()
+    const { query } = await req.json()
     if (!query) return NextResponse.json({ answer: "Please provide a question." })
+
+    const relevant = await retrieveRelevant(query)
+    const context = buildContextFromDocs(relevant)
+    const sources = extractSources(relevant)
+
+    const apiKey = process.env.OPENAI_API_KEY
+
+    if (!apiKey) {
+      const answer = context
+        ? `Based on stored intelligence:\n\n${context}\n\nSet OPENAI_API_KEY for AI-powered analysis.`
+        : "No relevant intelligence found for your question. Try asking about a specific competitor (Northern Light, MaineHealth, Gentiva, Amedisys), a Maine county, or a service line."
+      return NextResponse.json({ answer, sources })
+    }
 
     const payload = {
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `${context || ""}\n\nQuestion: ${query}\n\nAnswer based on available intelligence. Use "Not found publicly" for unsupported claims.` },
+        {
+          role: "user",
+          content: `## Intelligence Data\n${context || "No specific data found."}\n\n## Question\n${query}\n\nAnswer based on the intelligence data above. Use "Not found publicly" for unsupported claims. Cite specific competitors and counties.`,
+        },
       ],
       max_tokens: 800,
       temperature: 0.2,
@@ -25,22 +42,24 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY || ""}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(payload),
     })
 
     if (!res.ok) {
       return NextResponse.json({
-        answer: "AI analysis unavailable. Using stored intelligence data.",
-        sources: [],
+        answer: context
+          ? `Based on stored intelligence:\n\n${context}`
+          : "No relevant intelligence found. Try a different question.",
+        sources,
       })
     }
 
     const data = await res.json()
     return NextResponse.json({
-      answer: data.choices?.[0]?.message?.content || "Analysis complete based on available data.",
-      sources: [],
+      answer: data.choices?.[0]?.message?.content || "Analysis complete.",
+      sources,
     })
   } catch {
     return NextResponse.json({ answer: "Analysis unavailable. Using stored intelligence.", sources: [] })
