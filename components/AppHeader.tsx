@@ -16,7 +16,7 @@ export default function AppHeader() {
   const isHome = pathname === "/";
 
   return (
-    <header className="border-b" style={{ borderColor: "var(--color-border, #2d3748)", background: "rgba(10, 14, 39, 0.85)", backdropFilter: "blur(16px)" }}>
+    <header className="border-b" style={{ borderColor: "var(--color-border, #2d3748)", background: "rgba(10, 14, 39, 0.7)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-6">

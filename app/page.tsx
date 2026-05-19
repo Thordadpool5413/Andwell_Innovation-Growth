@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { LayoutDashboard, TrendingUp, Presentation, Rocket, Brain, Cpu, FileText, Upload, Table, Swords, FileBarChart, MessageSquare, BookOpen, Activity } from 'lucide-react';
 import { LoadingState } from '../components/StateViews';
 import { andwellCatalog } from '../lib/andwell';
 import { buildGrowthRows, buildStaffingPlan, growthDefaultScenario, rollupGrowthByService, summarizeGrowth } from '../lib/growth-plan';
@@ -23,6 +24,12 @@ import { Reports } from '../components/command-center/views/Reports';
 import { AskHub } from '../components/command-center/views/AskHub';
 import { Catalog } from '../components/command-center/views/Catalog';
 import { Diagnostics } from '../components/command-center/views/Diagnostics';
+
+const navIcons: Record<View, React.ComponentType<{ className?: string }>> = {
+  dashboard: LayoutDashboard, growth: TrendingUp, board: Presentation, launch: Rocket,
+  expert: Brain, ai: Cpu, prompt: FileText, intake: Upload, matrix: Table,
+  battlecards: Swords, reports: FileBarChart, ask: MessageSquare, catalog: BookOpen, diagnostics: Activity
+};
 
 export default function Page() {
   const [view, setView] = useState<View>('dashboard');
@@ -182,7 +189,7 @@ export default function Page() {
         </select>
         <p>{roleGuidance[roleView].headline}</p>
       </div>
-      <nav className="nav proNav">{nav.map((item) => <button key={item.key} className={view === item.key ? 'active' : ''} onClick={() => setView(item.key)}><strong>{item.label}</strong><small>{item.note}</small></button>)}</nav>
+      <nav className="nav proNav">{nav.map((item) => { const Icon = navIcons[item.key]; return <button key={item.key} className={view === item.key ? 'active' : ''} onClick={() => setView(item.key)}><Icon className="w-4 h-4 shrink-0" /><span><strong>{item.label}</strong><small>{item.note}</small></span></button>; })}</nav>
       <div className="mt-auto border-t border-white/10 p-4">
         <button className="btn primary w-full justify-center" onClick={() => { window.location.href = '/growth-plan'; }}><strong>Growth Plan Dashboard</strong></button>
       </div>
