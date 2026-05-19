@@ -9,8 +9,6 @@ const strictBuild = process.env.CIH_STRICT_BUILD === '1';
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  output: 'standalone',
-  outputFileTracingRoot: __dirname,
   typescript: {
     ignoreBuildErrors: !strictBuild
   },
