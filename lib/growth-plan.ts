@@ -16,7 +16,17 @@ type ServiceModel = {
   demandRate: number;
 };
 
-type CountyMarket = {
+export type StaffingPlanItem = {
+  service: GrowthServiceName;
+  role: string;
+  patientsPerFTE: number;
+  avgSalary: number;
+  starts: [number, number, number];
+  fte: [number, number, number];
+  cost: [number, number, number];
+};
+
+export type CountyMarket = {
   ffs: number;
   hh: { prov: number; users: number; rate: number; pay: number; ppu: number };
   hos: { prov: number; users: number; ppu: number };
@@ -73,7 +83,7 @@ export const growthServices: Record<GrowthServiceName, ServiceModel> = {
   'Therapy Care': { color: '#16a34a', role: 'Referral retention line', unit: 'therapy service starts', reimbursement: 1650, margin: 0.2, demandRate: 0.05 }
 };
 
-const cmsCountyMarket: Record<string, CountyMarket> = {
+export const cmsCountyMarket: Record<string, CountyMarket> = {
   York: { ffs: 32287, hh: { prov: 11, users: 2191, rate: 0.0679, pay: 10448386, ppu: 4769 }, hos: { prov: 9, users: 851, ppu: 14723 } },
   Cumberland: { ffs: 35113, hh: { prov: 8, users: 2196, rate: 0.0625, pay: 10598866, ppu: 4826 }, hos: { prov: 9, users: 1011, ppu: 15736 } },
   Penobscot: { ffs: 20564, hh: { prov: 5, users: 1056, rate: 0.0514, pay: 4812225, ppu: 4557 }, hos: { prov: 6, users: 473, ppu: 15839 } },
@@ -103,7 +113,7 @@ export const launchPlan: LaunchPlanItem[] = [
   { county: 'Franklin', service: 'Therapy Care', age65: 6952, launchGroup: 'Priority 3', current: 'GUIDE, CareGivers, Mobile Wound, Home Healthcare, Palliative Medicine, Grief Support Groups, Community and Behavioral Health, Hospice', missing: 'Therapy Care, Audiology', reason: 'Small rural continuum completion opportunity. Therapy Care strengthens existing Home Healthcare, but should use a lean staffing model.', action: 'Confirm shared therapy staffing, falls and mobility demand, and referral density before launch.', accounts: ['MaineHealth Franklin Hospital', 'Franklin Health primary care network', 'Rural health clinics', 'SNF and rehabilitation centers', 'Senior living and caregiver organizations'] }
 ];
 
-const staffingRatios: Record<GrowthServiceName, { role: string; patientsPerFTE: number; avgSalary: number }> = {
+export const staffingRatios: Record<GrowthServiceName, { role: string; patientsPerFTE: number; avgSalary: number }> = {
   'Home Healthcare': { role: 'RN / LPN', patientsPerFTE: 25, avgSalary: 78000 },
   'Mobile Wound': { role: 'Wound Care Specialist', patientsPerFTE: 15, avgSalary: 85000 },
   'Therapy Care': { role: 'PT / OT / SLP', patientsPerFTE: 20, avgSalary: 82000 }

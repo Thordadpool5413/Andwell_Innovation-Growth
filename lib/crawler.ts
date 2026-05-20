@@ -1,8 +1,12 @@
 import * as cheerio from 'cheerio';
-import type { CrawledPage } from './types';
+import type { CrawledPage, CrawledPageType } from './types';
 
-const strongPaths = ['service','services','program','programs','hospice','home-health','home-care','palliative','wound','dementia','guide','behavioral','therapy','pediatric','maternal','child','referral','locations','service-area','bereavement','audiology','caregiver'];
+const strongPaths = ['service','services','program','programs','hospice','home-health','home-care','palliative','wound','dementia','guide','behavioral','therapy','pediatric','maternal','child','referral','refer','locations','service-area','eligibility','admission','admissions','bereavement','audiology','caregiver','specialty','patient','family'];
 const weakPaths = ['career','job','donat','event','privacy','terms','login','wp-admin'];
+const serviceSignals = ['service', 'services', 'program', 'programs', 'care', 'therapy', 'hospice', 'palliative', 'home health', 'wound', 'dementia', 'behavioral', 'audiology', 'maternal', 'pediatric'];
+const referralSignals = ['refer', 'referral', 'admission', 'admissions', 'intake', 'contact us', 'fax', 'provider', 'case manager'];
+const eligibilitySignals = ['eligibility', 'eligible', 'medicare', 'insurance', 'criteria', 'covered', 'payer'];
+const proofSignals = ['certified', 'accredited', 'quality', 'outcomes', 'specialist', 'team', '24/7', 'on call', 'same day', 'licensed'];
 
 function getAllowedHostPatterns(): string[] {
   return (process.env.CRAWL_ALLOWED_HOSTS || '')
@@ -106,6 +110,67 @@ function scoreUrl(url: string) {
   return score;
 }
 
+function textScore(text: string, terms: string[]) {
+  const lower = text.toLowerCase();
+  return terms.reduce((sum, term) => sum + (lower.includes(term) ? 1 : 0), 0);
+}
+
+function classifyPage(url: string, title: string, text: string): { pageType: CrawledPageType; intelligenceScore: number; evidenceSignals: string[] } {
+  const searchable = `${url} ${title} ${text.slice(0, 5000)}`.toLowerCase();
+  const serviceScore = textScore(searchable, serviceSignals);
+  const referralScore = textScore(searchable, referralSignals);
+  const eligibilityScore = textScore(searchable, eligibilitySignals);
+  const proofScore = textScore(searchable, proofSignals);
+  const lowValueScore = textScore(searchable, weakPaths);
+  const bodyValue = Math.min(24, Math.round(text.length / 900));
+  const urlValue = scoreUrl(url);
+  const intelligenceScore = Math.max(0, urlValue + serviceScore * 7 + referralScore * 5 + eligibilityScore * 4 + proofScore * 4 + bodyValue - lowValueScore * 8);
+  const evidenceSignals = [
+    serviceScore ? `${serviceScore} service signals` : '',
+    referralScore ? `${referralScore} referral signals` : '',
+    eligibilityScore ? `${eligibilityScore} eligibility signals` : '',
+    proofScore ? `${proofScore} proof signals` : ''
+  ].filter(Boolean);
+
+  let pageType: CrawledPageType = 'General page';
+  if (lowValueScore >= 2 && intelligenceScore < 24) pageType = 'Low value';
+  else if (referralScore >= 2) pageType = 'Referral page';
+  else if (eligibilityScore >= 2) pageType = 'Eligibility page';
+  else if (searchable.includes('location') || searchable.includes('service area')) pageType = 'Location page';
+  else if (searchable.includes('program')) pageType = 'Program page';
+  else if (serviceScore >= 2) pageType = 'Service page';
+  else if (searchable.includes('about')) pageType = 'About page';
+  else if (searchable.includes('blog') || searchable.includes('news')) pageType = 'News or blog';
+
+  return { pageType, intelligenceScore, evidenceSignals };
+}
+
+function organizationNameFromJsonLd($: cheerio.CheerioAPI) {
+  const names: string[] = [];
+  $('script[type="application/ld+json"]').each((_, el) => {
+    const raw = $(el).text();
+    if (!raw.trim()) return;
+    try {
+      const parsed = JSON.parse(raw);
+      const items = Array.isArray(parsed) ? parsed : [parsed, ...(Array.isArray(parsed['@graph']) ? parsed['@graph'] : [])];
+      items.forEach((item: any) => {
+        const type = Array.isArray(item?.['@type']) ? item['@type'].join(' ') : item?.['@type'];
+        if (typeof item?.name === 'string' && /organization|localbusiness|medicalbusiness|hospital|health/i.test(String(type || ''))) names.push(item.name);
+      });
+    } catch {}
+  });
+  return names[0];
+}
+
+function logoAlt($: cheerio.CheerioAPI) {
+  let value = '';
+  $('img[alt]').each((_, el) => {
+    const alt = $(el).attr('alt') || '';
+    if (!value && /logo/i.test(alt)) value = alt;
+  });
+  return value;
+}
+
 async function fetchHtml(url: string, redirectCount = 0): Promise<string> {
   const safeUrl = normalize(url);
   if (!safeUrl) throw new Error('Invalid URL. Use a complete public website address.');
@@ -145,11 +210,14 @@ async function fetchHtml(url: string, redirectCount = 0): Promise<string> {
 
 function pageFromHtml(url: string, html: string): CrawledPage {
   const $ = cheerio.load(html);
+  const siteName = clean($('meta[property="og:site_name"]').attr('content') || $('meta[name="application-name"]').attr('content') || '');
+  const organizationName = clean(organizationNameFromJsonLd($) || $('[itemtype*="Organization"] [itemprop="name"]').first().text() || logoAlt($) || '');
   $('script,style,nav,footer,header,noscript,svg,form').remove();
   const title = clean($('title').first().text() || $('h1').first().text() || url);
   const headings = $('h1,h2,h3').map((_, el) => clean($(el).text())).get().filter(Boolean).join(' | ');
   const body = clean(`${headings} ${$('body').text()}`);
-  return { url, title, text: body.slice(0, 32000), excerpt: body.slice(0, 900) };
+  const text = body.slice(0, 32000);
+  return { url, title, siteName, organizationName, text, excerpt: body.slice(0, 900), ...classifyPage(url, title, text) };
 }
 
 function linksFromHtml(root: string, html: string) {
@@ -177,7 +245,7 @@ export async function crawlSite(startUrl: string, maxPages = 24): Promise<Crawle
   if (!html) throw new Error('The website did not return readable public HTML.');
   const pages: CrawledPage[] = [pageFromHtml(root, html)];
   const seen = new Set<string>([root]);
-  const links = linksFromHtml(root, html).filter((url) => scoreUrl(url) >= -2).slice(0, maxPages * 2);
+  const links = linksFromHtml(root, html).filter((url) => scoreUrl(url) >= -2).slice(0, maxPages * 3);
   for (const url of links) {
     if (pages.length >= maxPages) break;
     if (seen.has(url)) continue;
@@ -186,8 +254,8 @@ export async function crawlSite(startUrl: string, maxPages = 24): Promise<Crawle
       const nextHtml = await fetchHtml(url);
       if (!nextHtml) continue;
       const page = pageFromHtml(url, nextHtml);
-      if (page.text.length > 160) pages.push(page);
+      if (page.text.length > 160 && page.pageType !== 'Low value') pages.push(page);
     } catch {}
   }
-  return pages;
+  return pages.sort((a, b) => (b.intelligenceScore || 0) - (a.intelligenceScore || 0));
 }

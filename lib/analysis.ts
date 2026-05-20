@@ -1,6 +1,7 @@
 import { andwellCatalog } from './andwell';
 import { buildExpertBrief } from './expert-engine';
-import type { CompetitorAnalysis, CompetitorInput, Confidence, CrawledPage, ExecutiveInsight, Finding, IntelligenceReport, Status, SubserviceFinding, CompetitorScore, ThreatLevel } from './types';
+import { cleanProviderName, nameFromUrl } from './provider-identity';
+import type { CompetitorAnalysis, CompetitorInput, Confidence, CrawledPage, EvidenceSource, ExecutiveInsight, Finding, IntelligenceReport, MatrixScore, Status, SubserviceFinding, CompetitorScore, ThreatLevel } from './types';
 
 function norm(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -28,12 +29,7 @@ function score(text: string, terms: string[]) {
 }
 
 function providerName(input: CompetitorInput) {
-  if (input.name?.trim()) return input.name.trim();
-  try {
-    return new URL(input.url).hostname.replace(/^www\./, '').split('.')[0].replace(/\b\w/g, (l) => l.toUpperCase());
-  } catch {
-    return 'Competitor';
-  }
+  return cleanProviderName(input.name) || nameFromUrl(input.url) || 'Competitor';
 }
 
 const hints: Record<string, string[]> = {
@@ -55,6 +51,78 @@ const hints: Record<string, string[]> = {
 
 function evidence(pages: CrawledPage[], terms: string[]) {
   return [...pages].sort((a, b) => score(b.text, terms) - score(a.text, terms))[0];
+}
+
+function pageQuality(page: CrawledPage) {
+  if (page.pageType === 'Service page' || page.pageType === 'Program page') return 28;
+  if (page.pageType === 'Referral page' || page.pageType === 'Eligibility page') return 24;
+  if (page.pageType === 'Location page') return 18;
+  if (page.pageType === 'About page') return 12;
+  if (page.pageType === 'News or blog') return 8;
+  if (page.pageType === 'Low value') return 2;
+  return 10;
+}
+
+function sourceExcerpt(page: CrawledPage, matchedTerms: string[]) {
+  const text = page.text || page.excerpt || '';
+  const lower = text.toLowerCase();
+  const match = matchedTerms.find((term) => lower.includes(term.toLowerCase()));
+  if (!match) return page.excerpt || text.slice(0, 900);
+  const index = Math.max(0, lower.indexOf(match.toLowerCase()) - 220);
+  return text.slice(index, index + 900).trim() || page.excerpt || text.slice(0, 900);
+}
+
+function evidenceSources(pages: CrawledPage[], terms: string[]): EvidenceSource[] {
+  return [...pages]
+    .map((page) => {
+      const matchedTerms = terms.filter((term) => score(page.text, [term]) > 0).slice(0, 12);
+      const termScore = score(page.text, terms);
+      return {
+        url: page.url,
+        title: page.title,
+        pageType: page.pageType,
+        excerpt: sourceExcerpt(page, matchedTerms),
+        matchedTerms,
+        score: termScore + pageQuality(page) + Math.min(20, page.intelligenceScore || 0)
+      };
+    })
+    .filter((source) => source.matchedTerms.length || source.score >= 30)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+}
+
+function statusStrength(status: Status) {
+  if (status === 'Clearly offered') return 100;
+  if (status === 'Mentioned only') return 62;
+  if (status === 'Related but not equivalent') return 48;
+  if (status === 'Unclear' || status === 'Needs human review') return 26;
+  return 0;
+}
+
+function confidenceStrength(confidence: Confidence) {
+  if (confidence === 'High') return 100;
+  if (confidence === 'Moderate') return 66;
+  if (confidence === 'Low') return 34;
+  if (confidence === 'Needs review') return 20;
+  return 0;
+}
+
+function buildMatrixScore(params: { status: Status; confidence: Confidence; sources: EvidenceSource[]; matchedCount: number; totalCount: number; aiSourceCount?: number; aiRationale?: string }): MatrixScore {
+  const sourceCount = Math.max(params.sources.length, params.aiSourceCount || 0);
+  const bestSourceQuality = Math.min(100, params.sources.reduce((max, source) => Math.max(max, source.score), 0));
+  const evidenceStrength = Math.round((statusStrength(params.status) * 0.58) + (confidenceStrength(params.confidence) * 0.28) + Math.min(14, sourceCount * 7));
+  const matchStrength = Math.round((params.matchedCount / Math.max(params.totalCount, 1)) * 100);
+  const reviewRisk = params.status === 'Clearly offered' && params.confidence === 'High' && sourceCount > 0 ? 12 : params.status === 'Not found publicly' ? 70 : params.confidence === 'Low' ? 82 : 48;
+  const andwellDifferentiation = params.status === 'Clearly offered' ? Math.max(0, 100 - matchStrength) : params.status === 'Not found publicly' ? 92 : 64;
+  const overall = Math.round((evidenceStrength * 0.34) + (bestSourceQuality * 0.16) + (matchStrength * 0.2) + (andwellDifferentiation * 0.18) + ((100 - reviewRisk) * 0.12));
+  const rationale = [
+    `${params.status} with ${params.confidence.toLowerCase()} confidence`,
+    `${sourceCount} supporting source${sourceCount === 1 ? '' : 's'}`,
+    `${matchStrength}% Andwell subservice match`,
+    `${andwellDifferentiation}% Andwell differentiation signal`,
+    params.aiRationale || ''
+  ].filter(Boolean).slice(0, 5);
+  return { overall: Math.max(0, Math.min(100, overall)), evidenceStrength: Math.min(100, evidenceStrength), sourceQuality: bestSourceQuality, sourceCount, matchStrength, andwellDifferentiation, reviewRisk, rationale };
 }
 
 function classifyTerms(terms: string[], pages: CrawledPage[]): { status: Status; confidence: Confidence; page?: CrawledPage; matched: string[]; rawScore: number } {
@@ -100,6 +168,7 @@ function buildSubserviceFinding(input: CompetitorInput, competitorId: string, se
   const terms = relatedTerms(serviceLine, subservice);
   const c = classifyTerms(terms, pages);
   const subject = `${serviceLine}: ${subservice}`;
+  const sources = evidenceSources(pages, terms);
   return {
     id: `${competitorId}:${serviceLine}:${subservice}`,
     competitorId,
@@ -111,7 +180,9 @@ function buildSubserviceFinding(input: CompetitorInput, competitorId: string, se
     confidence: c.confidence,
     sourceUrl: c.page?.url,
     sourceTitle: c.page?.title,
-    evidenceExcerpt: c.page?.excerpt || `No explicit public evidence for ${subservice} was found in ${pages.length} reviewed pages.`,
+    evidenceExcerpt: sources[0]?.excerpt || c.page?.excerpt || `No explicit public evidence for ${subservice} was found in ${pages.length} reviewed pages.`,
+    evidenceSources: sources,
+    matrixScore: buildMatrixScore({ status: c.status, confidence: c.confidence, sources, matchedCount: c.status === 'Clearly offered' ? 1 : 0, totalCount: 1 }),
     matchedTerms: c.matched,
     aiInterpretation: interpretation(name, c.status, subject),
     safeSalesWording: c.status === 'Not found publicly'
@@ -144,6 +215,7 @@ function buildFinding(input: CompetitorInput, competitorId: string, service: typ
   const confidence = status === 'Clearly offered' ? (c.confidence === 'High' || summary.confidence === 'High' ? 'High' : 'Moderate') : summary.confidence;
   const bestPage = c.page || evidence(pages, serviceHints);
   const clearlyMatchedSubservices = summary.matched;
+  const sources = evidenceSources(pages, [...serviceHints, service.serviceLine, ...service.subservices]);
   return {
     id: `${competitorId}:${service.serviceLine}`,
     competitorId,
@@ -154,7 +226,9 @@ function buildFinding(input: CompetitorInput, competitorId: string, service: typ
     confidence,
     sourceUrl: bestPage?.url,
     sourceTitle: bestPage?.title,
-    evidenceExcerpt: bestPage?.excerpt || `No explicit public evidence was found in ${pages.length} reviewed pages.`,
+    evidenceExcerpt: sources[0]?.excerpt || bestPage?.excerpt || `No explicit public evidence was found in ${pages.length} reviewed pages.`,
+    evidenceSources: sources,
+    matrixScore: buildMatrixScore({ status, confidence, sources, matchedCount: clearlyMatchedSubservices, totalCount: service.subservices.length }),
     aiInterpretation: `${interpretation(name, status, service.serviceLine)} ${clearlyMatchedSubservices} of ${service.subservices.length} Andwell subservices were clearly matched from public pages.`,
     matchLevel: status === 'Clearly offered' ? 'Main service line match. Subservice depth determines positioning strength.' : status === 'Not found publicly' ? 'Potential Andwell advantage based on reviewed public pages.' : 'Partial, related, or unclear public match. Review before using in sales materials.',
     andwellAdvantage: status === 'Clearly offered'
@@ -183,7 +257,7 @@ function threatLevel(overlap: number, depth: number): ThreatLevel {
   return 'Low overlap';
 }
 
-function buildScore(analysis: Omit<CompetitorAnalysis, 'score'>): CompetitorScore {
+export function buildScore(analysis: Omit<CompetitorAnalysis, 'score'>): CompetitorScore {
   const total = Math.max(analysis.findings.length, 1);
   const matched = analysis.findings.filter((f) => f.competitorStatus === 'Clearly offered');
   const notMatched = analysis.findings.filter((f) => f.competitorStatus !== 'Clearly offered');

@@ -1,4 +1,4 @@
-import type { Confidence, CrawledPage, ReviewStatus, Status } from './types';
+import type { Confidence, ConfidenceDetails, CrawledPage, ReviewStatus, Status } from './types';
 
 export type EvidenceLike = {
   type?: string;
@@ -150,6 +150,40 @@ export function selectBestPromptPages(pages: CrawledPage[], maxPages: number, ma
     intelligenceScore: pageIntelligenceScore(page),
     excerpt: page.text.slice(0, maxCharsPerPage)
   }));
+}
+
+export function computeConfidenceDetails(params: {
+  status: Status;
+  sourceCount: number;
+  hasFreshSource: boolean;
+  hasCmsSupport: boolean;
+  hasInternalValidation: boolean;
+  competitorOverlap: 'High' | 'Moderate' | 'Low';
+  humanReviewed: boolean;
+}): ConfidenceDetails {
+  const { status, sourceCount, hasFreshSource, hasCmsSupport, hasInternalValidation, competitorOverlap, humanReviewed } = params;
+  const evidenceQuality: 'Strong' | 'Moderate' | 'Weak' = status === 'Clearly offered' ? 'Strong' : status === 'Not found publicly' ? 'Weak' : 'Moderate';
+  const sourceFreshness: 'Current' | 'Recent' | 'Stale' = hasFreshSource ? 'Current' : sourceCount > 0 ? 'Recent' : 'Stale';
+  const hasSource = sourceCount > 0;
+  const positiveSignals = [hasSource, hasFreshSource, hasCmsSupport, hasInternalValidation, humanReviewed, competitorOverlap === 'High'].filter(Boolean).length;
+  const negativeSignals = [status === 'Unclear', status === 'Needs human review', !hasSource, competitorOverlap === 'Low'].filter(Boolean).length;
+  let overall: Confidence;
+  if (positiveSignals >= 4 && negativeSignals === 0) overall = 'High';
+  else if (positiveSignals >= 2) overall = 'Moderate';
+  else if (negativeSignals >= 2) overall = 'Low';
+  else overall = 'Needs review';
+  if (status === 'Not found publicly' && !hasSource) overall = 'Not found';
+  const parts: string[] = [];
+  if (evidenceQuality === 'Strong') parts.push('supported by clear evidence');
+  else if (evidenceQuality === 'Weak') parts.push('limited evidence available');
+  if (sourceFreshness === 'Current') parts.push('fresh source');
+  else if (sourceFreshness === 'Stale') parts.push('source may be outdated');
+  if (sourceCount > 0) parts.push(`${sourceCount} source${sourceCount > 1 ? 's' : ''}`);
+  if (hasCmsSupport) parts.push('CMS data supports');
+  if (hasInternalValidation) parts.push('internally validated');
+  if (humanReviewed) parts.push('human reviewed');
+  if (competitorOverlap === 'High') parts.push('high competitor overlap');
+  return { overall, evidenceQuality, sourceFreshness, sourceCount, hasInternalValidation, hasCmsSupport, competitorOverlap, humanReviewed, reason: parts.length ? parts.join(', ') : 'needs more data' };
 }
 
 export function fieldActionFromEvidence(item: EvidenceLike) {

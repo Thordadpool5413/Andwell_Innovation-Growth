@@ -1,14 +1,4 @@
-export function normalizeUrl(url: string) {
-  return url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
-}
-
-export function nameFromUrl(url: string) {
-  try {
-    return new URL(normalizeUrl(url)).hostname.replace(/^www\./, '').split('.')[0].replace(/\b\w/g, (letter) => letter.toUpperCase());
-  } catch {
-    return 'Competitor';
-  }
-}
+export { nameFromUrl, normalizeCompetitorUrl as normalizeUrl, parseCompetitorEntries, cleanProviderName } from '../provider-identity';
 
 export function parseJsonSafely<T>(text: string, url: string): T {
   const trimmed = text.trim();

@@ -1,7 +1,7 @@
 import type { IntelligenceReport } from '../types';
 
-export type View = 'dashboard' | 'growth' | 'board' | 'launch' | 'expert' | 'ai' | 'prompt' | 'intake' | 'matrix' | 'battlecards' | 'reports' | 'ask' | 'catalog' | 'diagnostics';
-export type RoleView = 'Executive' | 'Sales Leader' | 'Sales Rep' | 'Admin';
+export type View = 'home' | 'dashboard' | 'growth' | 'board' | 'launch' | 'heatmap' | 'expert' | 'ai' | 'prompt' | 'intake' | 'matrix' | 'battlecards' | 'reports' | 'ask' | 'catalog' | 'diagnostics' | 'governance' | 'builder' | 'referrals' | 'decisions' | 'scenarios' | 'brief' | 'narrative' | 'board-packet' | 'coaching' | 'executive-view' | 'county-plan' | 'referral-plan' | 'competitive-view' | 'service-lines' | 'cms-data' | 'financial-model' | 'staffing-model' | 'sensitivity' | 'opportunity-score' | 'launch-timeline' | 'board-report' | 'launch-checklist';
+export type RoleView = 'Executive' | 'Growth Leader' | 'Sales Leader' | 'Sales Rep' | 'Board' | 'Admin';
 export type MatrixFilter = 'all' | 'salesReady' | 'review' | 'advantage' | 'matched';
 export type ReportSummary = { id: string; generatedAt: string; competitorsAnalyzed: number; pagesReviewed: number; potentialAndwellAdvantages: number; humanReviewItems: number; competitors: string[]; executiveSummary: string };
 export type ApiCheck = { route: string; ok: boolean; status: number; message: string; preview?: string };

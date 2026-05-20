@@ -4,12 +4,50 @@ export type ReviewStatus = 'Sales usable with evidence' | 'Manager review sugges
 export type ThreatLevel = 'Low overlap' | 'Moderate overlap' | 'High overlap' | 'Strategic threat';
 export type ExpertPriority = 'Critical' | 'High' | 'Medium' | 'Low';
 export type ExpertAudience = 'CEO' | 'COO' | 'Sales Leader' | 'Sales Rep' | 'Admin' | 'Marketing' | 'Clinical Leader';
+export type CrawledPageType = 'Service page' | 'Program page' | 'Referral page' | 'Eligibility page' | 'Location page' | 'About page' | 'News or blog' | 'Low value' | 'General page';
+
+export type ConfidenceDetails = {
+  overall: Confidence;
+  evidenceQuality: 'Strong' | 'Moderate' | 'Weak';
+  sourceFreshness: 'Current' | 'Recent' | 'Stale';
+  sourceCount: number;
+  hasInternalValidation: boolean;
+  hasCmsSupport: boolean;
+  competitorOverlap: 'High' | 'Moderate' | 'Low';
+  humanReviewed: boolean;
+  reason: string;
+};
 
 export type CrawledPage = {
   url: string;
   title: string;
+  siteName?: string;
+  organizationName?: string;
   text: string;
   excerpt: string;
+  pageType?: CrawledPageType;
+  intelligenceScore?: number;
+  evidenceSignals?: string[];
+};
+
+export type EvidenceSource = {
+  url: string;
+  title: string;
+  pageType?: CrawledPageType;
+  excerpt: string;
+  matchedTerms: string[];
+  score: number;
+};
+
+export type MatrixScore = {
+  overall: number;
+  evidenceStrength: number;
+  sourceQuality: number;
+  sourceCount: number;
+  matchStrength: number;
+  andwellDifferentiation: number;
+  reviewRisk: number;
+  rationale: string[];
 };
 
 export type CompetitorInput = {
@@ -23,6 +61,9 @@ export type AIServiceLineDepth = {
   serviceLine: string;
   depthScore: number;
   evidenceStrength: 'Strong' | 'Moderate' | 'Weak' | 'Not found';
+  status?: Status;
+  sourceCount?: number;
+  matchRationale?: string;
   summary: string;
   competitorAdvantages: string[];
   andwellAdvantages: string[];
@@ -36,6 +77,9 @@ export type AISubserviceDepth = {
   subservice: string;
   status: Status;
   confidence: Confidence;
+  evidenceStrength?: 'Strong' | 'Moderate' | 'Weak' | 'Not found';
+  sourceCount?: number;
+  matchRationale?: string;
   evidenceExcerpt: string;
   sourceUrl?: string;
   safeSalesLanguage: string;
@@ -71,6 +115,15 @@ export type AICompetitorExtraction = {
   reviewRisks: string[];
   leadershipSummary: string;
   salesBattlecards: AISalesBattlecard[];
+  pageEvidence: {
+    url: string;
+    title: string;
+    pageType: CrawledPageType;
+    servicesFound: string[];
+    proofPoints: string[];
+    referralSignals: string[];
+    limitations: string[];
+  }[];
   rawConfidence: 'High' | 'Medium' | 'Low';
 };
 
@@ -86,6 +139,8 @@ export type SubserviceFinding = {
   sourceUrl?: string;
   sourceTitle?: string;
   evidenceExcerpt: string;
+  evidenceSources?: EvidenceSource[];
+  matrixScore?: MatrixScore;
   matchedTerms: string[];
   aiInterpretation: string;
   safeSalesWording: string;
@@ -104,6 +159,8 @@ export type Finding = {
   sourceUrl?: string;
   sourceTitle?: string;
   evidenceExcerpt: string;
+  evidenceSources?: EvidenceSource[];
+  matrixScore?: MatrixScore;
   aiInterpretation: string;
   matchLevel: string;
   andwellAdvantage: string;
@@ -186,6 +243,41 @@ export type ExpertWatchItem = {
   whyItMatters: string;
   nextCheck: string;
   priority: ExpertPriority;
+};
+
+export type ClaimStatus = 'Safe' | 'Needs review' | 'Do not use' | 'Internal only' | 'High risk';
+export type ReferralSourceType = 'Hospital' | 'SNF' | 'Primary Care' | 'Specialist' | 'Assisted Living' | 'Home Health Referral' | 'Behavioral Health' | 'Community Partner' | 'Family Caregiver';
+
+export type CategorizedClaim = {
+  claim: string;
+  category: ClaimStatus;
+  reason: string;
+  competitorName: string;
+  sourceUrl?: string;
+  serviceLine?: string;
+};
+
+export type BattlecardTemplate = {
+  competitor: string;
+  county: string;
+  serviceLine: string;
+  audience: string;
+  objection: string;
+  opening: string;
+  discoveryQuestions: string[];
+  positioning: string;
+  objectionResponse: string;
+  close: string;
+};
+
+export type ReferralSourceProfile = {
+  sourceType: ReferralSourceType;
+  leadService: string;
+  painPoints: string[];
+  discoveryQuestions: string[];
+  positioningLanguage: string;
+  referralCta: string;
+  serviceLines: { name: string; relevance: 'High' | 'Medium' | 'Low'; reason: string }[];
 };
 
 export type ExpertBrief = {
