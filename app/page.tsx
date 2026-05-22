@@ -519,7 +519,7 @@ function PageContent() {
         <div className="view-enter">
         {view === 'home' && <Home roleView={roleView} setView={setView} currentReport={currentReport} competitors={competitors} busy={busy} onRefresh={refreshServerState} />}
         {view === 'dashboard' && <Dashboard expertBrief={expertBrief} roleView={roleView} setView={setView} clearLegacyBrowserStorage={clearLegacyBrowserStorage} rows={growthRows} totals={growthTotals} />}
-        {view === 'growth' && <GrowthCommand rows={growthRows} totals={growthTotals} serviceRollup={growthServiceRollup} scenario={growthScenario} setScenario={setGrowthScenario} setView={setView} />}
+        {view === 'growth' && <GrowthCommand rows={growthRows} totals={growthTotals} serviceRollup={growthServiceRollup} scenario={growthScenario} setScenario={setGrowthScenario} setView={setView} currentReport={currentReport} />}
         {view === 'board' && <BoardRoom currentReport={currentReport} totals={growthTotals} rows={growthRows} topThreat={topThreat} topOpportunity={topOpportunity} setView={setView} scenario={growthScenario} />}
         {view === 'launch' && <LaunchPlan rows={growthRows} totals={growthTotals} staffingPlan={staffingPlan} setView={setView} />}
         {view === 'heatmap' && <OpportunityHeatMap rows={growthRows} totals={growthTotals} />}
