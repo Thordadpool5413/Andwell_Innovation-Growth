@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { LayoutDashboard, TrendingUp, Presentation, Rocket, Brain, Cpu, FileText, Upload, Table, Swords, FileBarChart, MessageSquare, BookOpen, Activity, Shield, Hammer, Users, Map, CheckSquare, Sliders, Search, FileSpreadsheet, ScrollText, GraduationCap, Globe, MapPin, Phone, Crosshair, Layers, Database, DollarSign, Target, Clock, ListChecks, Home as HomeIcon } from 'lucide-react';
-import { LoadingState } from '../components/StateViews';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { LayoutDashboard, TrendingUp, Presentation, Rocket, Brain, Cpu, FileText, Upload, Table, Swords, FileBarChart, MessageSquare, BookOpen, Activity, Shield, Hammer, Users, Map, CheckSquare, Sliders, Search, FileSpreadsheet, ScrollText, GraduationCap, Globe, MapPin, Phone, Crosshair, Layers, Database, DollarSign, Target, Clock, ListChecks, Home as HomeIcon, Menu, X } from 'lucide-react';
+import { ToastProvider, useToast } from '../components/Toast';
 import { andwellCatalog } from '../lib/andwell';
 import { buildGrowthRows, buildStaffingPlan, growthDefaultScenario, rollupGrowthByService, summarizeGrowth } from '../lib/growth-plan';
 import { generateAndwellExpertBrief } from '../lib/andwell-expert';
@@ -50,6 +50,7 @@ import { GrowthOpportunityScore } from '../components/command-center/views/Growt
 import { GrowthLaunchTimeline } from '../components/command-center/views/GrowthLaunchTimeline';
 import { GrowthBoardReport } from '../components/command-center/views/GrowthBoardReport';
 import { GrowthLaunchChecklist } from '../components/command-center/views/GrowthLaunchChecklist';
+import { generateDecisions } from '../lib/decision-queue';
 
 const navIcons: Record<View, React.ComponentType<{ className?: string }>> = {
   home: HomeIcon, dashboard: LayoutDashboard, decisions: CheckSquare, scenarios: Sliders, growth: TrendingUp, board: Presentation, launch: Rocket, heatmap: Map,
@@ -62,36 +63,135 @@ const navIcons: Record<View, React.ComponentType<{ className?: string }>> = {
 };
 
 const navGroups: { label: string; keys: View[] }[] = [
-  { label: 'Expert OS', keys: ['home', 'dashboard', 'ask'] },
+  { label: 'Home', keys: ['home', 'dashboard'] },
   { label: 'Workspaces', keys: ['heatmap', 'growth', 'battlecards', 'board-packet'] },
-  { label: 'Operations', keys: ['intake', 'reports', 'diagnostics'] }
+  { label: 'Operations', keys: ['intake', 'reports'] }
 ];
 
 const workspaceTools: Partial<Record<View, { label: string; keys: View[] }>> = {
-  heatmap: { label: 'Intelligence tools', keys: ['heatmap', 'expert', 'ai', 'matrix', 'governance', 'brief', 'narrative'] },
-  growth: { label: 'Growth tools', keys: ['growth', 'launch', 'scenarios', 'executive-view', 'county-plan', 'financial-model', 'staffing-model', 'sensitivity', 'launch-timeline'] },
-  battlecards: { label: 'Field tools', keys: ['battlecards', 'builder', 'referrals', 'coaching', 'ask'] },
-  'board-packet': { label: 'Board tools', keys: ['board-packet', 'board', 'narrative', 'board-report', 'launch-checklist', 'decisions'] }
+  heatmap: { label: 'Intelligence', keys: ['heatmap', 'expert', 'matrix', 'governance', 'brief'] },
+  growth: { label: 'Growth', keys: ['growth', 'scenarios', 'financial-model', 'staffing-model', 'launch-checklist'] },
+  battlecards: { label: 'Field', keys: ['battlecards', 'builder', 'referrals', 'coaching'] },
+  'board-packet': { label: 'Board', keys: ['board-packet', 'board', 'narrative', 'board-report', 'decisions'] },
+  reports: { label: 'Operations', keys: ['reports', 'ask', 'diagnostics'] },
 };
+
+function AnalysisProgress({ items, busy, onDismiss }: { items: { name: string; status: 'queued' | 'crawling' | 'ai' | 'done' | 'error'; pages?: number; error?: string }[]; busy: boolean; onDismiss?: () => void }) {
+  const scanDone = !busy && items.length > 0;
+  const errorCount = items.filter((item) => item.status === 'error').length;
+
+  useEffect(() => {
+    if (!scanDone || errorCount > 0) return;
+    const timer = setTimeout(() => onDismiss?.(), 4000);
+    return () => clearTimeout(timer);
+  }, [scanDone, errorCount, onDismiss]);
+
+  if (!items.length) return null;
+  const statusLabel: Record<string, string> = { queued: 'Queued', crawling: 'Crawling…', ai: 'AI extraction…', done: 'Done', error: 'Failed' };
+  const statusColor: Record<string, string> = { queued: 'var(--color-text-tertiary)', crawling: 'var(--color-info)', ai: 'var(--color-accent)', done: 'var(--color-success)', error: 'var(--color-danger)' };
+  const headerLabel = scanDone
+    ? errorCount > 0 ? `Scan complete — ${errorCount} error${errorCount > 1 ? 's' : ''}` : 'Scan complete — closing…'
+    : 'Analysis in progress';
+  const headerColor = scanDone ? (errorCount > 0 ? 'var(--color-danger)' : 'var(--color-success)') : 'var(--color-text-tertiary)';
+  return (
+    <div style={{ position: 'fixed', bottom: '24px', right: '24px', width: '340px', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '16px', zIndex: 300, boxShadow: 'var(--color-shadow)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+        <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: headerColor }}>{headerLabel}</p>
+        {scanDone && onDismiss && <button className="btn btn-sm" onClick={onDismiss}>✕</button>}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {items.map((item, i) => (
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: statusColor[item.status] || 'var(--color-text-tertiary)' }} />
+              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.name}>{item.name}</span>
+              <span style={{ color: statusColor[item.status] || 'var(--color-text-tertiary)', fontSize: '11px', whiteSpace: 'nowrap' }}>
+                {statusLabel[item.status] || item.status}
+                {item.pages && item.status !== 'queued' ? ` · ${item.pages}p` : ''}
+              </span>
+            </div>
+            {item.error && <p style={{ margin: '0 0 0 18px', fontSize: '11px', color: 'var(--color-danger)', lineHeight: 1.3 }}>{item.error}</p>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const SHORTCUTS: { key: string; label: string; view?: View; action?: string }[] = [
+  { key: 'G', label: 'Growth command center', view: 'growth' },
+  { key: 'D', label: 'Decision queue', view: 'decisions' },
+  { key: 'B', label: 'Battlecards', view: 'battlecards' },
+  { key: 'H', label: 'Opportunity heat map', view: 'heatmap' },
+  { key: 'A', label: 'Ask Andwell Expert', view: 'ask' },
+  { key: 'R', label: 'Reports', view: 'reports' },
+  { key: 'E', label: 'Expert center', view: 'expert' },
+  { key: 'Ctrl+K', label: 'Command search', action: 'search' },
+  { key: '?', label: 'Toggle this overlay', action: 'shortcuts' },
+];
+
+function ShortcutsOverlay({ onClose }: { onClose: () => void }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={onClose}>
+      <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '24px 28px', minWidth: '360px', boxShadow: '0 25px 50px rgba(0,0,0,0.4)' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <h3 style={{ margin: 0 }}>Keyboard shortcuts</h3>
+          <button className="btn btn-sm" onClick={onClose}>✕</button>
+        </div>
+        <div style={{ display: 'grid', gap: '8px' }}>
+          {SHORTCUTS.map((s) => (
+            <div key={s.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+              <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>{s.label}</span>
+              <kbd style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)', fontSize: '12px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--color-text-primary)', whiteSpace: 'nowrap' }}>{s.key}</kbd>
+            </div>
+          ))}
+        </div>
+        <p style={{ margin: '16px 0 0', fontSize: '11px', color: 'var(--color-text-tertiary)' }}>Shortcuts only fire when focus is not in a text field.</p>
+      </div>
+    </div>
+  );
+}
 
 function WorkspaceTools({ view, setView }: { view: View; setView: (view: View) => void }) {
   const tools = Object.values(workspaceTools).find((group) => group?.keys.includes(view));
   if (!tools) return null;
-  return <div className="card" style={{ padding: '14px 16px', marginBottom: '16px' }}>
-    <div className="row spread" style={{ gap: '12px' }}>
-      <strong className="text-small" style={{ color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{tools.label}</strong>
-      <div className="row" style={{ gap: '8px' }}>
-        {tools.keys.map((key) => {
-          const item = nav.find((entry) => entry.key === key);
-          if (!item) return null;
-          return <button key={key} className={`btn ${view === key ? 'primary' : ''}`} onClick={() => setView(key)}>{item.label}</button>;
-        })}
-      </div>
+  return (
+    <div style={{ display: 'flex', borderBottom: '1px solid var(--color-border)', marginBottom: '24px', overflowX: 'auto', flexShrink: 0 }}>
+      {tools.keys.map((key) => {
+        const item = nav.find((entry) => entry.key === key);
+        if (!item) return null;
+        const active = view === key;
+        return (
+          <button
+            key={key}
+            onClick={() => setView(key)}
+            style={{
+              padding: '10px 18px',
+              background: 'none',
+              border: 'none',
+              borderBottom: active ? '2px solid var(--color-accent)' : '2px solid transparent',
+              marginBottom: '-1px',
+              color: active ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
+              fontSize: '13px',
+              fontWeight: active ? 700 : 400,
+              cursor: 'pointer',
+              transition: 'color 150ms ease, border-color 150ms ease',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = 'var(--color-text-secondary)'; }}
+            onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = 'var(--color-text-tertiary)'; }}
+          >
+            {item.label}
+          </button>
+        );
+      })}
     </div>
-  </div>;
+  );
 }
 
-export default function Page() {
+function PageContent() {
+  const { showToast } = useToast();
   const [view, setView] = useState<View>('home');
   const [roleView, setRoleView] = useState<RoleView>('Executive');
   const [matrixFilter, setMatrixFilter] = useState<MatrixFilter>('all');
@@ -105,9 +205,11 @@ export default function Page() {
   const [diagnostics, setDiagnostics] = useState<ApiCheck[]>([]);
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState('Ready');
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
   const [growthScenario, setGrowthScenario] = useState<GrowthScenario>(growthDefaultScenario);
+  const [navOpen, setNavOpen] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [progressItems, setProgressItems] = useState<{ name: string; status: 'queued' | 'crawling' | 'ai' | 'done' | 'error'; pages?: number; error?: string }[]>([]);
+  const dismissProgress = useCallback(() => setProgressItems([]), []);
 
   const aiAnalyses = currentReport?.analyses.filter((analysis) => Boolean(analysis.aiExtraction)) || [];
   const growthRows = useMemo(() => buildGrowthRows(growthScenario), [growthScenario]);
@@ -137,31 +239,96 @@ export default function Page() {
     return [...(currentReport?.competitorScores || [])].sort((a, b) => b.andwellDifferentiationScore - a.andwellDifferentiationScore)[0];
   }, [currentReport]);
 
+  const urgentDecisionCount = useMemo(() => {
+    const decisions = generateDecisions(currentReport, growthRows);
+    return decisions.filter(d => d.status === 'Pending' && (d.urgency === 'Immediate' || d.urgency === 'Today')).length;
+  }, [currentReport, growthRows]);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      switch (e.key) {
+        case '?': setShowShortcuts(v => !v); break;
+        case 'Escape': setShowShortcuts(false); break;
+        case 'g': setView('growth'); break;
+        case 'd': setView('decisions'); break;
+        case 'b': setView('battlecards'); break;
+        case 'h': setView('heatmap'); break;
+        case 'a': setView('ask'); break;
+        case 'r': setView('reports'); break;
+        case 'e': setView('expert'); break;
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem('andwell:view', view); } catch {}
+  }, [view]);
+
+  useEffect(() => {
+    try { localStorage.setItem('andwell:growthScenario', JSON.stringify(growthScenario)); } catch {}
+  }, [growthScenario]);
+
+  useEffect(() => {
+    try {
+      if (currentReport?.id) localStorage.setItem('andwell:reportId', currentReport.id);
+    } catch {}
+  }, [currentReport]);
+
+  useEffect(() => {
+    // Restore persisted state after mount to avoid SSR/client hydration mismatch
+    try {
+      const savedView = localStorage.getItem('andwell:view') as View;
+      if (savedView && nav.some(n => n.key === savedView)) setView(savedView);
+    } catch {}
+    try {
+      const savedScenario = localStorage.getItem('andwell:growthScenario');
+      if (savedScenario) setGrowthScenario(JSON.parse(savedScenario) as GrowthScenario);
+    } catch {}
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    (async () => {
+      await refreshServerState();
+      try {
+        const savedId = localStorage.getItem('andwell:reportId');
+        if (savedId) {
+          setBusy(true);
+          setPhase('Restore session');
+          const response = await api<{ report: IntelligenceReport }>(`/api/reports?id=${encodeURIComponent(savedId)}`);
+          setCurrentReport(response.report);
+        }
+      } catch {}
+      finally { setBusy(false); setPhase('Ready'); }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function clearLegacyBrowserStorage() {
     try {
       ['andwellReports', 'andwellReport', 'andwellCompetitiveReports', 'competitiveIntelligenceReports'].forEach((key) => {
         window.localStorage.removeItem(key);
         window.sessionStorage.removeItem(key);
       });
-      setNotice('Legacy browser report storage cleared.');
+      showToast('Legacy browser report storage cleared.', 'success');
     } catch {
-      setNotice('Browser storage was unavailable, but the app does not require local report storage.');
+      showToast('Browser storage was unavailable, but the app does not require local report storage.', 'info');
     }
   }
 
   async function refreshServerState() {
     setBusy(true);
     setPhase('Load data');
-    setError('');
-    setNotice('');
     try {
       const competitorResponse = await api<{ competitors: CompetitorInput[] }>('/api/competitors');
       const reportResponse = await api<{ reports: ReportSummary[] }>('/api/reports');
       setCompetitors(competitorResponse.competitors || []);
       setReports(reportResponse.reports || []);
-      setNotice('Server state loaded successfully.');
+      showToast('Server state loaded.', 'success');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load server state.');
+      showToast(err instanceof Error ? err.message : 'Unable to load server state.', 'error');
     } finally {
       setBusy(false);
       setPhase('Ready');
@@ -175,49 +342,135 @@ export default function Page() {
   }
 
   async function saveCompetitors() {
-    setBusy(true); setPhase('Save library'); setError(''); setNotice('');
+    setBusy(true); setPhase('Save library');
     try {
       const response = await api<{ competitors: CompetitorInput[] }>('/api/competitors', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ competitors }) });
       setCompetitors(response.competitors || []);
-      setNotice('Competitor library saved on the server.');
-    } catch (err) { setError(err instanceof Error ? err.message : 'Unable to save competitors.'); } finally { setBusy(false); setPhase('Ready'); }
+      showToast('Competitor library saved.', 'success');
+    } catch (err) { showToast(err instanceof Error ? err.message : 'Unable to save competitors.', 'error'); } finally { setBusy(false); setPhase('Ready'); }
   }
 
   async function runAnalysis() {
-    setBusy(true); setError(''); setNotice(''); setAskResponse(null);
+    setBusy(true); setAskResponse(null); setProgressItems([]);
     try {
       if (!competitors.length) throw new Error('Add at least one competitor URL first.');
       setPhase('Validate URLs');
-      await new Promise((resolve) => setTimeout(resolve, 80));
-      setPhase('Crawl pages');
-      const report = await api<IntelligenceReport>('/api/analyze', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ competitors, maxPagesPerSite: 8, save: true, useAI: true }) });
+      try {
+        const validation = await api<{ results: { url: string; ok: boolean; error?: string }[] }>(
+          '/api/validate-urls',
+          { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ urls: competitors.map(c => c.url) }) }
+        );
+        const failed = validation.results.filter(r => !r.ok);
+        if (failed.length === competitors.length) throw new Error('No competitor URLs are reachable. Check your list and try again.');
+        if (failed.length > 0) showToast(`${failed.length} URL(s) appear unreachable and may be skipped.`, 'warning');
+      } catch (validationErr) {
+        if (validationErr instanceof Error && validationErr.message.startsWith('No competitor')) throw validationErr;
+      }
+      setPhase('Starting scan');
+      const streamRes = await fetch('/api/analyze-stream', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ competitors, maxPagesPerSite: 8, save: true, useAI: true })
+      });
+      if (!streamRes.ok || !streamRes.body) throw new Error('Analysis request failed to start.');
+      const reader = streamRes.body.getReader();
+      const decoder = new TextDecoder();
+      let sseBuffer = '';
+      let report: IntelligenceReport | null = null;
+      let streamError: string | null = null;
+      streamLoop: while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        sseBuffer += decoder.decode(value, { stream: true });
+        const parts = sseBuffer.split('\n\n');
+        sseBuffer = parts.pop() ?? '';
+        for (const part of parts) {
+          const line = part.trim();
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const ev = JSON.parse(line.slice(6)) as Record<string, unknown>;
+            if (ev.type === 'start') {
+              const total = Number(ev.total);
+              setProgressItems(Array.from({ length: total }, (_, i) => ({ name: competitors[i]?.name || String(competitors[i]?.url || `Site ${i + 1}`), status: 'queued' as const })));
+            } else if (ev.type === 'crawl_start') {
+              const idx = Number(ev.index);
+              setPhase(`Crawling ${ev.name} (${idx + 1}/${ev.total})`);
+              setProgressItems(prev => prev.map((item, i) => i === idx ? { ...item, name: String(ev.name), status: 'crawling' } : item));
+            } else if (ev.type === 'crawl_done') {
+              const idx = Number(ev.index);
+              setPhase(`Crawled ${ev.name} — ${ev.pages} pages`);
+              setProgressItems(prev => prev.map((item, i) => i === idx ? { ...item, pages: Number(ev.pages), status: 'ai' } : item));
+            } else if (ev.type === 'ai_start') {
+              setPhase(`AI extraction: ${ev.name}`);
+            } else if (ev.type === 'ai_done') {
+              const idx = Number(ev.index);
+              setPhase(`AI done: ${ev.name}`);
+              setProgressItems(prev => prev.map((item, i) => i === idx ? { ...item, status: 'done' } : item));
+            } else if (ev.type === 'ai_error') {
+              const idx = Number(ev.index);
+              setProgressItems(prev => prev.map((item, i) => i === idx ? { ...item, status: 'error', error: String(ev.error || 'AI extraction failed') } : item));
+            } else if (ev.type === 'crawl_error') {
+              const idx = Number(ev.index);
+              setProgressItems(prev => prev.map((item, i) => i === idx ? { ...item, status: 'error', error: String(ev.error) } : item));
+            } else if (ev.type === 'building') {
+              setPhase(String(ev.message));
+            } else if (ev.type === 'complete') {
+              report = ev.report as IntelligenceReport; break streamLoop;
+            } else if (ev.type === 'error') {
+              streamError = String(ev.message); break streamLoop;
+            }
+          } catch { /* malformed SSE event, continue */ }
+        }
+      }
+      if (streamError) throw new Error(streamError);
+      if (!report) throw new Error('Analysis ended without returning a report.');
       setPhase('Build brief');
       setCurrentReport(report);
-      setNotice(report.expertBrief ? 'Foremost expert analysis completed and saved on the server.' : 'Analysis completed. Run a fresh scan after deployment to generate the full expert brief.');
+      showToast(report.expertBrief ? 'Expert analysis complete.' : 'Analysis complete.', 'success');
       setView(report.expertBrief ? 'expert' : 'dashboard');
-    } catch (err) { setError(err instanceof Error ? err.message : 'Analysis failed.'); } finally { setBusy(false); setPhase('Ready'); }
+    } catch (err) { showToast(err instanceof Error ? err.message : 'Analysis failed.', 'error'); } finally {
+      setProgressItems(prev => prev.map((item) => item.status !== 'done' && item.status !== 'error' ? { ...item, status: 'done' } : item));
+      setBusy(false); setPhase('Ready');
+    }
   }
 
   async function loadReport(id: string) {
-    setBusy(true); setPhase('Load report'); setError(''); setNotice('');
+    setBusy(true); setPhase('Load report');
     try {
       const response = await api<{ report: IntelligenceReport }>(`/api/reports?id=${encodeURIComponent(id)}`);
       setCurrentReport(response.report);
-      setNotice('Stored report loaded.');
+      showToast('Report loaded.', 'success');
       setView(response.report.expertBrief ? 'expert' : 'dashboard');
-    } catch (err) { setError(err instanceof Error ? err.message : 'Unable to load report.'); } finally { setBusy(false); setPhase('Ready'); }
+    } catch (err) { showToast(err instanceof Error ? err.message : 'Unable to load report.', 'error'); } finally { setBusy(false); setPhase('Ready'); }
   }
 
   async function askHub() {
-    setBusy(true); setPhase('Ask the Hub'); setError(''); setAskResponse(null);
+    setBusy(true); setPhase('Ask the Hub'); setAskResponse(null);
     try {
-      const response = await api<AskResponse>('/api/ask', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ question, reportId: currentReport?.id }) });
+      const response = await api<AskResponse>('/api/ask', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          question,
+          reportId: currentReport?.id,
+          growthContext: {
+            y1Revenue: growthTotals.revenue[0],
+            y3Revenue: growthTotals.revenue[2],
+            totalRevenue: growthTotals.totalRevenue,
+            totalContribution: growthTotals.totalContribution,
+            y1Starts: growthTotals.starts[0],
+            counties: [...new Set(growthRows.map(r => r.county))],
+            services: [...new Set(growthRows.map(r => r.service))],
+            topCounties: [...growthRows].sort((a, b) => (b.revenue[0] ?? 0) - (a.revenue[0] ?? 0)).slice(0, 3).map(r => ({ county: r.county, service: r.service, y1Revenue: r.revenue[0] })),
+          },
+        }),
+      });
       setAskResponse(response);
-    } catch (err) { setError(err instanceof Error ? err.message : 'Ask the Hub failed.'); } finally { setBusy(false); setPhase('Ready'); }
+    } catch (err) { showToast(err instanceof Error ? err.message : 'Ask the Hub failed.', 'error'); } finally { setBusy(false); setPhase('Ready'); }
   }
 
   async function runDiagnostics() {
-    setBusy(true); setPhase('System Check'); setError(''); setDiagnostics([]);
+    setBusy(true); setPhase('System Check'); setDiagnostics([]);
     const routes = ['/api/version', '/api/health', '/api/diagnostics', '/api/analyze', '/api/expert', '/api/competitors', '/api/reports', '/api/reviews', '/api/catalog', '/api/ask', '/api/runtime'];
     const results: ApiCheck[] = [];
     for (const route of routes) {
@@ -239,64 +492,78 @@ export default function Page() {
     const link = document.createElement('a'); link.href = url; link.download = 'andwell-competitive-intelligence-report.json'; link.click(); URL.revokeObjectURL(url);
   }
 
-  return <div className="proShell">
-    <aside className="side">
-      <div className="brand proBrand"><p>Andwell Innovation</p><h1>Expert Operating System</h1><span>One expert layer for market evidence, growth strategy, staffing, field language, and board decisions.</span></div>
-      <div className="roleBox">
-        <label>Lens</label>
+  return <>
+    <button className="mobileToggle" onClick={() => setNavOpen(v => !v)} aria-label={navOpen ? 'Close menu' : 'Open menu'}>
+      {navOpen ? <X size={18} /> : <Menu size={18} />}
+    </button>
+    {navOpen && <div className="sideOverlay" onClick={() => setNavOpen(false)} />}
+    {showShortcuts && <ShortcutsOverlay onClose={() => setShowShortcuts(false)} />}
+    {progressItems.length > 0 && <AnalysisProgress items={progressItems} busy={busy} onDismiss={dismissProgress} />}
+    <div className="proShell">
+    <aside className={`side${navOpen ? ' open' : ''}`}>
+      <div className="brand proBrand" style={{ marginBottom: '12px' }}><p>Andwell Innovation</p><h1>Intelligence Platform</h1></div>
+      <div className="roleBox" style={{ marginBottom: '8px' }}>
+        <label>View as</label>
         <select className="select darkSelect" value={roleView} onChange={(event) => setRoleView(event.target.value as RoleView)}>
           {(Object.keys(roleGuidance) as RoleView[]).map((role) => <option key={role} value={role}>{role}</option>)}
         </select>
-        <p>{roleGuidance[roleView].headline}</p>
       </div>
-      <nav className="nav proNav">{navGroups.map((group) => <div key={group.label} className="side-group"><div className="side-group-label">{group.label}</div>{group.keys.map((key) => { const item = nav.find((n) => n.key === key); if (!item) return null; const Icon = navIcons[item.key]; return <button key={item.key} className={view === item.key ? 'active' : ''} onClick={() => setView(item.key)}><Icon className="w-4 h-4 shrink-0" /><span><strong>{item.label}</strong><small>{item.note}</small></span></button>; })}</div>)}</nav>
+      <nav className="nav proNav">{navGroups.map((group) => <div key={group.label} className="side-group"><div className="side-group-label">{group.label}</div>{group.keys.map((key) => { const item = nav.find((n) => n.key === key); if (!item) return null; const Icon = navIcons[item.key]; const badge = key === 'decisions' && urgentDecisionCount > 0 ? urgentDecisionCount : null; return <button key={item.key} className={view === item.key ? 'active' : ''} onClick={() => setView(item.key)}><Icon className="w-4 h-4 shrink-0" /><span><strong>{item.label}</strong><small>{item.note}</small></span>{badge !== null && <span className="nav-badge">{badge}</span>}</button>; })}</div>)}</nav>
     </aside>
     <main className={`main proMain ${view === 'home' ? 'homeMain' : ''}`}>
-      {view !== 'home' && <header className="head proHead"><div><small>{currentReport?.expertBrief ? `Foremost Expert | ${currentReport.expertBrief.expertScore}` : currentReport?.aiEnabled ? `AI Enhanced | ${currentReport.aiModel || 'OpenAI'}` : 'Stable Build'}</small><h2>{nav.find((item) => item.key === view)?.label || 'Andwell Innovation'}</h2></div><div className="row"><span className={`badge ${busy ? 'amber' : 'green'}`}>{phase}</span><CommandSearch currentReport={currentReport} onNavigate={setView} /><button className="btn" disabled={busy} onClick={refreshServerState}>Load Server Data</button><button className="btn" onClick={() => setView('diagnostics')}>System Check</button></div></header>}
+      {view !== 'home' && <header className="head proHead"><div><small>{nav.find((item) => item.key === view)?.note || ''}</small><h2>{nav.find((item) => item.key === view)?.label || 'Andwell Innovation'}</h2></div><div className="row" style={{ gap: '8px', alignItems: 'center' }}>{currentReport ? <span className="badge green">Report loaded</span> : <span className="badge amber">No report</span>}{busy && <span className="badge amber">{phase}</span>}<button className="btn btn-sm no-print" onClick={() => setView('ask')}>Ask AI</button><CommandSearch currentReport={currentReport} growthRows={growthRows} onNavigate={setView} /></div></header>}
       <div className="content proContent">
-        {error && <div className="error mb-4">{error}</div>}
-        {notice && <div className="notice mb-4">{notice}</div>}
-        {busy && <LoadingState message={phase} />}
         <WorkspaceTools view={view} setView={setView} />
-        {view === 'home' && <Home roleView={roleView} />}
-        {view === 'dashboard' && <Dashboard expertBrief={expertBrief} roleView={roleView} setView={setView} clearLegacyBrowserStorage={clearLegacyBrowserStorage} />}
+        <div key={view} className="view-enter">
+        {view === 'home' && <Home roleView={roleView} setView={setView} currentReport={currentReport} competitors={competitors} busy={busy} onRefresh={refreshServerState} />}
+        {view === 'dashboard' && <Dashboard expertBrief={expertBrief} roleView={roleView} setView={setView} clearLegacyBrowserStorage={clearLegacyBrowserStorage} rows={growthRows} totals={growthTotals} />}
         {view === 'growth' && <GrowthCommand rows={growthRows} totals={growthTotals} serviceRollup={growthServiceRollup} scenario={growthScenario} setScenario={setGrowthScenario} setView={setView} />}
-        {view === 'board' && <BoardRoom currentReport={currentReport} totals={growthTotals} rows={growthRows} topThreat={topThreat} topOpportunity={topOpportunity} setView={setView} />}
+        {view === 'board' && <BoardRoom currentReport={currentReport} totals={growthTotals} rows={growthRows} topThreat={topThreat} topOpportunity={topOpportunity} setView={setView} scenario={growthScenario} />}
         {view === 'launch' && <LaunchPlan rows={growthRows} totals={growthTotals} staffingPlan={staffingPlan} setView={setView} />}
         {view === 'heatmap' && <OpportunityHeatMap rows={growthRows} totals={growthTotals} />}
         {view === 'brief' && <StrategyBrief currentReport={currentReport} growthRows={growthRows} totals={growthTotals} />}
         {view === 'narrative' && <ExecutiveNarrative currentReport={currentReport} growthRows={growthRows} totals={growthTotals} />}
         {view === 'board-packet' && <BoardPacket currentReport={currentReport} growthRows={growthRows} totals={growthTotals} staffingPlan={staffingPlan} />}
-        {view === 'coaching' && <CoachingMode currentReport={currentReport} />}
-        {view === 'executive-view' && <GrowthExecutiveView />}
-        {view === 'county-plan' && <GrowthCountyPlan />}
-        {view === 'referral-plan' && <GrowthReferralPlan />}
-        {view === 'competitive-view' && <GrowthCompetitiveView />}
+        {view === 'coaching' && <CoachingMode currentReport={currentReport} onRunScan={() => setView('intake')} />}
+        {view === 'executive-view' && <GrowthExecutiveView scenario={growthScenario} />}
+        {view === 'county-plan' && <GrowthCountyPlan scenario={growthScenario} />}
+        {view === 'referral-plan' && <GrowthReferralPlan scenario={growthScenario} />}
+        {view === 'competitive-view' && <GrowthCompetitiveView scenario={growthScenario} />}
         {view === 'service-lines' && <GrowthServiceLines />}
         {view === 'cms-data' && <GrowthCmsData />}
-        {view === 'financial-model' && <GrowthFinancialModel />}
-        {view === 'staffing-model' && <GrowthStaffingModel />}
-        {view === 'sensitivity' && <GrowthSensitivity />}
-        {view === 'opportunity-score' && <GrowthOpportunityScore />}
-        {view === 'launch-timeline' && <GrowthLaunchTimeline />}
-        {view === 'board-report' && <GrowthBoardReport />}
+        {view === 'financial-model' && <GrowthFinancialModel scenario={growthScenario} />}
+        {view === 'staffing-model' && <GrowthStaffingModel scenario={growthScenario} />}
+        {view === 'sensitivity' && <GrowthSensitivity scenario={growthScenario} />}
+        {view === 'opportunity-score' && <GrowthOpportunityScore scenario={growthScenario} />}
+        {view === 'launch-timeline' && <GrowthLaunchTimeline scenario={growthScenario} />}
+        {view === 'board-report' && <GrowthBoardReport scenario={growthScenario} />}
         {view === 'launch-checklist' && <GrowthLaunchChecklist />}
         {view === 'decisions' && <DecisionQueue currentReport={currentReport} growthRows={growthRows} />}
         {view === 'scenarios' && <ScenarioPresets scenario={growthScenario} setScenario={setGrowthScenario} growthRows={growthRows} />}
         {view === 'expert' && <ExpertCenter currentReport={currentReport} setView={setView} />}
-        {view === 'ai' && <AIIntelligence currentReport={currentReport} aiAnalyses={aiAnalyses} />}
+        {view === 'ai' && <AIIntelligence currentReport={currentReport} aiAnalyses={aiAnalyses} onRunScan={() => setView('intake')} />}
         {view === 'prompt' && <PromptEngine />}
         {view === 'intake' && <Intake competitors={competitors} setCompetitors={setCompetitors} urlInput={urlInput} setUrlInput={setUrlInput} addUrls={addUrls} saveCompetitors={saveCompetitors} runAnalysis={runAnalysis} busy={busy} />}
-        {view === 'matrix' && <Matrix currentReport={currentReport} matrixFilter={matrixFilter} setMatrixFilter={setMatrixFilter} matrixSearch={matrixSearch} setMatrixSearch={setMatrixSearch} />}
-        {view === 'battlecards' && <Battlecards currentReport={currentReport} />}
-        {view === 'governance' && <ClaimGovernance currentReport={currentReport} />}
-        {view === 'builder' && <BattlecardBuilder currentReport={currentReport} />}
+        {view === 'matrix' && <Matrix currentReport={currentReport} matrixFilter={matrixFilter} setMatrixFilter={setMatrixFilter} matrixSearch={matrixSearch} setMatrixSearch={setMatrixSearch} onRunScan={() => setView('intake')} />}
+        {view === 'battlecards' && <Battlecards currentReport={currentReport} onRunScan={() => setView('intake')} />}
+        {view === 'governance' && <ClaimGovernance currentReport={currentReport} onRunScan={() => setView('intake')} />}
+        {view === 'builder' && <BattlecardBuilder currentReport={currentReport} onRunScan={() => setView('intake')} />}
         {view === 'referrals' && <ReferralSources currentReport={currentReport} />}
         {view === 'reports' && <Reports reports={reports} currentReport={currentReport} loadReport={loadReport} exportJson={exportJson} refreshServerState={refreshServerState} busy={busy} />}
-        {view === 'ask' && <AskHub question={question} setQuestion={setQuestion} askHub={askHub} askResponse={askResponse} busy={busy} currentReport={currentReport} />}
+        {view === 'ask' && <AskHub question={question} setQuestion={setQuestion} askHub={askHub} askResponse={askResponse} busy={busy} currentReport={currentReport} hasGrowthPlan={growthRows.length > 0} />}
         {view === 'catalog' && <Catalog />}
         {view === 'diagnostics' && <Diagnostics diagnostics={diagnostics} runDiagnostics={runDiagnostics} busy={busy} />}
+        </div>
       </div>
     </main>
-  </div>;
+  </div>
+  </>;
+}
+
+export default function Page() {
+  return (
+    <ToastProvider>
+      <PageContent />
+    </ToastProvider>
+  );
 }

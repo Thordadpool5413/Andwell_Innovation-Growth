@@ -2,17 +2,40 @@
 
 import React, { useState } from 'react';
 import type { Confidence, ConfidenceDetails } from '../../lib/types';
+import { useCountUpOnMount } from '../../lib/useCountUp';
 
 export function Badge({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'neutral' | 'green' | 'amber' | 'red' | 'blue' | 'dark' }) {
   return <span className={`badge ${tone}`}>{children}</span>;
 }
 
-export function Panel({ title, children, className = '' }: { title: string; children: React.ReactNode; className?: string }) {
-  return <div className={`card ${className}`}><h3>{title}</h3>{children}</div>;
+export function Panel({ title, children, className = '', action }: { title: string; children: React.ReactNode; className?: string; action?: React.ReactNode }) {
+  return (
+    <div className={`card ${className}`}>
+      {action ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid var(--color-border)' }}>
+          <h3 className="text-overline" style={{ margin: 0, color: 'var(--color-text-tertiary)' }}>{title}</h3>
+          {action}
+        </div>
+      ) : <h3>{title}</h3>}
+      {children}
+    </div>
+  );
 }
 
-export function Stat({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
-  return <div className="metricCard hover-card"><p>{label}</p><strong>{value}</strong>{hint ? <span>{hint}</span> : null}</div>;
+function AnimatedNumber({ value }: { value: number }) {
+  const animated = useCountUpOnMount(value);
+  return <>{animated.toLocaleString()}</>;
+}
+
+export function Stat({ label, value, hint }: { label: string; value: string | number; hint?: React.ReactNode }) {
+  const isNumber = typeof value === 'number';
+  return (
+    <div className="metricCard hover-card">
+      <p>{label}</p>
+      <strong>{isNumber ? <AnimatedNumber value={value} /> : value}</strong>
+      {hint ? <span>{hint}</span> : null}
+    </div>
+  );
 }
 
 export function StatMini({ label, value, tone }: { label: string; value: string | number; tone?: 'green' | 'amber' | 'red' | 'blue' | 'neutral' }) {
@@ -28,7 +51,7 @@ export function TagList({ items }: { items?: string[] }) {
 
 export function ExpandableSection({ title, defaultOpen = false, children, badge }: { title: string; defaultOpen?: boolean; children: React.ReactNode; badge?: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
-  return <div className="expandable"><div className="expandable-header" onClick={() => setOpen(!open)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!open); } }}><span className="text-subhead" style={{ margin: 0 }}>{title}</span><span className="row" style={{ gap: '8px' }}>{badge}<span style={{ color: 'var(--color-text-tertiary)', fontSize: '13px', transition: 'transform 200ms ease', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span></span></div>{open ? <div className="expandable-body">{children}</div> : null}</div>;
+  return <div className="expandable"><div className="expandable-header" onClick={() => setOpen(!open)} role="button" aria-expanded={open} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!open); } }}><span className="text-subhead" style={{ margin: 0 }}>{title}</span><span className="row" style={{ gap: '8px' }}>{badge}<span style={{ color: 'var(--color-text-tertiary)', fontSize: '13px', transition: 'transform 200ms ease', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span></span></div>{open ? <div className="expandable-body">{children}</div> : null}</div>;
 }
 
 export function HoverPreviewContent({ summary, detail }: { summary: React.ReactNode; detail: React.ReactNode }) {
