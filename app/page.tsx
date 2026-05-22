@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LayoutDashboard, TrendingUp, Presentation, Rocket, Brain, Cpu, FileText, Upload, Table, Swords, FileBarChart, MessageSquare, BookOpen, Activity, Shield, Hammer, Users, Map, CheckSquare, Sliders, Search, FileSpreadsheet, ScrollText, GraduationCap, Globe, MapPin, Phone, Crosshair, Layers, Database, DollarSign, Target, Clock, ListChecks, Home as HomeIcon, Menu, X } from 'lucide-react';
 import { ToastProvider, useToast } from '../components/Toast';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { andwellCatalog } from '../lib/andwell';
 import { buildGrowthRows, buildStaffingPlan, growthDefaultScenario, rollupGrowthByService, summarizeGrowth } from '../lib/growth-plan';
 import { generateAndwellExpertBrief } from '../lib/andwell-expert';
@@ -514,7 +515,8 @@ function PageContent() {
       {view !== 'home' && <header className="head proHead"><div><small>{nav.find((item) => item.key === view)?.note || ''}</small><h2>{nav.find((item) => item.key === view)?.label || 'Andwell Innovation'}</h2></div><div className="row" style={{ gap: '8px', alignItems: 'center' }}>{currentReport ? <span className="badge green">Report loaded</span> : <span className="badge amber">No report</span>}{busy && <span className="badge amber">{phase}</span>}<button className="btn btn-sm no-print" onClick={() => setView('ask')}>Ask AI</button><CommandSearch currentReport={currentReport} growthRows={growthRows} onNavigate={setView} /></div></header>}
       <div className="content proContent">
         <WorkspaceTools view={view} setView={setView} />
-        <div key={view} className="view-enter">
+        <ErrorBoundary label={view} key={view}>
+        <div className="view-enter">
         {view === 'home' && <Home roleView={roleView} setView={setView} currentReport={currentReport} competitors={competitors} busy={busy} onRefresh={refreshServerState} />}
         {view === 'dashboard' && <Dashboard expertBrief={expertBrief} roleView={roleView} setView={setView} clearLegacyBrowserStorage={clearLegacyBrowserStorage} rows={growthRows} totals={growthTotals} />}
         {view === 'growth' && <GrowthCommand rows={growthRows} totals={growthTotals} serviceRollup={growthServiceRollup} scenario={growthScenario} setScenario={setGrowthScenario} setView={setView} />}
@@ -554,6 +556,7 @@ function PageContent() {
         {view === 'catalog' && <Catalog />}
         {view === 'diagnostics' && <Diagnostics diagnostics={diagnostics} runDiagnostics={runDiagnostics} busy={busy} />}
         </div>
+        </ErrorBoundary>
       </div>
     </main>
   </div>

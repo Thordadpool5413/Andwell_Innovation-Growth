@@ -1,12 +1,34 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Badge, Panel, ExpandableSection, SectionGroup } from '../Shared';
 import { toneForStatus } from '../../../lib/command-center/utils';
 import { categorizeClaims, filterApprovedClaims } from '../../../lib/claim-governance';
 import { generateCoachingPlan } from '../../../lib/strategy-brief';
 import { objectionLibrary, clinicalChecklist, phaseForScore, generateDiscoveryQuestions } from '../../../lib/sales-model-data';
 import type { IntelligenceReport } from '../../../lib/types';
+
+function buildCopyText(name: string, leadWith: string[], referralQuestions: string[], safeLanguage: string, doNotSay: string[], advantages: string[], phase: string): string {
+  return [
+    `BATTLECARD: ${name}`,
+    `Phase: ${phase}`,
+    '',
+    'LEAD WITH:',
+    ...leadWith.slice(0, 4).map((l) => `• ${l}`),
+    '',
+    'REFERRAL QUESTIONS:',
+    ...referralQuestions.slice(0, 3).map((q) => `• ${q}`),
+    '',
+    'PRE-CALL SAFE LANGUAGE:',
+    safeLanguage,
+    '',
+    'DO NOT SAY:',
+    ...doNotSay.slice(0, 2).map((d) => `• ${d}`),
+    '',
+    'NEXT ACTION:',
+    `Schedule a conversation to explore ${advantages.slice(0, 2).join(' and ').toLowerCase() || 'how Andwell depth aligns with workflow needs'}.`,
+  ].join('\n');
+}
 
 function phaseTone(phase: string): 'blue' | 'amber' | 'green' | 'neutral' {
   if (phase === 'Discovery') return 'blue';
@@ -17,6 +39,15 @@ function phaseTone(phase: string): 'blue' | 'amber' | 'green' | 'neutral' {
 
 export function Battlecards({ currentReport, onRunScan }: { currentReport: IntelligenceReport | null; onRunScan?: () => void }) {
   const [approvedOnly, setApprovedOnly] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyCard = useCallback(async (id: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {}
+  }, []);
 
   const claimMap = useMemo(() => {
     if (!currentReport) return {};
@@ -89,6 +120,9 @@ export function Battlecards({ currentReport, onRunScan }: { currentReport: Intel
             const advantages = analysis.score.strongestAndwellAdvantages || [];
             const objections = battlecards.map((bc) => bc.objectionResponse).filter(Boolean);
             const hasExtraction = analysis.aiEnhanced && analysis.aiExtraction;
+            const leadWith = analysis.aiExtraction?.salesBattlecards?.slice(0, 4).map((bc) => bc.leadWith) || analysis.score.leadWith || [];
+            const referralQuestions = analysis.aiExtraction?.salesBattlecards?.slice(0, 3).map((bc) => bc.referralQuestion || bc.leadWith) || questions.slice(0, 3);
+            const copyText = buildCopyText(analysis.name, leadWith, referralQuestions, plan.safeLanguage, doNotSay.length ? doNotSay : plan.doNotSay, advantages, phase);
 
             return (
               <div className="battleCard upgradedBattle hover-card" key={analysis.id}>
@@ -99,6 +133,14 @@ export function Battlecards({ currentReport, onRunScan }: { currentReport: Intel
                     <Badge tone={analysis.aiEnhanced ? 'green' : toneForStatus(analysis.score.threatLevel)}>
                       {analysis.aiEnhanced ? 'AI enhanced' : analysis.score.threatLevel}
                     </Badge>
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => copyCard(analysis.id, copyText)}
+                      title="Copy battlecard to clipboard"
+                      style={{ fontSize: '11px' }}
+                    >
+                      {copiedId === analysis.id ? 'Copied ✓' : 'Copy card'}
+                    </button>
                   </div>
                 </div>
                 <p className="text-small" style={{ color: 'var(--color-text-secondary)', marginBottom: '12px' }}>
