@@ -1,132 +1,139 @@
 'use client';
 
 import React from 'react';
-import type { RoleView } from '../../../lib/command-center/types';
+import type { View } from '../../../lib/command-center/types';
+import type { CompetitorInput, IntelligenceReport } from '../../../lib/types';
 
-const systemNodes = [
-  { label: 'High-Acuity Care', className: 'nodeIntake' },
-  { label: 'Partnerships', className: 'nodeReports' },
-  { label: 'Market Intel', className: 'nodeMarket' },
-  { label: 'Growth', className: 'nodeGrowth' },
-  { label: 'Technology', className: 'nodeField' },
-  { label: 'Board', className: 'nodeBoard' },
-  { label: 'Value-Based', className: 'nodeOps' }
+type RoleView = string;
+
+const quickLinks: { title: string; desc: string; view: View; accent: string }[] = [
+  { title: 'Expert Brief', desc: 'Recommendations, field plays, and watchlist', view: 'expert', accent: 'var(--color-accent)' },
+  { title: 'Battlecards', desc: 'Talk tracks and objection responses', view: 'battlecards', accent: 'var(--color-success)' },
+  { title: 'Evidence Matrix', desc: 'Scored findings across every service line', view: 'matrix', accent: 'var(--color-info)' },
+  { title: 'Growth Strategy', desc: 'Scenario engine and county plan', view: 'growth', accent: 'var(--color-warning)' },
 ];
 
-const strategicPillars = [
-  {
-    title: 'High-acuity community care',
-    body: 'Build care models capable of supporting complex patients in the community instead of defaulting to institutional settings.'
-  },
-  {
-    title: 'Post-acute partnerships',
-    body: 'Create partnerships across Maine that make Andwell essential to hospitals, payers, providers, referral sources, and families.'
-  },
-  {
-    title: 'Connected complex services',
-    body: 'Use technology and operating discipline to connect services that are difficult to coordinate manually.'
-  },
-  {
-    title: 'Value-based contracting',
-    body: 'Develop the model to take risk, improve outcomes, save payers money, and grow from the complexity Andwell is built to manage.'
-  }
+const steps = [
+  { n: '01', title: 'Add competitor URLs', body: 'Paste any provider website. The system validates and queues them for crawling.', view: 'intake' as View },
+  { n: '02', title: 'Run the AI scan', body: 'The engine crawls each site, runs AI extraction, and scores service overlap and differentiation.', view: 'intake' as View },
+  { n: '03', title: 'Use the intelligence', body: 'Expert brief, battlecards, evidence matrix, growth scenarios, and board-ready exports — all updated.', view: 'expert' as View },
 ];
 
-const commandRoles = [
-  {
-    title: 'Market Intelligence',
-    body: 'Understand where Andwell should compete, which markets are underdeveloped, and where external signals support action.'
-  },
-  {
-    title: 'Growth Strategy',
-    body: 'Model county, service-line, revenue, referral, staffing, and launch-readiness assumptions before committing resources.'
-  },
-  {
-    title: 'Field Enablement',
-    body: 'Translate strategy into governed referral language, battlecards, coaching, and safe positioning for the field.'
-  },
-  {
-    title: 'Board-Ready Decisions',
-    body: 'Convert intelligence and growth logic into leadership-ready recommendations, risks, and decision framing.'
-  }
-];
+export function Home({ setView, currentReport, competitors, busy, onRefresh }: {
+  roleView?: RoleView;
+  setView?: (view: View) => void;
+  currentReport?: IntelligenceReport | null;
+  competitors?: CompetitorInput[];
+  busy?: boolean;
+  onRefresh?: () => void;
+}) {
+  const hasReport = Boolean(currentReport);
+  const competitorCount = competitors?.length ?? 0;
 
-const trustPillars = [
-  { title: 'Evidence-backed', body: 'Recommendations are grounded in report evidence, market data, growth assumptions, and Andwell service logic.' },
-  { title: 'Governed language', body: 'Field-facing language is separated from internal planning assumptions and routed through claim governance.' },
-  { title: 'Risk-aware', body: 'Staffing, launch readiness, review items, and competitive pressure are surfaced before action is taken.' },
-  { title: 'Built for complexity', body: 'The system supports Andwell because the strategy depends on managing what fragmented providers cannot.' }
-];
+  return (
+    <div style={{ maxWidth: '820px', padding: '32px 32px 80px' }}>
 
-export function Home({ roleView: _roleView }: { roleView?: RoleView }) {
-  return <article className="homeExperience missionHome">
-    <section className="homeHeroStage missionHero">
-      <div className="homeHeroCopy missionCopy">
-        <p className="homeOverline">Andwell Innovation &amp; Growth</p>
-        <h1>Innovation and Growth is where Andwell Health Partners <strong>turns vision into infrastructure.</strong></h1>
-        <p className="homeHeroLead">We are building the <strong>future of high acuity community care</strong>, creating post acute partnerships that make us essential to Maine, connecting complex services through technology, and developing the <strong>value based contracting model</strong> that allows us to take risk, deliver better outcomes, save payers money, and grow because we are <strong>built for the complexity others cannot manage.</strong></p>
+      {/* Page title */}
+      <div style={{ marginBottom: '32px' }}>
+        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--color-info)' }}>Andwell Innovation &amp; Growth</p>
+        <h1 style={{ margin: 0, fontSize: '32px', letterSpacing: '-0.04em', lineHeight: 1.15 }}>
+          {hasReport ? 'Your intelligence is ready.' : 'Start with a competitive scan.'}
+        </h1>
+        <p style={{ margin: '10px 0 0', fontSize: '15px', color: 'var(--color-text-secondary)', lineHeight: 1.6, maxWidth: '560px' }}>
+          {hasReport
+            ? `${currentReport?.competitorsAnalyzed ?? 0} competitors analyzed. Use the views below to brief leadership, coach the field, plan growth, or prepare board materials.`
+            : 'Add competitor websites, run the AI scan, and get expert intelligence, battlecards, and growth guidance in minutes.'}
+        </p>
       </div>
-      <div className="homeSystemMap missionSystemMap" aria-label="Andwell Innovation Command system map">
-        <div className="homeMapGrid" />
-        <div className="homeOrbit orbitOuter" />
-        <div className="homeOrbit orbitInner" />
-        <div className="homeOrbit orbitMiddle" />
-        <div className="homeConnector connectTop" />
-        <div className="homeConnector connectUpperLeft" />
-        <div className="homeConnector connectUpperRight" />
-        <div className="homeConnector connectLeft" />
-        <div className="homeConnector connectRight" />
-        <div className="homeConnector connectLowerLeft" />
-        <div className="homeConnector connectLowerRight" />
-        <div className="homeCore"><strong>AIC</strong></div>
-        {systemNodes.map((node) => <div key={node.label} className={`homeMapNode ${node.className}`}>{node.label}</div>)}
-      </div>
-    </section>
 
-    <section className="missionStatementBand">
-      <p className="homeOverline">Strategic Thesis</p>
-      <h2>Andwell grows by building the infrastructure required to manage complex care in the community.</h2>
-      <p>The Command Center exists to turn that strategy into operating intelligence: where to grow, how to partner, what capacity is required, what language is safe, and what decisions leaders need to make.</p>
-    </section>
+      {/* Primary action — state-aware */}
+      {hasReport ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', marginBottom: '40px' }}>
+          {quickLinks.map((link) => (
+            <button
+              key={link.view}
+              onClick={() => setView?.(link.view)}
+              style={{
+                background: 'var(--color-bg-secondary)', border: `1px solid var(--color-border)`,
+                borderRadius: 'var(--radius-lg)', padding: '20px', textAlign: 'left', cursor: 'pointer',
+                transition: 'border-color 150ms ease, transform 150ms ease', display: 'block', width: '100%'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = link.accent; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              <p style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 700, color: 'var(--color-text-primary)' }}>{link.title}</p>
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-tertiary)', lineHeight: 1.4 }}>{link.desc}</p>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '28px', marginBottom: '40px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' }}>
+            <div>
+              <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                {competitorCount > 0
+                  ? `${competitorCount} competitor${competitorCount !== 1 ? 's' : ''} in library — ready to scan`
+                  : 'No competitors added yet'}
+              </p>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-tertiary)', lineHeight: 1.5 }}>
+                {competitorCount > 0
+                  ? 'Go to Competitor Intake to run the scan and generate your intelligence report.'
+                  : 'Go to Competitor Intake to add provider websites and run your first scan.'}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+              {onRefresh && <button className="btn btn-sm" disabled={busy} onClick={onRefresh}>Refresh</button>}
+              {setView && <button className="btn primary" onClick={() => setView('intake')}>
+                {competitorCount > 0 ? 'Run Competitive Scan →' : 'Add Competitors →'}
+              </button>}
+            </div>
+          </div>
+        </div>
+      )}
 
-    <section className="missionPillars">
-      <div className="homeSectionHead compact">
-        <p className="homeOverline">Strategic Pillars</p>
-        <h2>The strategic pillars behind Innovation and Growth.</h2>
+      {/* Status row */}
+      <div style={{ display: 'flex', gap: '20px', marginBottom: '40px', flexWrap: 'wrap' }}>
+        {[
+          { dot: hasReport ? 'var(--color-success)' : 'var(--color-border)', label: hasReport ? `Report loaded · ${currentReport?.competitorsAnalyzed ?? 0} competitors analyzed` : 'No report loaded' },
+          { dot: competitorCount > 0 ? 'var(--color-info)' : 'var(--color-border)', label: competitorCount > 0 ? `${competitorCount} competitor${competitorCount !== 1 ? 's' : ''} in library` : 'No competitors added' },
+        ].map((item, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: item.dot, flexShrink: 0 }} />
+            <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>{item.label}</span>
+          </div>
+        ))}
       </div>
-      <div className="missionPillarGrid">
-        {strategicPillars.map((pillar, index) => <div key={pillar.title}>
-          <span>{String(index + 1).padStart(2, '0')}</span>
-          <h3>{pillar.title}</h3>
-          <p>{pillar.body}</p>
-        </div>)}
-      </div>
-    </section>
 
-    <section className="missionCommandRole">
-      <div className="homeSectionHead compact">
-        <p className="homeOverline">Role of the Command Center</p>
-        <h2>How the Command Center operationalizes the strategy.</h2>
-      </div>
-      <div className="missionRoleRows">
-        {commandRoles.map((role) => <div key={role.title}>
-          <h3>{role.title}</h3>
-          <p>{role.body}</p>
-        </div>)}
-      </div>
-    </section>
+      {/* How it works — only show when no report */}
+      {!hasReport && (
+        <div>
+          <p style={{ margin: '0 0 16px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>How it works</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+            {steps.map((step) => (
+              <div key={step.n} style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '20px' }}>
+                <span style={{ display: 'block', fontSize: '22px', fontWeight: 800, color: 'var(--color-text-tertiary)', letterSpacing: '-0.04em', marginBottom: '10px' }}>{step.n}</span>
+                <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 700, color: 'var(--color-text-primary)' }}>{step.title}</p>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-tertiary)', lineHeight: 1.5 }}>{step.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-    <section className="homeTrustPillars missionTrust">
-      <div className="homeSectionHead compact">
-        <p className="homeOverline">Trust Model</p>
-        <h2>Strategic ambition still needs evidence, governance, and operational realism.</h2>
-      </div>
-      <div className="homeTrustGrid">
-        {trustPillars.map((pillar) => <div key={pillar.title}>
-          <h3>{pillar.title}</h3>
-          <p>{pillar.body}</p>
-        </div>)}
-      </div>
-    </section>
-  </article>;
+      {/* After-report workspace links */}
+      {hasReport && (
+        <div>
+          <p style={{ margin: '0 0 16px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>All workspaces</p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {(['heatmap', 'growth', 'battlecards', 'board-packet', 'intake', 'reports'] as View[]).map((v) => (
+              <button key={v} className="btn btn-sm" onClick={() => setView?.(v)} style={{ textTransform: 'capitalize' }}>
+                {({ heatmap: 'Intelligence', growth: 'Growth', battlecards: 'Field', 'board-packet': 'Board', intake: 'Run New Scan', reports: 'Reports' } as Record<string, string>)[v]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
 }

@@ -1,8 +1,10 @@
 import type { IntelligenceReport, CompetitorAnalysis, Finding } from './types';
+import type { GrowthRow } from './growth-plan';
 import { andwellCatalog } from './andwell';
 import { launchPlan } from './growth-plan';
+import { generateDecisions } from './decision-queue';
 
-export type SearchResultType = 'competitor' | 'service' | 'finding' | 'county' | 'claim' | 'decision' | 'referral';
+export type SearchResultType = 'competitor' | 'service' | 'finding' | 'county' | 'claim' | 'decision' | 'referral' | 'growth';
 
 export type SearchResult = {
   type: SearchResultType;
@@ -12,7 +14,13 @@ export type SearchResult = {
   detail?: string;
 };
 
-export function globalSearch(query: string, report?: IntelligenceReport | null): SearchResult[] {
+function fmtRevenue(v: number) {
+  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `$${Math.round(v / 1_000)}K`;
+  return `$${v}`;
+}
+
+export function globalSearch(query: string, report?: IntelligenceReport | null, growthRows?: GrowthRow[]): SearchResult[] {
   const q = query.trim().toLowerCase();
   if (!q || q.length < 2) return [];
 
@@ -75,6 +83,32 @@ export function globalSearch(query: string, report?: IntelligenceReport | null):
         }
       }
     }
+  }
+
+  // Live growth plan: counties, services, revenue
+  if (growthRows?.length) {
+    const seen2 = new Set<string>();
+    for (const row of growthRows) {
+      const searchable = `${row.county} ${row.service} ${row.launchGroup} ${row.reason}`.toLowerCase();
+      if (!searchable.includes(q)) continue;
+      const key2 = `${row.county}:${row.service}`;
+      if (seen2.has(key2)) continue;
+      seen2.add(key2);
+      const y1 = Array.isArray(row.revenue) ? (row.revenue[0] ?? 0) : 0;
+      add('growth', `${row.county} — ${row.service}`, `${row.launchGroup} · Y1 revenue: ${fmtRevenue(y1)} · ${row.reason.slice(0, 100)}`, 'heatmap', row.launchGroup);
+    }
+  }
+
+  // Decision queue items
+  const decisions = generateDecisions(report, growthRows);
+  const seenDecisions = new Set<string>();
+  for (const d of decisions) {
+    if (d.status !== 'Pending') continue;
+    const searchable = `${d.title} ${d.evidence} ${d.recommendedAction} ${d.type} ${d.owner}`.toLowerCase();
+    if (!searchable.includes(q)) continue;
+    if (seenDecisions.has(d.title)) continue;
+    seenDecisions.add(d.title);
+    add('decision', d.title.slice(0, 100), `${d.type} · ${d.urgency} · ${d.risk} risk`, 'decisions', d.status);
   }
 
   return results.slice(0, 25);

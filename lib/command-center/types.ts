@@ -7,4 +7,4 @@ export type ReportSummary = { id: string; generatedAt: string; competitorsAnalyz
 export type ApiCheck = { route: string; ok: boolean; status: number; message: string; preview?: string };
 export type AnyAnalysis = NonNullable<IntelligenceReport['analyses']>[number];
 export type AskEvidence = { type: string; smartScore?: number; competitorName: string; serviceLine: string; subservice?: string | null; status: string; confidence: string; sourceUrl?: string; sourceTitle?: string; evidenceExcerpt: string; safeSalesWording: string; reviewStatus: string; recommendedAction?: string };
-export type AskResponse = { answer: string; confidence: string; reportId?: string; questionTerms?: string[]; nextBestActions?: string[]; evidence?: AskEvidence[] };
+export type AskResponse = { answer: string; confidence: string; source?: 'ai' | 'template'; reportId?: string; questionTerms?: string[]; nextBestActions?: string[]; evidence?: AskEvidence[] };

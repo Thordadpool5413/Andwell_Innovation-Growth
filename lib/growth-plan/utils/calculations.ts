@@ -35,7 +35,7 @@ export function getCountyMath(row: LaunchPlanEntry, scenario: Scenario = DEFAULT
   const meta = services[row.service];
   const market = cmsCountyMarket[row.county];
   const conversionRate = scenario.conversionRate;
-  const marginOverride = scenario.marginOverrides[row.service];
+  const marginOverride = scenario.marginOverrides?.[row.service];
   const margin = marginOverride !== undefined ? marginOverride : meta.margin;
 
   let demandPool = row.age65 * meta.demandRate;

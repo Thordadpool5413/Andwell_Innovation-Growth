@@ -80,7 +80,7 @@ export default function MaineMap({ rows, selectedCounty, onSelectCounty }: Maine
   if (heatmapMode !== "priority" && rows) {
     Object.keys(countyPaths).forEach((county) => {
       if (launchCounties.has(county)) {
-        heatValues[county] = getHeatmapValue(county, heatmapMode, rows);
+        heatValues[county] = getHeatmapValue(county, heatmapMode, rows as any);
       }
     });
   }

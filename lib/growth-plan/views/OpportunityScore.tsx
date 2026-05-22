@@ -20,7 +20,7 @@ export default function OpportunityScore({ rows }: OpportunityScoreProps) {
   const { dark } = useDarkMode();
   const counties = [...new Set(rows.map((r) => r.county))];
   const scores = useMemo(
-    () => counties.map((c) => getOpportunityScore(c, rows)).filter(Boolean).sort((a, b) => b.score - a.score),
+    () => counties.map((c) => getOpportunityScore(c, rows)).filter((x): x is NonNullable<typeof x> => x !== null).sort((a, b) => b.score - a.score),
     [rows],
   );
 

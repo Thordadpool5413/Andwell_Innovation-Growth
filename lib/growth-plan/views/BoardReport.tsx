@@ -151,7 +151,7 @@ export default function BoardReport({ rows, totals }: BoardReportProps) {
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={serviceMix} dataKey="revenue" nameKey="service" cx="50%" cy="50%" outerRadius={80} label={({ service, revenue }) => `${service}: ${currency(revenue)}`}>
+                    <Pie data={serviceMix} dataKey="revenue" nameKey="service" cx="50%" cy="50%" outerRadius={80} label={(props: any) => `${props.service}: ${currency(props.revenue as number)}`}>
                       {serviceMix.map((entry) => (
                         <Cell key={entry.service} fill={entry.color} />
                       ))}

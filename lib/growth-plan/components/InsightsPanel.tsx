@@ -78,7 +78,7 @@ export default function InsightsPanel({ insights, onActionClick }: InsightsPanel
           </p>
           {rec.action && (
             <button
-              onClick={() => onActionClick?.(rec.actionValue)}
+              onClick={() => onActionClick?.(rec.actionValue ?? '')}
               className={`
                 text-xs font-semibold px-2 py-1 rounded transition-colors
                 ${dark
