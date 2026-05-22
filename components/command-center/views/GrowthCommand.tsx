@@ -6,13 +6,20 @@ import { useToast } from '../../../components/Toast';
 import { money, whole, percent } from '../../../lib/command-center/utils';
 import type { View } from '../../../lib/command-center/types';
 import { buildGrowthRows, growthDefaultScenario, summarizeGrowth } from '../../../lib/growth-plan';
-import type { GrowthRow, GrowthTotals, GrowthScenario } from '../../../lib/growth-plan';
+import type { GrowthRow, GrowthTotals, GrowthScenario, GrowthServiceName } from '../../../lib/growth-plan';
+import type { IntelligenceReport } from '../../../lib/types';
+
+const serviceToAndwellLines: Record<GrowthServiceName, string[]> = {
+  'Home Healthcare': ['home healthcare', 'in home care', 'dementia care'],
+  'Mobile Wound': ['mobile wound'],
+  'Therapy Care': ['pediatric therapy', 'adult therapy', 'audiology', 'behavioral health'],
+};
 
 function ScenarioControl({ label, value, min, max, step, onChange }: { label: string; value: number; min: number; max: number; step: number; onChange: (value: number) => void }) {
   return <label className="scenarioControl"><span>{label}</span><strong>{percent(value)}</strong><input type="range" min={min} max={max} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} /><input className="input" type="number" min={min} max={max} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>;
 }
 
-export function GrowthCommand({ rows, totals, serviceRollup, scenario, setScenario, setView }: { rows: GrowthRow[]; totals: GrowthTotals; serviceRollup: { service: string; role: string; color: string; y1Revenue: number; y3Starts: number }[]; scenario: GrowthScenario; setScenario: (value: GrowthScenario | ((current: GrowthScenario) => GrowthScenario)) => void; setView: (view: View) => void }) {
+export function GrowthCommand({ rows, totals, serviceRollup, scenario, setScenario, setView, currentReport }: { rows: GrowthRow[]; totals: GrowthTotals; serviceRollup: { service: string; role: string; color: string; y1Revenue: number; y3Starts: number }[]; scenario: GrowthScenario; setScenario: (value: GrowthScenario | ((current: GrowthScenario) => GrowthScenario)) => void; setView: (view: View) => void; currentReport?: IntelligenceReport | null }) {
   const topRows = [...rows].sort((a, b) => b.opportunityScore - a.opportunityScore).slice(0, 8);
   const priorityOneCount = rows.filter((row) => row.launchGroup === 'Priority 1').length;
   const updateCapture = (key: 'hhCapture' | 'woundCapture' | 'therapyCapture', value: number) => {
@@ -84,6 +91,47 @@ export function GrowthCommand({ rows, totals, serviceRollup, scenario, setScenar
       <Stat label="3 year contribution" value={money(totals.totalContribution)} hint={<>Margin adjusted{deltaSpan(contribDelta, money)}</>} />
       <Stat label="Priority counties" value={rows.length} hint="CMS modeled markets" />
     </div>
+    {currentReport && currentReport.competitorScores.length > 0 ? (() => {
+      const topThreat = [...currentReport.competitorScores].sort((a, b) =>
+        (b.serviceLineMatchScore + b.subserviceDepthScore) - (a.serviceLineMatchScore + a.subserviceDepthScore)
+      )[0];
+      const serviceThreatMap = new Map<string, { competitor: string; level: string }>();
+      for (const [growthService, keywords] of Object.entries(serviceToAndwellLines)) {
+        const topForService = [...currentReport.competitorScores].sort((a, b) => {
+          const aMatch = a.strongestMatches.filter(m => keywords.some(k => m.toLowerCase().includes(k))).length;
+          const bMatch = b.strongestMatches.filter(m => keywords.some(k => m.toLowerCase().includes(k))).length;
+          return bMatch - aMatch;
+        })[0];
+        if (topForService && topForService.strongestMatches.some(m => keywords.some(k => m.toLowerCase().includes(k)))) {
+          serviceThreatMap.set(growthService, { competitor: topForService.competitorName, level: topForService.threatLevel });
+        }
+      }
+      return (
+        <div className="notice" style={{ marginBottom: '16px' }}>
+          <div className="row spread" style={{ marginBottom: serviceThreatMap.size > 0 ? '10px' : '0' }}>
+            <div>
+              <strong>Competitive context:</strong> {topThreat.competitorName} is the highest-overlap competitor — {topThreat.serviceLineMatchScore}% service line match, {topThreat.andwellDifferentiationScore}% Andwell differentiation opportunity.
+              {topThreat.strongestMatches.length > 0 && <> Shared: {topThreat.strongestMatches.slice(0, 3).join(', ')}.</>}
+            </div>
+            <button className="btn btn-sm" style={{ flexShrink: 0, marginLeft: '12px' }} onClick={() => setView('matrix')}>View evidence</button>
+          </div>
+          {serviceThreatMap.size > 0 && (
+            <div className="row" style={{ gap: '8px', flexWrap: 'wrap' }}>
+              {[...serviceThreatMap.entries()].map(([service, info]) => (
+                <span key={service} className="text-xs" style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', padding: '2px 8px' }}>
+                  <strong>{service}</strong> — {info.competitor} ({info.level})
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    })() : currentReport === null ? (
+      <div className="notice" style={{ marginBottom: '16px' }}>
+        <strong>No competitive data loaded.</strong> Run a competitor scan to surface market threats alongside this financial model.
+        <button className="btn btn-sm" style={{ marginLeft: '12px' }} onClick={() => setView('intake')}>Run scan</button>
+      </div>
+    ) : null}
     <div className="card" style={{ marginBottom: '4px' }}>
       <div className="row spread" style={{ marginBottom: aiNarrative ? '12px' : '0' }}>
         <div>
