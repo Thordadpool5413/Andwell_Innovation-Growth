@@ -227,7 +227,7 @@ export function OpportunityHeatMap({ rows, totals }: { rows: GrowthRow[]; totals
           <div style={{ display: 'grid', gap: '16px' }}>
             <div className="grid cols2" style={{ gap: '8px' }}>
               {(Object.entries(county.dimensions) as [string, { raw: number; score: number; label: string }][]).map(([key, dim]) =>
-                <div key={key} className="hover-card" style={{ padding: '10px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
+                <div key={key} className="list-card hover-card">
                   <p className="text-xs text-overline" style={{ margin: '0 0 4px', color: 'var(--color-text-tertiary)' }}>{dim.label}</p>
                   <div className="row spread">
                     <strong style={{ fontSize: '18px' }}>{dim.score}%</strong>
@@ -243,7 +243,7 @@ export function OpportunityHeatMap({ rows, totals }: { rows: GrowthRow[]; totals
             </div>
 
             <div className="grid cols2">{readiness.filter((r) => r.county === county.county).map((r) =>
-              <div key={`${r.county}-${r.service}`} className="hover-card" style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
+              <div key={`${r.county}-${r.service}`} className="list-card hover-card">
                 <div className="row spread" style={{ marginBottom: '8px' }}>
                   <Badge tone={readinessTone(r.readinessPercent)}>{r.readinessPercent}% ready</Badge>
                   <Badge>{r.service}</Badge>

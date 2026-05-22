@@ -5,6 +5,8 @@ import { Badge, ConfidenceBadge, Panel, Stat } from '../Shared';
 import { computeConfidenceDetails } from '../../../lib/smart-ranking';
 import type { MatrixFilter } from '../../../lib/command-center/types';
 import type { Finding, IntelligenceReport, MatrixScore } from '../../../lib/types';
+import { downloadCsv } from '../../../lib/command-center/csv';
+import { useToast } from '../../../components/Toast';
 
 function scoreTone(score: number): 'green' | 'amber' | 'red' | 'blue' {
   if (score >= 75) return 'green';
@@ -87,7 +89,8 @@ function ExpandedFinding({ finding }: { finding: Finding }) {
   </td></tr>;
 }
 
-export function Matrix({ currentReport, matrixFilter, setMatrixFilter, matrixSearch, setMatrixSearch }: { currentReport: IntelligenceReport | null; matrixFilter: MatrixFilter; setMatrixFilter: (filter: MatrixFilter) => void; matrixSearch: string; setMatrixSearch: (value: string) => void }) {
+export function Matrix({ currentReport, matrixFilter, setMatrixFilter, matrixSearch, setMatrixSearch, onRunScan }: { currentReport: IntelligenceReport | null; matrixFilter: MatrixFilter; setMatrixFilter: (filter: MatrixFilter) => void; matrixSearch: string; setMatrixSearch: (value: string) => void; onRunScan?: () => void }) {
+  const { showToast } = useToast();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const findings = currentReport?.allFindings || [];
   const stats = useMemo(() => {
@@ -120,22 +123,39 @@ export function Matrix({ currentReport, matrixFilter, setMatrixFilter, matrixSea
     setExpandedRows((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   }
 
+  function exportCsv() {
+    downloadCsv('andwell-evidence-matrix.csv',
+      ['Competitor', 'Service Line', 'Status', 'Matrix Score', 'Sources', 'Review Status', 'Safe Field Wording'],
+      filtered.map(f => [f.competitorName, f.serviceLine, f.competitorStatus, f.matrixScore?.overall ?? '', sourceCount(f), f.reviewStatus, f.safeSalesWording])
+    );
+    showToast(`Exported ${filtered.length} findings to CSV.`, 'success');
+  }
+
   return <>
-    <section className="section"><div><h1>Evidence Matrix</h1><p className="text-body">Scrubs competitor websites, compares each finding to Andwell's service taxonomy, scores evidence quality, and keeps field language tied to citations.</p></div><Badge>{filtered.length} visible</Badge></section>
-    {!currentReport ? <Panel title="No report loaded"><p className="text-body">Run or load a report to populate the matrix.</p></Panel> : <>
+    <section className="section"><div><h1>Evidence Matrix</h1><p className="text-body">Scrubs competitor websites, compares each finding to Andwell's service taxonomy, scores evidence quality, and keeps field language tied to citations. Each row links to original sources and reviewed evidence.</p></div><Badge>{filtered.length} visible</Badge></section>
+    {!currentReport ? <Panel title="No report loaded"><p className="text-body">Run a competitive scan to populate the evidence matrix with scored, sourced competitive findings across every service line.</p>{onRunScan && <button className="btn primary" style={{ marginTop: '12px' }} onClick={onRunScan}>Run Competitive Scan →</button>}</Panel> : <>
       <div className="grid cols4">
         <Stat label="Matrix score" value={stats.averageScore || 'N/A'} hint="Average scored finding" />
         <Stat label="Sourced rows" value={`${stats.sourced}/${findings.length}`} hint="Rows with captured evidence" />
         <Stat label="AI enhanced" value={stats.aiEnhanced} hint="Competitor sites with AI extraction" />
         <Stat label="Pages reviewed" value={currentReport.pagesReviewed} hint="Website pages scrubbed" />
       </div>
-      <Panel title="Matrix controls">
+      <Panel title="Matrix controls" action={<button className="btn btn-sm" onClick={exportCsv}>Export CSV</button>}>
         <div className="row" style={{ gap: '8px', flexWrap: 'wrap' }}>
           <input className="input searchInput" value={matrixSearch} onChange={(event) => setMatrixSearch(event.target.value)} placeholder="Search competitor, service, evidence, rationale, or safe wording" />
           {(['all', 'salesReady', 'review', 'advantage', 'matched'] as MatrixFilter[]).map((filter) => <button key={filter} className={`btn ${matrixFilter === filter ? 'primary' : ''}`} onClick={() => setMatrixFilter(filter)}>{filter === 'all' ? 'All' : filter === 'salesReady' ? 'Sales ready' : filter === 'review' ? 'Needs review' : filter === 'advantage' ? 'Potential advantage' : 'Public matches'}</button>)}
         </div>
       </Panel>
-      <div className="tableWrap proTable evidenceMatrixTable"><table className="table-compact"><thead><tr><th>Competitor</th><th>Andwell service</th><th>Status</th><th>Matrix score</th><th>Sources</th><th>Depth</th><th>Review</th><th>Safe field wording</th></tr></thead><tbody>{filtered.map((finding) => {
+      {filtered.length === 0 && (
+        <Panel title="No findings match">
+          <p className="text-body">No findings match the current filter or search term.</p>
+          <div className="row" style={{ gap: '8px', marginTop: '12px' }}>
+            {matrixSearch && <button className="btn btn-sm" onClick={() => setMatrixSearch('')}>Clear search</button>}
+            {matrixFilter !== 'all' && <button className="btn btn-sm" onClick={() => setMatrixFilter('all')}>Show all findings</button>}
+          </div>
+        </Panel>
+      )}
+      {filtered.length > 0 && <div className="tableWrap proTable evidenceMatrixTable"><table className="table-compact"><thead><tr><th>Competitor</th><th>Andwell service</th><th>Status</th><th>Matrix score</th><th>Sources</th><th>Depth</th><th>Review</th><th>Safe field wording</th></tr></thead><tbody>{filtered.map((finding) => {
         const details = computeConfidenceDetails({ status: finding.competitorStatus, sourceCount: sourceCount(finding), hasFreshSource: sourceCount(finding) > 0, hasCmsSupport: false, hasInternalValidation: finding.reviewStatus === 'Approved for sales use', competitorOverlap: finding.competitorStatus === 'Clearly offered' ? 'High' : finding.competitorStatus === 'Not found publicly' ? 'Low' : 'Moderate', humanReviewed: finding.reviewStatus === 'Approved for sales use' || finding.reviewStatus === 'Rejected' });
         const isExpanded = expandedRows.has(finding.id);
         return <React.Fragment key={finding.id}>
@@ -151,7 +171,7 @@ export function Matrix({ currentReport, matrixFilter, setMatrixFilter, matrixSea
           </tr>
           {isExpanded ? <ExpandedFinding finding={finding} /> : null}
         </React.Fragment>;
-      })}</tbody></table></div>
+      })}</tbody></table></div>}
     </>}
   </>;
 }

@@ -7,7 +7,7 @@ import type { IntelligenceReport, ClaimStatus } from '../../../lib/types';
 
 const statusFilters: ClaimStatus[] = ['Safe', 'Needs review', 'Do not use', 'Internal only', 'High risk'];
 
-export function ClaimGovernance({ currentReport }: { currentReport: IntelligenceReport | null }) {
+export function ClaimGovernance({ currentReport, onRunScan }: { currentReport: IntelligenceReport | null; onRunScan?: () => void }) {
   const [statusFilter, setStatusFilter] = useState<ClaimStatus | 'all'>('all');
   const [showApprovedOnly, setShowApprovedOnly] = useState(false);
 
@@ -30,7 +30,7 @@ export function ClaimGovernance({ currentReport }: { currentReport: Intelligence
   }, [allClaims]);
 
   if (!currentReport) {
-    return <Panel title="No report loaded"><p className="text-body">Run or load a report to review and govern competitive claims.</p></Panel>;
+    return <Panel title="No report loaded"><p className="text-body">Run a competitive scan to review and categorize competitive claims by safety level — Safe, Needs Review, Do Not Use, and High Risk.</p>{onRunScan && <button className="btn primary" style={{ marginTop: '12px' }} onClick={onRunScan}>Run Competitive Scan →</button>}</Panel>;
   }
 
   return <>
@@ -44,7 +44,7 @@ export function ClaimGovernance({ currentReport }: { currentReport: Intelligence
     <SectionGroup title="Claim safety overview">
       <div className="grid cols2" style={{ marginBottom: '16px' }}>
         {(Object.entries(counts) as [ClaimStatus, number][]).map(([status, count]) =>
-          <div key={status} className="hover-card" style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
+          <div key={status} className="list-card hover-card">
             <p className="text-xs text-overline" style={{ color: 'var(--color-text-tertiary)', margin: '0 0 4px' }}>{status}</p>
             <strong style={{ color: status === 'High risk' ? 'var(--color-danger)' : status === 'Do not use' ? 'var(--color-danger)' : status === 'Internal only' ? 'var(--color-info)' : status === 'Needs review' ? 'var(--color-warning)' : 'var(--color-success)', fontSize: '22px' }}>{count}</strong>
           </div>
@@ -68,7 +68,7 @@ export function ClaimGovernance({ currentReport }: { currentReport: Intelligence
     {filtered.length === 0
       ? <Panel title="No claims match"><p className="text-body">No claims match the current filter. Try adjusting the filter criteria.</p></Panel>
       : <div className="grid cols2">{filtered.map((claim, i) =>
-        <div key={i} className="hover-card" style={{ padding: '16px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
+        <div key={i} className="list-card hover-card" style={{ padding: '16px' }}>
           <div className="row spread" style={{ marginBottom: '8px' }}>
             <Badge tone={claimStatusTone(claim.category)}>{claim.category}</Badge>
             <span className="text-small" style={{ color: 'var(--color-text-tertiary)' }}>{claim.competitorName}</span>
