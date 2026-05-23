@@ -6,20 +6,51 @@ import type { CompetitorInput, IntelligenceReport } from '../../../lib/types';
 
 type RoleView = string;
 
-const quickLinks: { title: string; desc: string; view: View; accent: string }[] = [
-  { title: 'Expert Brief', desc: 'Recommendations, field plays, and watchlist', view: 'expert', accent: 'var(--color-accent)' },
-  { title: 'Battlecards', desc: 'Talk tracks and objection responses', view: 'battlecards', accent: 'var(--color-success)' },
-  { title: 'Evidence Matrix', desc: 'Scored findings across every service line', view: 'matrix', accent: 'var(--color-info)' },
-  { title: 'Growth Strategy', desc: 'Scenario engine and county plan', view: 'growth', accent: 'var(--color-warning)' },
+const innovationStatement = 'Innovation and Growth is where Andwell Health Partners turns vision into infrastructure. We are building the future of high acuity community care, creating post acute partnerships that make us essential to Maine, connecting complex services through technology, and developing the value based contracting model that allows us to take risk, deliver better outcomes, save payers money, and grow because we are built for the complexity others cannot manage.';
+
+const processSteps = [
+  'Reading public sources',
+  'Extracting service evidence',
+  'Scrubbing unsupported claims',
+  'Connecting evidence to Andwell capabilities',
+  'Building capability comparison',
+  'Mapping growth opportunities',
+  'Building field safe language',
+  'Creating growth strategy',
+  'Preparing executive output',
 ];
 
-const steps = [
-  { n: '01', title: 'Add competitor URLs', body: 'Paste any provider website. The system validates and queues them for crawling.', view: 'intake' as View },
-  { n: '02', title: 'Run the AI scan', body: 'The engine crawls each site, runs AI extraction, and scores service overlap and differentiation.', view: 'intake' as View },
-  { n: '03', title: 'Use the intelligence', body: 'Expert brief, battlecards, evidence matrix, growth scenarios, and board-ready exports — all updated.', view: 'expert' as View },
+const outputPreviews: { title: string; desc: string; view: View; accent: string }[] = [
+  { title: 'Advantage Matrix', desc: 'Compare Andwell capabilities against public competitor evidence.', view: 'matrix', accent: 'var(--color-info)' },
+  { title: 'Growth Map', desc: 'Identify market opportunity, saturation, field focus, and evidence confidence.', view: 'heatmap', accent: 'var(--color-success)' },
+  { title: 'Field Guidance', desc: 'Use safe talk tracks, questions to ask, and what not to say.', view: 'battlecards', accent: 'var(--color-accent)' },
+  { title: 'Executive Report', desc: 'Prepare leadership ready output from Matrix, Map, and strategy signals.', view: 'board-packet', accent: 'var(--color-warning)' },
 ];
 
-export function Home({ setView, currentReport, competitors, busy, onRefresh }: {
+const readiness = [
+  'Ready for source intelligence',
+  'Evidence guardrails active',
+  'Capability matrix ready to build',
+  'Growth map ready to build',
+  'Strategy builder ready',
+  'Executive output engine ready',
+];
+
+function ReadyPill({ label }: { label: string }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '8px 10px',
+      borderRadius: '999px', border: '1px solid var(--color-border)',
+      background: 'var(--color-bg-primary)', color: 'var(--color-text-secondary)',
+      fontSize: '12px', fontWeight: 700
+    }}>
+      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--color-success)' }} />
+      {label}
+    </span>
+  );
+}
+
+export function Home({ setView, currentReport, competitors, busy }: {
   roleView?: RoleView;
   setView?: (view: View) => void;
   currentReport?: IntelligenceReport | null;
@@ -31,108 +62,113 @@ export function Home({ setView, currentReport, competitors, busy, onRefresh }: {
   const competitorCount = competitors?.length ?? 0;
 
   return (
-    <div style={{ maxWidth: '820px', padding: '32px 32px 80px' }}>
+    <div style={{ maxWidth: '1180px', padding: '32px 32px 80px' }}>
 
-      {/* Page title */}
-      <div style={{ marginBottom: '32px' }}>
-        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--color-info)' }}>Andwell Innovation &amp; Growth</p>
-        <h1 style={{ margin: 0, fontSize: '32px', letterSpacing: '-0.04em', lineHeight: 1.15 }}>
-          {hasReport ? 'Your intelligence is ready.' : 'Start with a competitive scan.'}
-        </h1>
-        <p style={{ margin: '10px 0 0', fontSize: '15px', color: 'var(--color-text-secondary)', lineHeight: 1.6, maxWidth: '560px' }}>
-          {hasReport
-            ? `${currentReport?.competitorsAnalyzed ?? 0} competitors analyzed. Use the views below to brief leadership, coach the field, plan growth, or prepare board materials.`
-            : 'Add competitor websites, run the AI scan, and get expert intelligence, battlecards, and growth guidance in minutes.'}
-        </p>
-      </div>
+      <section style={{
+        display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(320px, 0.9fr)',
+        gap: '20px', alignItems: 'stretch', marginBottom: '22px'
+      }} className="homeHeroGrid">
+        <div style={{
+          background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-xl)', padding: '32px', boxShadow: 'var(--color-shadow)'
+        }}>
+          <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--color-info)' }}>
+            Andwell Innovation and Growth
+          </p>
+          <h1 style={{ margin: 0, fontSize: 'clamp(34px, 5vw, 58px)', letterSpacing: '-0.06em', lineHeight: 0.98 }}>
+            Build the future of high acuity community care with source based intelligence.
+          </h1>
+          <p style={{ margin: '20px 0 0', fontSize: '15px', color: 'var(--color-text-secondary)', lineHeight: 1.75, maxWidth: '780px' }}>
+            {innovationStatement}
+          </p>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '24px' }}>
+            {setView && <button className="btn primary" onClick={() => setView('intake')}>Build Andwell Intelligence</button>}
+            {setView && <button className="btn" onClick={() => setView('reports')}>View Built Outputs</button>}
+          </div>
+        </div>
 
-      {/* Primary action — state-aware */}
-      {hasReport ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', marginBottom: '40px' }}>
-          {quickLinks.map((link) => (
-            <button
-              key={link.view}
-              onClick={() => setView?.(link.view)}
-              style={{
-                background: 'var(--color-bg-secondary)', border: `1px solid var(--color-border)`,
-                borderRadius: 'var(--radius-lg)', padding: '20px', textAlign: 'left', cursor: 'pointer',
-                transition: 'border-color 150ms ease, transform 150ms ease', display: 'block', width: '100%'
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = link.accent; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
-            >
-              <p style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 700, color: 'var(--color-text-primary)' }}>{link.title}</p>
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-tertiary)', lineHeight: 1.4 }}>{link.desc}</p>
-            </button>
+        <div style={{
+          background: 'linear-gradient(145deg, var(--color-bg-secondary), var(--color-bg-primary))',
+          border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)',
+          padding: '24px', boxShadow: 'var(--color-shadow)', display: 'flex', flexDirection: 'column', gap: '14px'
+        }}>
+          <p style={{ margin: 0, fontSize: '11px', fontWeight: 900, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>
+            Source to output workflow
+          </p>
+          <h2 style={{ margin: 0, fontSize: '24px', letterSpacing: '-0.04em' }}>
+            Enter sources. Receive intelligence.
+          </h2>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.65 }}>
+            The system turns public source material into comparison, market geography, strategy, field guidance, and leadership output.
+          </p>
+          <div style={{ display: 'grid', gap: '8px', marginTop: '4px' }}>
+            {readiness.map((item) => <ReadyPill key={item} label={item} />)}
+          </div>
+        </div>
+      </section>
+
+      <section style={{
+        background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-xl)', padding: '24px', marginBottom: '22px'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: '18px' }}>
+          <div>
+            <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>
+              How intelligence is built
+            </p>
+            <h2 style={{ margin: 0, fontSize: '24px', letterSpacing: '-0.04em' }}>
+              The system handles the evidence work behind the scenes.
+            </h2>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <ReadyPill label={hasReport ? `${currentReport?.competitorsAnalyzed ?? 0} competitors analyzed` : 'Ready to build'} />
+            <ReadyPill label={competitorCount > 0 ? `${competitorCount} sources prepared` : 'Awaiting public sources'} />
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '10px' }}>
+          {processSteps.map((step, index) => (
+            <div key={step} style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
+              <span style={{ display: 'inline-flex', width: '28px', height: '28px', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: 'var(--color-bg-primary)', color: 'var(--color-info)', fontWeight: 900, fontSize: '12px', border: '1px solid var(--color-border)', marginBottom: '10px' }}>
+                {index + 1}
+              </span>
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: 'var(--color-text-primary)', lineHeight: 1.35 }}>{step}</p>
+            </div>
           ))}
         </div>
-      ) : (
-        <div style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '28px', marginBottom: '40px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' }}>
-            <div>
-              <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-                {competitorCount > 0
-                  ? `${competitorCount} competitor${competitorCount !== 1 ? 's' : ''} in library — ready to scan`
-                  : 'No competitors added yet'}
-              </p>
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-tertiary)', lineHeight: 1.5 }}>
-                {competitorCount > 0
-                  ? 'Go to Competitor Intake to run the scan and generate your intelligence report.'
-                  : 'Go to Competitor Intake to add provider websites and run your first scan.'}
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-              {onRefresh && <button className="btn btn-sm" disabled={busy} onClick={onRefresh}>Refresh</button>}
-              {setView && <button className="btn primary" onClick={() => setView('intake')}>
-                {competitorCount > 0 ? 'Run Competitive Scan →' : 'Add Competitors →'}
-              </button>}
-            </div>
-          </div>
-        </div>
-      )}
+      </section>
 
-      {/* Status row */}
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '40px', flexWrap: 'wrap' }}>
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px', marginBottom: '22px' }}>
+        {outputPreviews.map((link) => (
+          <button
+            key={link.view}
+            onClick={() => setView?.(link.view)}
+            style={{
+              background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-xl)', padding: '22px', textAlign: 'left', cursor: 'pointer',
+              transition: 'border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease', display: 'block', width: '100%', minHeight: '150px'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = link.accent; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--color-shadow)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+          >
+            <span style={{ display: 'inline-block', width: '34px', height: '4px', borderRadius: '99px', background: link.accent, marginBottom: '18px' }} />
+            <p style={{ margin: '0 0 8px', fontSize: '17px', fontWeight: 900, color: 'var(--color-text-primary)', letterSpacing: '-0.03em' }}>{link.title}</p>
+            <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.55 }}>{link.desc}</p>
+          </button>
+        ))}
+      </section>
+
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
         {[
-          { dot: hasReport ? 'var(--color-success)' : 'var(--color-border)', label: hasReport ? `Report loaded · ${currentReport?.competitorsAnalyzed ?? 0} competitors analyzed` : 'No report loaded' },
-          { dot: competitorCount > 0 ? 'var(--color-info)' : 'var(--color-border)', label: competitorCount > 0 ? `${competitorCount} competitor${competitorCount !== 1 ? 's' : ''} in library` : 'No competitors added' },
-        ].map((item, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: item.dot, flexShrink: 0 }} />
-            <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>{item.label}</span>
+          ['What', 'The system turns public market evidence into safe, usable Andwell growth intelligence.'],
+          ['Why', 'Andwell needs repeatable intelligence for partnerships, payer value, service line positioning, field coaching, and high acuity community care growth.'],
+          ['How', 'The system ingests public sources, scrubs unsupported claims, maps evidence to Andwell capabilities, compares competitors, identifies market opportunity, and creates leadership ready outputs.'],
+        ].map(([title, body]) => (
+          <div key={title} style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '20px' }}>
+            <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 900, color: 'var(--color-text-primary)' }}>{title}</p>
+            <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.65 }}>{body}</p>
           </div>
         ))}
-      </div>
-
-      {/* How it works — only show when no report */}
-      {!hasReport && (
-        <div>
-          <p style={{ margin: '0 0 16px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>How it works</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
-            {steps.map((step) => (
-              <div key={step.n} style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '20px' }}>
-                <span style={{ display: 'block', fontSize: '22px', fontWeight: 800, color: 'var(--color-text-tertiary)', letterSpacing: '-0.04em', marginBottom: '10px' }}>{step.n}</span>
-                <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 700, color: 'var(--color-text-primary)' }}>{step.title}</p>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-tertiary)', lineHeight: 1.5 }}>{step.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* After-report workspace links */}
-      {hasReport && (
-        <div>
-          <p style={{ margin: '0 0 16px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>All workspaces</p>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {(['heatmap', 'growth', 'battlecards', 'board-packet', 'intake', 'reports'] as View[]).map((v) => (
-              <button key={v} className="btn btn-sm" onClick={() => setView?.(v)} style={{ textTransform: 'capitalize' }}>
-                {({ heatmap: 'Intelligence', growth: 'Growth', battlecards: 'Field', 'board-packet': 'Board', intake: 'Run New Scan', reports: 'Reports' } as Record<string, string>)[v]}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      </section>
 
     </div>
   );
