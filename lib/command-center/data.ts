@@ -1,75 +1,75 @@
 import type { View, RoleView } from './types';
 
 export const nav: { key: View; label: string; note: string }[] = [
-  { key: 'home', label: 'Home', note: 'Why, how, what' },
-  { key: 'dashboard', label: 'Command Center', note: 'Priorities and actions' },
-  { key: 'decisions', label: 'Decision Queue', note: 'Pending actions' },
-  { key: 'scenarios', label: 'Scenario Presets', note: 'Compare models' },
-  { key: 'growth', label: 'Growth Strategy', note: 'Markets and staffing' },
-  { key: 'board', label: 'Board Room', note: 'Operating plan' },
-  { key: 'launch', label: 'Launch Plan', note: 'Staffing and timeline' },
-  { key: 'expert', label: 'Expert Brief', note: 'Strategy and field plays' },
-  { key: 'ai', label: 'AI Intelligence', note: 'Extracted evidence' },
-  { key: 'prompt', label: 'Methodology', note: 'Governed logic' },
-  { key: 'intake', label: 'Competitor Intake', note: 'Add up to 25 URLs' },
-  { key: 'matrix', label: 'Evidence Matrix', note: 'Filter and compare' },
-  { key: 'battlecards', label: 'Field Enablement', note: 'Safe coaching cards' },
-  { key: 'heatmap', label: 'Market Intelligence', note: 'County opportunity map' },
-  { key: 'brief', label: 'Strategy Brief', note: 'Multi-audience export' },
-  { key: 'narrative', label: 'Executive Narrative', note: 'Leadership readout' },
-  { key: 'board-packet', label: 'Board Packet', note: 'Print-ready export' },
-  { key: 'coaching', label: 'Coaching Mode', note: 'Pre-call sales plans' },
-  { key: 'executive-view', label: 'Executive View', note: 'Growth summary' },
-  { key: 'county-plan', label: 'County Plan', note: 'Maine map view' },
-  { key: 'referral-plan', label: 'Referral Plan', note: 'Referral targets' },
-  { key: 'competitive-view', label: 'Competitive View', note: 'Provider analysis' },
-  { key: 'service-lines', label: 'Service Lines', note: 'Service catalog' },
-  { key: 'cms-data', label: 'CMS Data', note: 'Market data' },
-  { key: 'financial-model', label: 'Financial Model', note: 'Revenue projection' },
-  { key: 'staffing-model', label: 'Staffing Model', note: 'FTE planning' },
-  { key: 'sensitivity', label: 'Sensitivity', note: 'What-if analysis' },
-  { key: 'opportunity-score', label: 'Opportunity Score', note: 'County scoring' },
-  { key: 'launch-timeline', label: 'Launch Timeline', note: 'Gantt view' },
-  { key: 'board-report', label: 'Board Report', note: 'Print-ready' },
-  { key: 'launch-checklist', label: 'Launch Checklist', note: 'Task tracking' },
-  { key: 'governance', label: 'Claim Governance', note: 'Safety review' },
-  { key: 'builder', label: 'Battlecard Builder', note: 'Dynamic generator' },
-  { key: 'referrals', label: 'Referral Sources', note: 'Account-type views' },
-  { key: 'reports', label: 'Reports', note: 'Stored intelligence' },
-  { key: 'ask', label: 'Ask Andwell Expert', note: 'Evidence based answers' },
-  { key: 'catalog', label: 'Andwell Catalog', note: 'Baseline truth' },
-  { key: 'diagnostics', label: 'System Check', note: 'Deployment proof' }
+  { key: 'home', label: 'Home', note: 'Innovation and Growth' },
+  { key: 'dashboard', label: 'Intelligence Overview', note: 'Leadership Signals' },
+  { key: 'decisions', label: 'Decision Support', note: 'Leadership Actions' },
+  { key: 'scenarios', label: 'Scenario Modeling', note: 'Planning Options' },
+  { key: 'growth', label: 'Strategy', note: 'Growth Plays' },
+  { key: 'board', label: 'Leadership Plan', note: 'Operating View' },
+  { key: 'launch', label: 'Launch Planning', note: 'Timeline and Staffing' },
+  { key: 'expert', label: 'Strategic Brief', note: 'Recommendations' },
+  { key: 'ai', label: 'Source Intelligence', note: 'Evidence Extraction' },
+  { key: 'prompt', label: 'Intelligence Method', note: 'Evidence Logic' },
+  { key: 'intake', label: 'Build Intelligence', note: 'Enter Sources' },
+  { key: 'matrix', label: 'Advantage Matrix', note: 'Capability Comparison' },
+  { key: 'battlecards', label: 'Field Guidance', note: 'Safe Field Language' },
+  { key: 'heatmap', label: 'Growth Map', note: 'Market Opportunity' },
+  { key: 'brief', label: 'Strategy Brief', note: 'Audience Ready' },
+  { key: 'narrative', label: 'Executive Narrative', note: 'Leadership Readout' },
+  { key: 'board-packet', label: 'Executive Report', note: 'Leadership Output' },
+  { key: 'coaching', label: 'Field Coaching', note: 'Pre Call Plans' },
+  { key: 'executive-view', label: 'Executive View', note: 'Growth Summary' },
+  { key: 'county-plan', label: 'Territory Plan', note: 'Market Area View' },
+  { key: 'referral-plan', label: 'Referral Plan', note: 'Account Targets' },
+  { key: 'competitive-view', label: 'Competitive View', note: 'Provider Analysis' },
+  { key: 'service-lines', label: 'Service Lines', note: 'Capability Catalog' },
+  { key: 'cms-data', label: 'Market Data', note: 'Public Data Signals' },
+  { key: 'financial-model', label: 'Financial View', note: 'Revenue Projection' },
+  { key: 'staffing-model', label: 'Staffing View', note: 'Capacity Planning' },
+  { key: 'sensitivity', label: 'Sensitivity', note: 'Planning Variables' },
+  { key: 'opportunity-score', label: 'Opportunity Score', note: 'Market Scoring' },
+  { key: 'launch-timeline', label: 'Launch Timeline', note: 'Execution Sequence' },
+  { key: 'board-report', label: 'Board Report', note: 'Print Ready' },
+  { key: 'launch-checklist', label: 'Launch Checklist', note: 'Execution Tasks' },
+  { key: 'governance', label: 'Evidence Discipline', note: 'Safe Claims' },
+  { key: 'builder', label: 'Guidance Builder', note: 'Field Language' },
+  { key: 'referrals', label: 'Referral Sources', note: 'Account Views' },
+  { key: 'reports', label: 'Intelligence Library', note: 'Built Outputs' },
+  { key: 'ask', label: 'AI Coach', note: 'Ask the System' },
+  { key: 'catalog', label: 'Andwell Catalog', note: 'Baseline Capabilities' },
+  { key: 'diagnostics', label: 'System Health', note: 'Diagnostics' }
 ];
 
 export const roleGuidance: Record<RoleView, { headline: string; focus: string; action: string }> = {
   Executive: {
-    headline: 'Leadership brief mode',
-    focus: 'Prioritizes threat level, market signal, differentiation, and what needs a leadership decision.',
-    action: 'Start with the Command Center, review the top threat, then export or share the executive readout.'
+    headline: 'Leadership intelligence view',
+    focus: 'Prioritizes market signal, differentiation, strategic implications, and leadership ready next actions.',
+    action: 'Use the intelligence overview, executive report, and growth strategy surfaces to move from evidence to decision.'
   },
   'Growth Leader': {
-    headline: 'Growth strategy mode',
-    focus: 'Prioritizes county sequencing, staffing feasibility, referral access, launch readiness, and modeled upside.',
-    action: 'Start with the top recommended action, validate staffing, then open Growth Strategy for scenario and launch detail.'
+    headline: 'Growth strategy view',
+    focus: 'Prioritizes opportunity geography, capability alignment, partnership value, referral access, and modeled upside.',
+    action: 'Use Strategy and Growth Map to identify where Andwell can focus growth with evidence based positioning.'
   },
   'Sales Leader': {
-    headline: 'Coaching mode',
-    focus: 'Prioritizes rep talk tracks, service line opportunities, manager review items, and practical follow up.',
-    action: 'Use Battlecards and the Evidence Matrix to coach around safe positioning and specific referral situations.'
+    headline: 'Field guidance view',
+    focus: 'Prioritizes field talk tracks, service line opportunities, safe positioning, and practical coaching.',
+    action: 'Use Field Guidance and Advantage Matrix to coach safe, specific referral conversations.'
   },
   'Sales Rep': {
-    headline: 'Field mode',
-    focus: 'Prioritizes simple language, referral questions, objection responses, and what not to say.',
-    action: 'Use Ask the Hub before calls and lead with verified Andwell depth rather than broad competitor claims.'
+    headline: 'Field use view',
+    focus: 'Prioritizes simple language, referral questions, safe boundaries, and what not to say.',
+    action: 'Use AI Coach and Field Guidance before calls to stay source based and specific to referral needs.'
   },
   Board: {
-    headline: 'Board brief mode',
-    focus: 'Prioritizes recommendation clarity, ROI, launch risk, staffing constraints, and decision-ready narrative.',
-    action: 'Review the board narrative, open Board Packet, then resolve any governance or staffing risks before distribution.'
+    headline: 'Board intelligence view',
+    focus: 'Prioritizes recommendation clarity, market signal, growth rationale, risk boundaries, and decision ready narrative.',
+    action: 'Use Executive Report and Board Report to review the leadership package.'
   },
   Admin: {
-    headline: 'Governance mode',
-    focus: 'Prioritizes diagnostics, route health, review risk, data freshness, and evidence quality.',
-    action: 'Run System Check, review risky findings, and confirm the app is returning JSON after every deployment.'
+    headline: 'Operational diagnostics view',
+    focus: 'Prioritizes diagnostics, source processing, report services, storage service, and API health.',
+    action: 'Use System Health to verify operational checks without exposing diagnostics to the normal product experience.'
   }
 };
