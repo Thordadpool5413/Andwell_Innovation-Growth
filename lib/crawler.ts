@@ -235,6 +235,27 @@ function linksFromHtml(root: string, html: string) {
   return [...links].sort((a, b) => scoreUrl(b) - scoreUrl(a));
 }
 
+async function fetchPagesConcurrent(urls: string[]): Promise<CrawledPage[]> {
+  const concurrency = Math.max(1, Math.min(4, Number(process.env.CRAWL_PAGE_CONCURRENCY || 4)));
+  const pages: CrawledPage[] = [];
+  let nextIndex = 0;
+
+  async function processNext() {
+    while (nextIndex < urls.length) {
+      const url = urls[nextIndex++];
+      try {
+        const html = await fetchHtml(url);
+        if (!html) continue;
+        const page = pageFromHtml(url, html);
+        if (page.text.length > 160 && page.pageType !== 'Low value') pages.push(page);
+      } catch {}
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, urls.length) }, processNext));
+  return pages;
+}
+
 export async function crawlSite(startUrl: string, maxPages = 24): Promise<CrawledPage[]> {
   const root = normalize(startUrl);
   if (!root) throw new Error('Invalid URL. Use a complete public website address.');
@@ -243,19 +264,19 @@ export async function crawlSite(startUrl: string, maxPages = 24): Promise<Crawle
 
   const html = await fetchHtml(root);
   if (!html) throw new Error('The website did not return readable public HTML.');
-  const pages: CrawledPage[] = [pageFromHtml(root, html)];
+  const rootPage = pageFromHtml(root, html);
   const seen = new Set<string>([root]);
   const links = linksFromHtml(root, html).filter((url) => scoreUrl(url) >= -2).slice(0, maxPages * 3);
+
+  const toFetch: string[] = [];
   for (const url of links) {
-    if (pages.length >= maxPages) break;
+    if (toFetch.length >= maxPages - 1) break;
     if (seen.has(url)) continue;
     seen.add(url);
-    try {
-      const nextHtml = await fetchHtml(url);
-      if (!nextHtml) continue;
-      const page = pageFromHtml(url, nextHtml);
-      if (page.text.length > 160 && page.pageType !== 'Low value') pages.push(page);
-    } catch {}
+    toFetch.push(url);
   }
+
+  const additionalPages = await fetchPagesConcurrent(toFetch);
+  const pages = [rootPage, ...additionalPages];
   return pages.sort((a, b) => (b.intelligenceScore || 0) - (a.intelligenceScore || 0));
 }

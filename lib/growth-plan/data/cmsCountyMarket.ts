@@ -6,9 +6,17 @@ export interface CmsServiceData {
   ppu: number;
 }
 
+export interface CmsHhData {
+  prov: number;
+  users: number;
+  rate: number;
+  pay: number;
+  ppu: number;
+}
+
 export interface CmsCountyData {
   ffs: number;
-  hh: CmsServiceData;
+  hh: CmsHhData;
   hos: CmsServiceData;
 }
 

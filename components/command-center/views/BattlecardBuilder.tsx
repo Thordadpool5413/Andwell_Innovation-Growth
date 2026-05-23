@@ -5,7 +5,7 @@ import { Badge, Panel, SectionGroup } from '../Shared';
 import { buildBattlecard, getBuilderOptions } from '../../../lib/battlecard-builder';
 import type { IntelligenceReport, BattlecardTemplate } from '../../../lib/types';
 
-export function BattlecardBuilder({ currentReport }: { currentReport: IntelligenceReport | null }) {
+export function BattlecardBuilder({ currentReport, onRunScan }: { currentReport: IntelligenceReport | null; onRunScan?: () => void }) {
   const options = useMemo(() => getBuilderOptions(currentReport), [currentReport]);
   const [competitor, setCompetitor] = useState(options.competitors[0] || 'Competitor');
   const [county, setCounty] = useState(options.counties[0]);
@@ -36,7 +36,7 @@ export function BattlecardBuilder({ currentReport }: { currentReport: Intelligen
       </div>
     </section>
     {!hasCompetitors
-      ? <Panel title="No competitors loaded"><p className="text-body">Run or load a report first to populate competitor data for battlecard generation.</p></Panel>
+      ? <Panel title="No competitors loaded"><p className="text-body">Run a competitive scan to populate competitor data, then return here to generate dynamic sales battlecards by competitor, county, service line, and audience.</p>{onRunScan && <button className="btn primary" style={{ marginTop: '12px' }} onClick={onRunScan}>Run Competitive Scan →</button>}</Panel>
       : <><Panel title="Battlecard parameters">
         <div style={{ display: 'grid', gap: '12px' }}>
           <label className="text-small" style={{ fontWeight: 600 }}>Competitor
@@ -79,11 +79,11 @@ export function BattlecardBuilder({ currentReport }: { currentReport: Intelligen
               <Badge>{battlecard.county}</Badge>
             </div>
             <div style={{ display: 'grid', gap: '16px' }}>
-              <div><p className="text-small text-overline" style={{ margin: '0 0 4px', color: 'var(--color-text-tertiary)' }}>Opening</p><p className="text-body" style={{ margin: 0 }}>{battlecard.opening}</p></div>
-              <div><p className="text-small text-overline" style={{ margin: '0 0 4px', color: 'var(--color-text-tertiary)' }}>Discovery questions</p><ul style={{ margin: 0, paddingLeft: '16px' }}>{battlecard.discoveryQuestions.map((q, i) => <li key={i} className="text-small" style={{ color: 'var(--color-text-secondary)', marginBottom: '4px' }}>{q}</li>)}</ul></div>
-              <div><p className="text-small text-overline" style={{ margin: '0 0 4px', color: 'var(--color-text-tertiary)' }}>Positioning</p><p className="text-body" style={{ margin: 0 }}>{battlecard.positioning}</p></div>
-              <div><p className="text-small text-overline" style={{ margin: '0 0 4px', color: 'var(--color-text-tertiary)' }}>Objection response</p><p className="text-body" style={{ margin: 0 }}>{battlecard.objectionResponse}</p></div>
-              <div><p className="text-small text-overline" style={{ margin: '0 0 4px', color: 'var(--color-text-tertiary)' }}>Close</p><p className="text-body" style={{ margin: 0 }}>{battlecard.close}</p></div>
+              <div><p className="text-overline" style={{ margin: '0 0 4px', color: 'var(--color-text-tertiary)' }}>Opening</p><p className="text-body" style={{ margin: 0 }}>{battlecard.opening}</p></div>
+              <div><p className="text-overline" style={{ margin: '0 0 4px', color: 'var(--color-text-tertiary)' }}>Discovery questions</p><ul style={{ margin: 0, paddingLeft: '16px' }}>{battlecard.discoveryQuestions.map((q, i) => <li key={i} className="text-small" style={{ color: 'var(--color-text-secondary)', marginBottom: '4px' }}>{q}</li>)}</ul></div>
+              <div><p className="text-overline" style={{ margin: '0 0 4px', color: 'var(--color-text-tertiary)' }}>Positioning</p><p className="text-body" style={{ margin: 0 }}>{battlecard.positioning}</p></div>
+              <div><p className="text-overline" style={{ margin: '0 0 4px', color: 'var(--color-text-tertiary)' }}>Objection response</p><p className="text-body" style={{ margin: 0 }}>{battlecard.objectionResponse}</p></div>
+              <div><p className="text-overline" style={{ margin: '0 0 4px', color: 'var(--color-text-tertiary)' }}>Close</p><p className="text-body" style={{ margin: 0 }}>{battlecard.close}</p></div>
             </div>
           </div>
         </SectionGroup>

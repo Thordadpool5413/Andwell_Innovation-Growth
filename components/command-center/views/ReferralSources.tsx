@@ -42,21 +42,21 @@ export function ReferralSources({ currentReport }: { currentReport: Intelligence
       </SectionGroup>
       <SectionGroup title="Pain points">
         <div className="grid cols2">{profile.painPoints.map((pp, i) =>
-          <div key={i} className="hover-card" style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
+          <div key={i} className="list-card hover-card">
             <p className="text-small" style={{ margin: 0, color: 'var(--color-text-primary)' }}>{pp}</p>
           </div>
         )}</div>
       </SectionGroup>
       <SectionGroup title="Discovery questions">
-        <div style={{ display: 'grid', gap: '8px' }}>{profile.discoveryQuestions.map((q, i) =>
-          <div key={i} className="hover-card" style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
+        <div className="list-grid">{profile.discoveryQuestions.map((q, i) =>
+          <div key={i} className="list-card hover-card">
             <p className="text-small" style={{ margin: 0, color: 'var(--color-text-primary)' }}>{i + 1}. {q}</p>
           </div>
         )}</div>
       </SectionGroup>
       <SectionGroup title="Relevant service lines">
         <div className="grid cols2">{profile.serviceLines.map((sl, i) =>
-          <div key={i} className="hover-card" style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
+          <div key={i} className="list-card hover-card">
             <div className="row spread" style={{ marginBottom: '4px' }}>
               <span className="text-small" style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{sl.name}</span>
               <Badge tone={sl.relevance === 'High' ? 'green' : sl.relevance === 'Medium' ? 'amber' : 'blue'}>{sl.relevance}</Badge>

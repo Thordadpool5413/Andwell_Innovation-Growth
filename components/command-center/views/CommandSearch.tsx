@@ -1,15 +1,18 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Badge } from '../Shared';
 import { globalSearch } from '../../../lib/command-search';
 import type { IntelligenceReport } from '../../../lib/types';
 import type { View } from '../../../lib/command-center/types';
+import type { GrowthRow } from '../../../lib/growth-plan';
 
-export function CommandSearch({ currentReport, onNavigate }: { currentReport: IntelligenceReport | null; onNavigate: (view: View) => void }) {
+export function CommandSearch({ currentReport, growthRows, onNavigate }: { currentReport: IntelligenceReport | null; growthRows?: GrowthRow[]; onNavigate: (view: View) => void }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -29,21 +32,25 @@ export function CommandSearch({ currentReport, onNavigate }: { currentReport: In
     }
   }, [open]);
 
-  const results = useMemo(() => globalSearch(query, currentReport), [query, currentReport]);
+  const results = useMemo(() => globalSearch(query, currentReport, growthRows), [query, currentReport, growthRows]);
 
-  function handleNavigate(view: View) {
+  useEffect(() => { setActiveIndex(-1); }, [results]);
+
+  const handleNavigate = useCallback((view: View) => {
     setOpen(false);
     setQuery('');
+    setActiveIndex(-1);
     onNavigate(view);
-  }
+  }, [onNavigate]);
 
   const viewMap: Record<string, View> = {
     competitor: 'battlecards',
     service: 'catalog',
     finding: 'matrix',
     county: 'launch',
+    growth: 'heatmap',
     claim: 'governance',
-    decision: 'dashboard',
+    decision: 'decisions',
     referral: 'referrals'
   };
 
@@ -70,12 +77,24 @@ export function CommandSearch({ currentReport, onNavigate }: { currentReport: In
             ref={inputRef}
             className="input"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => { setQuery(e.target.value); setActiveIndex(-1); }}
             placeholder="Search competitors, services, counties, claims, findings..."
             style={{ width: '100%', fontSize: '16px', padding: '12px' }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setActiveIndex(i => Math.min(i + 1, results.length - 1));
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setActiveIndex(i => Math.max(i - 1, -1));
+              } else if (e.key === 'Enter' && activeIndex >= 0 && results[activeIndex]) {
+                e.preventDefault();
+                handleNavigate((viewMap[results[activeIndex].type] || 'dashboard') as View);
+              }
+            }}
           />
         </div>
-        <div style={{ overflowY: 'auto', flex: 1, padding: '8px' }}>
+        <div ref={listRef} style={{ overflowY: 'auto', flex: 1, padding: '8px' }}>
           {query.length < 2
             ? <p className="text-small" style={{ padding: '16px', textAlign: 'center', color: 'var(--color-text-tertiary)' }}>Type at least 2 characters to search across competitors, services, counties, claims, and findings.</p>
             : results.length === 0
@@ -83,10 +102,11 @@ export function CommandSearch({ currentReport, onNavigate }: { currentReport: In
               : <div style={{ display: 'grid', gap: '4px' }}>{results.map((r, i) =>
                 <div key={i} className="hover-card" style={{
                   padding: '12px', borderRadius: '8px', cursor: 'pointer',
-                  border: '1px solid transparent',
+                  border: `1px solid ${i === activeIndex ? 'var(--color-accent)' : 'transparent'}`,
+                  background: i === activeIndex ? 'var(--color-bg-tertiary)' : undefined,
                   display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
                   gap: '8px'
-                }} onClick={() => handleNavigate(viewMap[r.type] || 'dashboard')}>
+                }} onClick={() => handleNavigate((viewMap[r.type] || 'dashboard') as View)}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="row" style={{ gap: '6px', marginBottom: '4px' }}>
                       <Badge>{r.type}</Badge>
@@ -100,7 +120,7 @@ export function CommandSearch({ currentReport, onNavigate }: { currentReport: In
           }
         </div>
         <div style={{ padding: '8px 16px', borderTop: '1px solid var(--color-border)', fontSize: '11px', color: 'var(--color-text-tertiary)' }}>
-          <span>Ctrl+K to toggle · Esc to close · Click result to navigate</span>
+          <span>Ctrl+K to toggle · Esc to close · ↑↓ to navigate · Enter to open</span>
         </div>
       </div>
     </div>

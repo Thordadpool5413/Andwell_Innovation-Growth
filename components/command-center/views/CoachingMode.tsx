@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Badge, Panel, SectionGroup } from '../Shared';
 import { generateCoachingPlan } from '../../../lib/strategy-brief';
 import type { IntelligenceReport } from '../../../lib/types';
 
-export function CoachingMode({ currentReport }: { currentReport: IntelligenceReport | null }) {
+export function CoachingMode({ currentReport, onRunScan }: { currentReport: IntelligenceReport | null; onRunScan?: () => void }) {
   const competitors = useMemo(() => {
     if (!currentReport) return [];
     return currentReport.analyses.map((a) => a.name);
@@ -13,13 +13,19 @@ export function CoachingMode({ currentReport }: { currentReport: IntelligenceRep
 
   const [selectedCompetitor, setSelectedCompetitor] = useState(competitors[0] || '');
 
+  useEffect(() => {
+    if (competitors.length > 0 && !selectedCompetitor) {
+      setSelectedCompetitor(competitors[0]);
+    }
+  }, [competitors, selectedCompetitor]);
+
   const plan = useMemo(() => {
     if (!selectedCompetitor) return null;
     return generateCoachingPlan(selectedCompetitor, currentReport);
   }, [selectedCompetitor, currentReport]);
 
   if (!currentReport || competitors.length === 0) {
-    return <Panel title="No report loaded"><p className="text-body">Run or load a report to generate coaching plans for each competitor.</p></Panel>;
+    return <Panel title="No report loaded"><p className="text-body">Run a competitive scan to generate pre-call coaching plans, discovery questions, competitor warnings, and post-call templates for each competitor.</p>{onRunScan && <button className="btn primary" style={{ marginTop: '12px' }} onClick={onRunScan}>Run Competitive Scan →</button>}</Panel>;
   }
 
   return <>
@@ -51,16 +57,16 @@ export function CoachingMode({ currentReport }: { currentReport: IntelligenceRep
           </div>
         </SectionGroup>
         <SectionGroup title="Competitor Warnings">
-          <div style={{ display: 'grid', gap: '6px' }}>{plan.competitorWarnings.map((w, i) =>
-            <div key={i} className="hover-card" style={{ padding: '10px', borderRadius: 'var(--radius)', border: '1px solid var(--color-warning)', background: 'rgba(245,158,11,0.05)' }}>
+          <div className="list-grid">{plan.competitorWarnings.map((w, i) =>
+            <div key={i} className="status-card status-card--warning">
               <p className="text-small" style={{ margin: 0, color: 'var(--color-text-primary)' }}>{w}</p>
             </div>
           )}</div>
         </SectionGroup>
       </div>
       <SectionGroup title="Discovery Questions">
-        <div style={{ display: 'grid', gap: '8px' }}>{plan.discoveryQuestions.map((q, i) =>
-          <div key={i} className="hover-card" style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
+        <div className="list-grid">{plan.discoveryQuestions.map((q, i) =>
+          <div key={i} className="list-card hover-card">
             <p className="text-small" style={{ margin: 0, color: 'var(--color-text-primary)' }}>{i + 1}. {q}</p>
           </div>
         )}</div>

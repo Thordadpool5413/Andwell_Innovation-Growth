@@ -1,132 +1,136 @@
 'use client';
 
 import React from 'react';
-import type { RoleView } from '../../../lib/command-center/types';
+import type { View } from '../../../lib/command-center/types';
+import type { CompetitorInput, IntelligenceReport } from '../../../lib/types';
 
-const systemNodes = [
-  { label: 'High-Acuity Care', className: 'nodeIntake' },
-  { label: 'Partnerships', className: 'nodeReports' },
-  { label: 'Market Intel', className: 'nodeMarket' },
-  { label: 'Growth', className: 'nodeGrowth' },
-  { label: 'Technology', className: 'nodeField' },
-  { label: 'Board', className: 'nodeBoard' },
-  { label: 'Value-Based', className: 'nodeOps' }
+type RoleView = string;
+
+const innovationStatement = 'Innovation and Growth is where Andwell Health Partners turns vision into infrastructure. We are building the future of high acuity community care, creating post acute partnerships that make us essential to Maine, connecting complex services through technology, and developing the value based contracting model that allows us to take risk, deliver better outcomes, save payers money, and grow because we are built for the complexity others cannot manage.';
+
+const intelligenceCards: { title: string; desc: string; view: View; eyebrow: string }[] = [
+  { title: 'Advantage Matrix', eyebrow: 'Capability Comparison', desc: 'Compare Andwell capabilities against public competitor evidence with safe positioning language.', view: 'matrix' },
+  { title: 'Growth Map', eyebrow: 'Market Opportunity', desc: 'Understand where growth potential, saturation, partnership value, and field focus intersect.', view: 'heatmap' },
+  { title: 'Strategy', eyebrow: 'Growth Plays', desc: 'Translate market evidence into referral source angles, payer value positioning, and next moves.', view: 'growth' },
+  { title: 'Executive Report', eyebrow: 'Leadership Output', desc: 'Turn source based intelligence into a polished leadership ready report package.', view: 'board-packet' },
 ];
 
-const strategicPillars = [
-  {
-    title: 'High-acuity community care',
-    body: 'Build care models capable of supporting complex patients in the community instead of defaulting to institutional settings.'
-  },
-  {
-    title: 'Post-acute partnerships',
-    body: 'Create partnerships across Maine that make Andwell essential to hospitals, payers, providers, referral sources, and families.'
-  },
-  {
-    title: 'Connected complex services',
-    body: 'Use technology and operating discipline to connect services that are difficult to coordinate manually.'
-  },
-  {
-    title: 'Value-based contracting',
-    body: 'Develop the model to take risk, improve outcomes, save payers money, and grow from the complexity Andwell is built to manage.'
-  }
+const focusAreas = [
+  { title: 'Capability intelligence', body: 'The system organizes Andwell service strengths and compares them against public competitor evidence.' },
+  { title: 'Market intelligence', body: 'The Growth Map connects capability differences to geography, saturation, and field focus priorities.' },
+  { title: 'Field execution', body: 'Field Guidance turns intelligence into safe talk tracks, questions, and what not to say.' },
+  { title: 'Leadership output', body: 'The Executive Report packages market signals, strategy, payer value, and recommended actions.' },
 ];
 
-const commandRoles = [
-  {
-    title: 'Market Intelligence',
-    body: 'Understand where Andwell should compete, which markets are underdeveloped, and where external signals support action.'
-  },
-  {
-    title: 'Growth Strategy',
-    body: 'Model county, service-line, revenue, referral, staffing, and launch-readiness assumptions before committing resources.'
-  },
-  {
-    title: 'Field Enablement',
-    body: 'Translate strategy into governed referral language, battlecards, coaching, and safe positioning for the field.'
-  },
-  {
-    title: 'Board-Ready Decisions',
-    body: 'Convert intelligence and growth logic into leadership-ready recommendations, risks, and decision framing.'
-  }
-];
+export function Home({ setView }: {
+  roleView?: RoleView;
+  setView?: (view: View) => void;
+  currentReport?: IntelligenceReport | null;
+  competitors?: CompetitorInput[];
+  busy?: boolean;
+  onRefresh?: () => void;
+}) {
+  return (
+    <div style={{ maxWidth: '1180px', padding: '36px 32px 88px' }}>
+      <section style={{
+        background: 'var(--color-bg-primary)',
+        border: '1px solid var(--color-border)',
+        borderRadius: '28px',
+        padding: '44px',
+        marginBottom: '22px',
+        boxShadow: 'var(--color-shadow)'
+      }}>
+        <p style={{ margin: '0 0 14px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--color-info)' }}>
+          Andwell Innovation and Growth
+        </p>
+        <h1 style={{ margin: 0, maxWidth: '900px', fontSize: 'clamp(36px, 5.2vw, 64px)', letterSpacing: '-0.065em', lineHeight: 0.98 }}>
+          Intelligence for capability, market, field, and leadership decisions.
+        </h1>
+        <p style={{ margin: '22px 0 0', maxWidth: '880px', fontSize: '16px', color: 'var(--color-text-secondary)', lineHeight: 1.78 }}>
+          {innovationStatement}
+        </p>
+      </section>
 
-const trustPillars = [
-  { title: 'Evidence-backed', body: 'Recommendations are grounded in report evidence, market data, growth assumptions, and Andwell service logic.' },
-  { title: 'Governed language', body: 'Field-facing language is separated from internal planning assumptions and routed through claim governance.' },
-  { title: 'Risk-aware', body: 'Staffing, launch readiness, review items, and competitive pressure are surfaced before action is taken.' },
-  { title: 'Built for complexity', body: 'The system supports Andwell because the strategy depends on managing what fragmented providers cannot.' }
-];
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(235px, 1fr))', gap: '14px', marginBottom: '22px' }}>
+        {intelligenceCards.map((card) => (
+          <button
+            key={card.view}
+            onClick={() => setView?.(card.view)}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              minHeight: '210px',
+              width: '100%',
+              padding: '24px',
+              textAlign: 'left',
+              cursor: 'pointer',
+              background: 'var(--color-bg-primary)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '24px',
+              transition: 'border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-info)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--color-shadow)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+          >
+            <span style={{ marginBottom: '18px', fontSize: '10px', fontWeight: 900, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>{card.eyebrow}</span>
+            <span style={{ display: 'block' }}>
+              <strong style={{ display: 'block', fontSize: '22px', letterSpacing: '-0.04em', color: 'var(--color-text-primary)' }}>{card.title}</strong>
+              <span style={{ display: 'block', marginTop: '12px', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.65 }}>{card.desc}</span>
+            </span>
+          </button>
+        ))}
+      </section>
 
-export function Home({ roleView: _roleView }: { roleView?: RoleView }) {
-  return <article className="homeExperience missionHome">
-    <section className="homeHeroStage missionHero">
-      <div className="homeHeroCopy missionCopy">
-        <p className="homeOverline">Andwell Innovation &amp; Growth</p>
-        <h1>Innovation and Growth is where Andwell Health Partners <strong>turns vision into infrastructure.</strong></h1>
-        <p className="homeHeroLead">We are building the <strong>future of high acuity community care</strong>, creating post acute partnerships that make us essential to Maine, connecting complex services through technology, and developing the <strong>value based contracting model</strong> that allows us to take risk, deliver better outcomes, save payers money, and grow because we are <strong>built for the complexity others cannot manage.</strong></p>
-      </div>
-      <div className="homeSystemMap missionSystemMap" aria-label="Andwell Innovation Command system map">
-        <div className="homeMapGrid" />
-        <div className="homeOrbit orbitOuter" />
-        <div className="homeOrbit orbitInner" />
-        <div className="homeOrbit orbitMiddle" />
-        <div className="homeConnector connectTop" />
-        <div className="homeConnector connectUpperLeft" />
-        <div className="homeConnector connectUpperRight" />
-        <div className="homeConnector connectLeft" />
-        <div className="homeConnector connectRight" />
-        <div className="homeConnector connectLowerLeft" />
-        <div className="homeConnector connectLowerRight" />
-        <div className="homeCore"><strong>AIC</strong></div>
-        {systemNodes.map((node) => <div key={node.label} className={`homeMapNode ${node.className}`}>{node.label}</div>)}
-      </div>
-    </section>
+      <section style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 0.95fr) minmax(320px, 1.05fr)',
+        gap: '18px',
+        marginBottom: '22px'
+      }} className="homeHeroGrid">
+        <div style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '28px' }}>
+          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>
+            Leadership view
+          </p>
+          <h2 style={{ margin: 0, fontSize: '28px', letterSpacing: '-0.05em', lineHeight: 1.08 }}>
+            A clear view of market position, growth signals, and strategic next actions.
+          </h2>
+          <p style={{ margin: '16px 0 0', fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.75 }}>
+            Leadership can move from public market evidence to strategic implications without reading through raw findings, review queues, or operational diagnostics.
+          </p>
+        </div>
+        <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '28px' }}>
+          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>
+            Current intelligence focus
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px' }}>
+            {focusAreas.map((item) => (
+              <div key={item.title} style={{ border: '1px solid var(--color-border)', borderRadius: '18px', padding: '16px', background: 'var(--color-bg-secondary)' }}>
+                <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 900, color: 'var(--color-text-primary)' }}>{item.title}</p>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>{item.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-    <section className="missionStatementBand">
-      <p className="homeOverline">Strategic Thesis</p>
-      <h2>Andwell grows by building the infrastructure required to manage complex care in the community.</h2>
-      <p>The Command Center exists to turn that strategy into operating intelligence: where to grow, how to partner, what capacity is required, what language is safe, and what decisions leaders need to make.</p>
-    </section>
-
-    <section className="missionPillars">
-      <div className="homeSectionHead compact">
-        <p className="homeOverline">Strategic Pillars</p>
-        <h2>The strategic pillars behind Innovation and Growth.</h2>
-      </div>
-      <div className="missionPillarGrid">
-        {strategicPillars.map((pillar, index) => <div key={pillar.title}>
-          <span>{String(index + 1).padStart(2, '0')}</span>
-          <h3>{pillar.title}</h3>
-          <p>{pillar.body}</p>
-        </div>)}
-      </div>
-    </section>
-
-    <section className="missionCommandRole">
-      <div className="homeSectionHead compact">
-        <p className="homeOverline">Role of the Command Center</p>
-        <h2>How the Command Center operationalizes the strategy.</h2>
-      </div>
-      <div className="missionRoleRows">
-        {commandRoles.map((role) => <div key={role.title}>
-          <h3>{role.title}</h3>
-          <p>{role.body}</p>
-        </div>)}
-      </div>
-    </section>
-
-    <section className="homeTrustPillars missionTrust">
-      <div className="homeSectionHead compact">
-        <p className="homeOverline">Trust Model</p>
-        <h2>Strategic ambition still needs evidence, governance, and operational realism.</h2>
-      </div>
-      <div className="homeTrustGrid">
-        {trustPillars.map((pillar) => <div key={pillar.title}>
-          <h3>{pillar.title}</h3>
-          <p>{pillar.body}</p>
-        </div>)}
-      </div>
-    </section>
-  </article>;
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+        <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '26px' }}>
+          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Field use</p>
+          <h3 style={{ margin: 0, fontSize: '22px', letterSpacing: '-0.04em' }}>Safe language for real referral conversations.</h3>
+          <p style={{ margin: '14px 0 0', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>Field teams get practical language, questions to ask, and boundaries that prevent unsupported competitor claims.</p>
+        </div>
+        <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '26px' }}>
+          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Market opportunity</p>
+          <h3 style={{ margin: 0, fontSize: '22px', letterSpacing: '-0.04em' }}>Where capability advantage meets geography.</h3>
+          <p style={{ margin: '14px 0 0', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>The Growth Map turns source evidence into area based opportunity, saturation, partnership, and payer value signals.</p>
+        </div>
+        <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '26px' }}>
+          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Evidence discipline</p>
+          <h3 style={{ margin: 0, fontSize: '22px', letterSpacing: '-0.04em' }}>Useful intelligence without overclaiming.</h3>
+          <p style={{ margin: '14px 0 0', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>Outputs stay tied to public source evidence, confidence, safe positioning, and what not to say.</p>
+        </div>
+      </section>
+    </div>
+  );
 }

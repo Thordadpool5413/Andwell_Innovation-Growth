@@ -3,7 +3,7 @@ export interface Scenario {
   hhCapture: number[];
   woundCapture: number[];
   therapyCapture: number[];
-  marginOverrides: Record<string, never>;
+  marginOverrides?: Record<string, number>;
 }
 
 export interface StaffingRatio {
@@ -24,16 +24,27 @@ export interface SensitivityVariable {
 export interface GrowthRow {
   county: string;
   service: string;
+  age65: number;
+  action: string;
+  launchGroup: string;
+  current: string;
+  missing: string;
+  reason: string;
+  accounts: string[];
+  meta: { color: string; role: string; unit: string; reimbursement: number; margin: number; conversion: number; demandRate: number };
+  market?: { ffs: number; hh: { prov: number; users: number; rate: number; pay: number; ppu: number }; hos: { prov: number; users: number; ppu: number } };
+  basis: string;
+  demandPool: number;
+  reimbursement: number;
   starts: number[];
   referrals: number[];
   revenue: number[];
-  launchGroup: string;
-  meta: { unit: string; margin: number };
-  basis: string;
-  reason: string;
-  current: string;
-  missing: string;
-  accounts: string[];
+  contribution?: number[];
+  totalStarts: number;
+  totalReferrals: number;
+  totalRevenue: number;
+  totalContribution: number;
+  opportunityScore?: number;
 }
 
 export interface GrowthTotals {

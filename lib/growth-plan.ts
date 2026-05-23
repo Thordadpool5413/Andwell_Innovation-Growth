@@ -68,6 +68,7 @@ export type GrowthTotals = {
   contribution: [number, number, number];
   totalRevenue: number;
   totalContribution: number;
+  totalReferrals: number;
 };
 
 export const growthDefaultScenario: GrowthScenario = {
@@ -185,7 +186,8 @@ export function summarizeGrowth(rows: GrowthRow[]): GrowthTotals {
     revenue,
     contribution,
     totalRevenue: revenue.reduce((a, b) => a + b, 0),
-    totalContribution: contribution.reduce((a, b) => a + b, 0)
+    totalContribution: contribution.reduce((a, b) => a + b, 0),
+    totalReferrals: referrals.reduce((a, b) => a + b, 0)
   };
 }
 

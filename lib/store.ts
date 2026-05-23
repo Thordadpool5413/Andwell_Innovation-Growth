@@ -163,29 +163,25 @@ export async function writeStore(store: HubStore) {
   if (isSupabaseConfigured() && !supabaseUnavailable) {
     try {
       const supabase = getSupabaseClient();
-      const [competitorsDelete, reportsDelete, reviewsDelete, catalogDelete] = await Promise.all([
-        supabase.from('cih_competitors').delete().neq('url', '__cih_never__'),
-        supabase.from('cih_reports').delete().neq('id', '__cih_never__'),
-        supabase.from('cih_reviews').delete().neq('finding_id', '__cih_never__'),
-        supabase.from('cih_catalog_overrides').delete().neq('service_line', '__cih_never__')
+      const [competitorsResult, reportsResult, reviewsResult, catalogResult] = await Promise.all([
+        store.competitors.length
+          ? supabase.from('cih_competitors').upsert(store.competitors.filter((c) => c.url).map(competitorRow), { onConflict: 'url' })
+          : Promise.resolve({ error: null }),
+        store.reports.length
+          ? supabase.from('cih_reports').upsert(store.reports.map(reportRow), { onConflict: 'id' })
+          : Promise.resolve({ error: null }),
+        store.reviews.length
+          ? supabase.from('cih_reviews').upsert(store.reviews.map(reviewRow), { onConflict: 'finding_id' })
+          : Promise.resolve({ error: null }),
+        store.catalogOverrides.length
+          ? supabase.from('cih_catalog_overrides').upsert(store.catalogOverrides.map(catalogOverrideRow), { onConflict: 'service_line' })
+          : Promise.resolve({ error: null })
       ]);
 
-      assertSupabase('delete competitors', competitorsDelete.error);
-      assertSupabase('delete reports', reportsDelete.error);
-      assertSupabase('delete reviews', reviewsDelete.error);
-      assertSupabase('delete catalog overrides', catalogDelete.error);
-
-      const [competitorsInsert, reportsInsert, reviewsInsert, catalogInsert] = await Promise.all([
-        store.competitors.length ? supabase.from('cih_competitors').insert(store.competitors.filter((competitor) => competitor.url).map(competitorRow)) : Promise.resolve({ error: null }),
-        store.reports.length ? supabase.from('cih_reports').insert(store.reports.map(reportRow)) : Promise.resolve({ error: null }),
-        store.reviews.length ? supabase.from('cih_reviews').insert(store.reviews.map(reviewRow)) : Promise.resolve({ error: null }),
-        store.catalogOverrides.length ? supabase.from('cih_catalog_overrides').insert(store.catalogOverrides.map(catalogOverrideRow)) : Promise.resolve({ error: null })
-      ]);
-
-      assertSupabase('insert competitors', competitorsInsert.error);
-      assertSupabase('insert reports', reportsInsert.error);
-      assertSupabase('insert reviews', reviewsInsert.error);
-      assertSupabase('insert catalog overrides', catalogInsert.error);
+      assertSupabase('upsert competitors', competitorsResult.error);
+      assertSupabase('upsert reports', reportsResult.error);
+      assertSupabase('upsert reviews', reviewsResult.error);
+      assertSupabase('upsert catalog overrides', catalogResult.error);
 
       return { ...store, updatedAt: new Date().toISOString() };
     } catch (error) {
