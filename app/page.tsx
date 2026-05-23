@@ -512,9 +512,11 @@ function PageContent() {
       <nav className="nav proNav">{navGroups.map((group) => <div key={group.label} className="side-group"><div className="side-group-label">{group.label}</div>{group.keys.map((key) => { const item = nav.find((n) => n.key === key); if (!item) return null; const Icon = navIcons[item.key]; const badge = key === 'decisions' && urgentDecisionCount > 0 ? urgentDecisionCount : null; return <button key={item.key} className={view === item.key ? 'active' : ''} onClick={() => setView(item.key)}><Icon className="w-4 h-4 shrink-0" /><span><strong>{item.label}</strong><small>{item.note}</small></span>{badge !== null && <span className="nav-badge">{badge}</span>}</button>; })}</div>)}</nav>
     </aside>
     <main className={`main proMain ${view === 'home' ? 'homeMain' : ''}`}>
-      {view !== 'home' && <header className="head proHead"><div><small>{nav.find((item) => item.key === view)?.note || ''}</small><h2>{nav.find((item) => item.key === view)?.label || 'Andwell Innovation'}</h2></div><div className="row" style={{ gap: '8px', alignItems: 'center' }}>{currentReport ? <span className="badge green">Report loaded</span> : <span className="badge amber">No report</span>}{busy && <span className="badge amber">{phase}</span>}<button className="btn btn-sm no-print" onClick={() => setView('ask')}>Ask AI</button><CommandSearch currentReport={currentReport} growthRows={growthRows} onNavigate={setView} /></div></header>}
-      <div className="content proContent">
+      <div className="sticky-top-group">
+        {view !== 'home' && <header className="head proHead"><div><small>{nav.find((item) => item.key === view)?.note || ''}</small><h2>{nav.find((item) => item.key === view)?.label || 'Andwell Innovation'}</h2></div><div className="row" style={{ gap: '8px', alignItems: 'center' }}>{currentReport ? <span className="badge green">Report loaded</span> : <span className="badge amber">No report</span>}{busy && <span className="badge amber">{phase}</span>}<button className="btn btn-sm no-print" onClick={() => setView('ask')}>Ask AI</button><CommandSearch currentReport={currentReport} growthRows={growthRows} onNavigate={setView} /></div></header>}
         <WorkspaceTools view={view} setView={setView} />
+      </div>
+      <div className="content proContent">
         <ErrorBoundary label={view} key={view}>
         <div className="view-enter">
         {view === 'home' && <Home roleView={roleView} setView={setView} currentReport={currentReport} competitors={competitors} busy={busy} onRefresh={refreshServerState} />}

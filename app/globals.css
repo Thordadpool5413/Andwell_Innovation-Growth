@@ -761,7 +761,15 @@ a {
 .main {
   flex: 1;
   min-width: 0;
+  height: 100vh;
+  overflow-y: auto;
   overflow-x: hidden;
+}
+.sticky-top-group {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-bg-primary);
 }
 .main.homeMain {
   /* home view has its own internal padding */
@@ -774,9 +782,6 @@ a {
   padding: 14px 28px;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg-primary);
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 .head small {
   text-transform: uppercase;
@@ -2238,6 +2243,18 @@ td {
   -webkit-backdrop-filter: blur(2px);
 }
 
+/* Toast positioned to the right of the sidebar */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: calc(252px + 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
 @media (max-width: 1200px) {
   .proShell {
     flex-direction: column;
@@ -2251,6 +2268,16 @@ td {
     border-radius: 0;
     border: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .main {
+    height: auto;
+    overflow-y: visible;
+  }
+  .sticky-top-group {
+    position: relative;
+  }
+  .toast-container {
+    left: 16px;
   }
   .nav {
     grid-template-columns: repeat(2, minmax(0, 1fr));

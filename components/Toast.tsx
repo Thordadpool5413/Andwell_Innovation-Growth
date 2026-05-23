@@ -71,11 +71,7 @@ function Toast({ item, onDismiss }: { item: ToastItem; onDismiss: () => void }) 
 function ToastContainer({ toasts, onDismiss }: { toasts: ToastItem[]; onDismiss: (id: string) => void }) {
   if (!toasts.length) return null;
   return (
-    <div style={{
-      position: 'fixed', bottom: '24px', left: '24px',
-      display: 'flex', flexDirection: 'column', gap: '8px',
-      zIndex: 9999, pointerEvents: 'none',
-    }}>
+    <div className="toast-container">
       {toasts.map((t) => (
         <div key={t.id} style={{ pointerEvents: 'all' }}>
           <Toast item={t} onDismiss={() => onDismiss(t.id)} />
