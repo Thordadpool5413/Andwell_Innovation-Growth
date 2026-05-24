@@ -37,8 +37,13 @@ function cleanEnvValue(value?: string) {
   return value?.trim().replace(/^['"]|['"]$/g, '');
 }
 
-const dataDir = cleanEnvValue(process.env.CIH_DATA_DIR) || path.join(process.cwd(), '.data');
-const storeFile = cleanEnvValue(process.env.CIH_STORE_FILE) || path.join(dataDir, 'competitive-intelligence-hub.json');
+const preferredDataDir = cleanEnvValue(process.env.CIH_DATA_DIR) || path.join(process.cwd(), '.data');
+const preferredStoreFile = cleanEnvValue(process.env.CIH_STORE_FILE) || path.join(preferredDataDir, 'competitive-intelligence-hub.json');
+const fallbackDataDir = path.join('/tmp', '.data');
+const fallbackStoreFile = path.join(fallbackDataDir, 'competitive-intelligence-hub.json');
+
+let resolvedDataDir: string | null = null;
+let resolvedStoreFile: string | null = null;
 let mongoUnavailable = false;
 let supabaseUnavailable = false;
 
@@ -51,8 +56,19 @@ const emptyStore = (): HubStore => ({
   catalogOverrides: []
 });
 
-async function ensureDataDir() {
-  await mkdir(dataDir, { recursive: true });
+async function ensureDataDir(): Promise<{ dataDir: string; storeFile: string }> {
+  if (resolvedDataDir && resolvedStoreFile) return { dataDir: resolvedDataDir, storeFile: resolvedStoreFile };
+  try {
+    await mkdir(preferredDataDir, { recursive: true });
+    resolvedDataDir = preferredDataDir;
+    resolvedStoreFile = preferredStoreFile;
+  } catch {
+    await mkdir(fallbackDataDir, { recursive: true });
+    resolvedDataDir = fallbackDataDir;
+    resolvedStoreFile = fallbackStoreFile;
+    console.warn(`Data dir ${preferredDataDir} not writable, using ${fallbackDataDir}`);
+  }
+  return { dataDir: resolvedDataDir, storeFile: resolvedStoreFile };
 }
 
 async function collection<T extends object>(name: string): Promise<Collection<T>> {
@@ -107,7 +123,7 @@ async function supabaseReadStore(): Promise<HubStore> {
 }
 
 async function jsonReadStore(): Promise<HubStore> {
-  await ensureDataDir();
+  const { storeFile } = await ensureDataDir();
   try {
     const raw = await readFile(storeFile, 'utf8');
     const parsed = JSON.parse(raw) as Partial<HubStore>;
@@ -127,7 +143,7 @@ async function jsonReadStore(): Promise<HubStore> {
 }
 
 async function jsonWriteStore(store: HubStore) {
-  await ensureDataDir();
+  const { storeFile } = await ensureDataDir();
   const next = { ...store, updatedAt: new Date().toISOString() };
   await writeFile(storeFile, JSON.stringify(next, null, 2), 'utf8');
   return next;
