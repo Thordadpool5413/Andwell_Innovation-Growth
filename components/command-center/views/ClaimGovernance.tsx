@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { Badge, Panel, SectionGroup, ExpandableSection } from '../Shared';
-import { categorizeAllClaims, filterApprovedClaims, claimStatusTone } from '../../../lib/claim-governance';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { Badge, Panel, SectionGroup } from '../Shared';
+import { categorizeAllClaims, claimStatusTone } from '../../../lib/claim-governance';
+import { appendAuditEvent } from '../../../lib/audit-log';
 import type { IntelligenceReport, ClaimStatus } from '../../../lib/types';
 
 const statusFilters: ClaimStatus[] = ['Safe', 'Needs review', 'Do not use', 'Internal only', 'High risk'];
@@ -12,28 +13,82 @@ function claimId(claim: string) {
   return claim.trim().slice(0, 100);
 }
 
+async function fetchApprovals(): Promise<string[]> {
+  try {
+    const res = await fetch('/api/claim-approvals');
+    if (!res.ok) return [];
+    const data = await res.json() as { approvals: string[] };
+    return data.approvals ?? [];
+  } catch {
+    return [];
+  }
+}
+
+async function persistApprovals(approvals: string[]) {
+  try {
+    await fetch('/api/claim-approvals', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ approvals }),
+    });
+  } catch {}
+}
+
 export function ClaimGovernance({ currentReport, onRunScan }: { currentReport: IntelligenceReport | null; onRunScan?: () => void }) {
   const [statusFilter, setStatusFilter] = useState<ClaimStatus | 'all'>('all');
   const [showApprovedOnly, setShowApprovedOnly] = useState(false);
   const [approvals, setApprovals] = useState<Set<string>>(new Set());
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'local'>('idle');
+  const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Load approvals: try API first, fall back to localStorage
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(APPROVAL_KEY);
-      if (stored) setApprovals(new Set(JSON.parse(stored) as string[]));
-    } catch {}
+    setSyncStatus('syncing');
+    fetchApprovals().then((serverApprovals) => {
+      if (serverApprovals.length > 0) {
+        setApprovals(new Set(serverApprovals));
+        try { localStorage.setItem(APPROVAL_KEY, JSON.stringify(serverApprovals)); } catch {}
+        setSyncStatus('synced');
+      } else {
+        try {
+          const stored = localStorage.getItem(APPROVAL_KEY);
+          if (stored) setApprovals(new Set(JSON.parse(stored) as string[]));
+        } catch {}
+        setSyncStatus('local');
+      }
+    });
   }, []);
 
-  const toggleApproval = useCallback((claim: string) => {
+  // Debounced server persist whenever approvals change (after initial load)
+  const approvalsRef = useRef(approvals);
+  useEffect(() => { approvalsRef.current = approvals; }, [approvals]);
+
+  const schedulePersist = useCallback((next: Set<string>) => {
+    if (persistTimer.current) clearTimeout(persistTimer.current);
+    persistTimer.current = setTimeout(() => {
+      const arr = [...next];
+      try { localStorage.setItem(APPROVAL_KEY, JSON.stringify(arr)); } catch {}
+      persistApprovals(arr).then(() => setSyncStatus('synced'));
+    }, 1200);
+  }, []);
+
+  const toggleApproval = useCallback((claim: string, competitorName: string) => {
     setApprovals((prev) => {
       const next = new Set(prev);
       const id = claimId(claim);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      try { localStorage.setItem(APPROVAL_KEY, JSON.stringify([...next])); } catch {}
+      const removing = next.has(id);
+      if (removing) next.delete(id); else next.add(id);
+      setSyncStatus('syncing');
+      schedulePersist(next);
+      appendAuditEvent({
+        type: removing ? 'claim_removed' : 'claim_approved',
+        actor: 'User',
+        description: removing ? `Removed approval for claim from ${competitorName}` : `Approved claim for field use from ${competitorName}`,
+        detail: claim.slice(0, 120),
+      });
       return next;
     });
-  }, []);
+  }, [schedulePersist]);
 
   const allClaims = useMemo(() => {
     if (!currentReport) return [];
@@ -50,7 +105,7 @@ export function ClaimGovernance({ currentReport, onRunScan }: { currentReport: I
   const approvedCount = useMemo(() => allClaims.filter((c) => approvals.has(claimId(c.claim))).length, [allClaims, approvals]);
 
   const counts = useMemo(() => {
-    const c = { Safe: 0, 'Needs review': 0, 'Do not use': 0, 'Internal only': 0, 'High risk': 0 };
+    const c: Record<ClaimStatus, number> = { Safe: 0, 'Needs review': 0, 'Do not use': 0, 'Internal only': 0, 'High risk': 0 };
     allClaims.forEach((cl) => { c[cl.category]++; });
     return c;
   }, [allClaims]);
@@ -68,6 +123,9 @@ export function ClaimGovernance({ currentReport, onRunScan }: { currentReport: I
       <div className="row" style={{ gap: '8px' }}>
         <Badge>{filtered.length} of {allClaims.length} claims</Badge>
         {approvedCount > 0 && <Badge tone="green">{approvedCount} approved</Badge>}
+        {syncStatus === 'syncing' && <Badge tone="amber">Saving…</Badge>}
+        {syncStatus === 'synced' && <Badge tone="green">Synced</Badge>}
+        {syncStatus === 'local' && <Badge tone="neutral">Local only</Badge>}
       </div>
     </section>
     <SectionGroup title="Claim safety overview">
@@ -114,7 +172,7 @@ export function ClaimGovernance({ currentReport, onRunScan }: { currentReport: I
               <button
                 className={`btn btn-sm ${isApproved ? 'danger' : ''}`}
                 style={{ marginLeft: 'auto' }}
-                onClick={() => toggleApproval(claim.claim)}
+                onClick={() => toggleApproval(claim.claim, claim.competitorName)}
               >
                 {isApproved ? 'Remove approval' : 'Approve for field use'}
               </button>

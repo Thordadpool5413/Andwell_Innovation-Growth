@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { LayoutDashboard, TrendingUp, Presentation, Rocket, Brain, Cpu, FileText, Upload, Table, Swords, FileBarChart, MessageSquare, BookOpen, Activity, Shield, Hammer, Users, Map, CheckSquare, Sliders, Search, FileSpreadsheet, ScrollText, GraduationCap, Globe, MapPin, Phone, Crosshair, Layers, Database, DollarSign, Target, Clock, ListChecks, Home as HomeIcon, Menu, X } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Presentation, Rocket, Brain, Cpu, FileText, Upload, Table, Swords, FileBarChart, MessageSquare, BookOpen, Activity, Shield, Hammer, Users, Map, CheckSquare, Sliders, Search, FileSpreadsheet, ScrollText, GraduationCap, Globe, MapPin, Phone, Crosshair, Layers, Database, DollarSign, Target, Clock, ListChecks, Home as HomeIcon, Menu, X, ClipboardList } from 'lucide-react';
 import { ToastProvider, useToast } from '../components/Toast';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { andwellCatalog } from '../lib/andwell';
@@ -51,7 +51,9 @@ import { GrowthOpportunityScore } from '../components/command-center/views/Growt
 import { GrowthLaunchTimeline } from '../components/command-center/views/GrowthLaunchTimeline';
 import { GrowthBoardReport } from '../components/command-center/views/GrowthBoardReport';
 import { GrowthLaunchChecklist } from '../components/command-center/views/GrowthLaunchChecklist';
+import { AuditLog } from '../components/command-center/views/AuditLog';
 import { generateDecisions } from '../lib/decision-queue';
+import { appendAuditEvent } from '../lib/audit-log';
 
 const navIcons: Record<View, React.ComponentType<{ className?: string }>> = {
   home: HomeIcon, dashboard: LayoutDashboard, decisions: CheckSquare, scenarios: Sliders, growth: TrendingUp, board: Presentation, launch: Rocket, heatmap: Map,
@@ -60,7 +62,8 @@ const navIcons: Record<View, React.ComponentType<{ className?: string }>> = {
   brief: FileSpreadsheet, narrative: ScrollText, 'board-packet': Presentation, coaching: GraduationCap,
   'executive-view': Globe, 'county-plan': MapPin, 'referral-plan': Phone, 'competitive-view': Crosshair,
   'service-lines': Layers, 'cms-data': Database, 'financial-model': DollarSign, 'staffing-model': Users,
-  sensitivity: Activity, 'opportunity-score': Target, 'launch-timeline': Clock, 'board-report': FileText, 'launch-checklist': ListChecks
+  sensitivity: Activity, 'opportunity-score': Target, 'launch-timeline': Clock, 'board-report': FileText, 'launch-checklist': ListChecks,
+  audit: ClipboardList
 };
 
 const navGroups: { label: string; keys: View[] }[] = [
@@ -74,7 +77,7 @@ const workspaceTools: Partial<Record<View, { label: string; keys: View[] }>> = {
   growth: { label: 'Growth', keys: ['growth', 'scenarios', 'financial-model', 'staffing-model', 'launch-checklist'] },
   battlecards: { label: 'Field', keys: ['battlecards', 'builder', 'referrals', 'coaching'] },
   'board-packet': { label: 'Board', keys: ['board-packet', 'board', 'narrative', 'board-report', 'decisions'] },
-  reports: { label: 'Operations', keys: ['reports', 'ask', 'diagnostics'] },
+  reports: { label: 'Operations', keys: ['reports', 'ask', 'audit', 'diagnostics'] },
 };
 
 function AnalysisProgress({ items, busy, onDismiss }: { items: { name: string; status: 'queued' | 'crawling' | 'ai' | 'done' | 'error'; pages?: number; error?: string }[]; busy: boolean; onDismiss?: () => void }) {
@@ -353,6 +356,7 @@ function PageContent() {
 
   async function runAnalysis() {
     setBusy(true); setAskResponse(null); setProgressItems([]);
+    appendAuditEvent({ type: 'analysis_started', actor: roleView, description: `Scan started for ${competitors.length} competitor${competitors.length !== 1 ? 's' : ''}` });
     try {
       if (!competitors.length) throw new Error('Add at least one competitor URL first.');
       setPhase('Validate URLs');
@@ -427,6 +431,7 @@ function PageContent() {
       if (!report) throw new Error('Analysis ended without returning a report.');
       setPhase('Build brief');
       setCurrentReport(report);
+      appendAuditEvent({ type: 'analysis_complete', actor: roleView, description: `Scan complete — ${report.competitorsAnalyzed} competitors analyzed`, detail: `${report.pagesReviewed} pages reviewed` });
       showToast(report.expertBrief ? 'Expert analysis complete.' : 'Analysis complete.', 'success');
       setView(report.expertBrief ? 'expert' : 'dashboard');
     } catch (err) { showToast(err instanceof Error ? err.message : 'Analysis failed.', 'error'); } finally {
@@ -440,6 +445,7 @@ function PageContent() {
     try {
       const response = await api<{ report: IntelligenceReport }>(`/api/reports?id=${encodeURIComponent(id)}`);
       setCurrentReport(response.report);
+      appendAuditEvent({ type: 'report_loaded', actor: roleView, description: `Loaded report from ${new Date(response.report.generatedAt).toLocaleDateString()}`, detail: `${response.report.competitorsAnalyzed} competitors, ${response.report.pagesReviewed} pages` });
       showToast('Report loaded.', 'success');
       setView(response.report.expertBrief ? 'expert' : 'dashboard');
     } catch (err) { showToast(err instanceof Error ? err.message : 'Unable to load report.', 'error'); } finally { setBusy(false); setPhase('Ready'); }
@@ -453,6 +459,7 @@ function PageContent() {
         body: JSON.stringify({ ids }),
       });
       if (currentReport && ids.includes(currentReport.id)) setCurrentReport(null);
+      appendAuditEvent({ type: 'report_deleted', actor: roleView, description: `Deleted ${ids.length} report${ids.length !== 1 ? 's' : ''}` });
       await refreshServerState();
       showToast(`${ids.length} report${ids.length !== 1 ? 's' : ''} deleted.`, 'success');
     } catch (err) {
@@ -503,6 +510,7 @@ function PageContent() {
           ),
         };
         setCurrentReport(merged);
+        appendAuditEvent({ type: 'rescan_complete', actor: roleView, description: `Re-scan complete for ${updatedAnalysis.name}` });
         showToast(`Re-scan complete for ${updatedAnalysis.name}.`, 'success');
       } else {
         setCurrentReport(freshReport);
@@ -626,6 +634,7 @@ function PageContent() {
         {view === 'reports' && <Reports reports={reports} currentReport={currentReport} loadReport={loadReport} exportJson={exportJson} refreshServerState={refreshServerState} deleteReports={deleteReports} busy={busy} />}
         {view === 'ask' && <AskHub question={question} setQuestion={setQuestion} askHub={askHub} askResponse={askResponse} busy={busy} currentReport={currentReport} hasGrowthPlan={growthRows.length > 0} />}
         {view === 'catalog' && <Catalog />}
+        {view === 'audit' && <AuditLog />}
         {view === 'diagnostics' && <Diagnostics diagnostics={diagnostics} runDiagnostics={runDiagnostics} busy={busy} />}
         </div>
         </ErrorBoundary>

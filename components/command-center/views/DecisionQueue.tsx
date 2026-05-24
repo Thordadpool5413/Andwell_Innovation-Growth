@@ -5,6 +5,7 @@ import { Badge, MetricGrid, Panel, SectionGroup, Stat } from '../Shared';
 import { generateDecisions, applyDecisionAction, urgencyOrder, riskTone } from '../../../lib/decision-queue';
 import { downloadCsv } from '../../../lib/command-center/csv';
 import { useToast } from '../../../components/Toast';
+import { appendAuditEvent } from '../../../lib/audit-log';
 import type { IntelligenceReport } from '../../../lib/types';
 import type { GrowthRow, GrowthTotals } from '../../../lib/growth-plan';
 import type { DecisionType, DecisionStatus, DecisionUrgency } from '../../../lib/decision-queue';
@@ -61,9 +62,13 @@ export function DecisionQueue({ currentReport, growthRows }: { currentReport: In
   }, [allItems, typeFilter, urgencyFilter, statusFilter]);
 
   function handleAction(id: string, action: DecisionStatus) {
+    const item = (items || allItems).find((d) => d.id === id);
     setItems((prev) => applyDecisionAction(prev || allItems, id, action));
     const labels: Record<DecisionStatus, string> = { Pending: 'Re-opened', Approved: 'Approved', Deferred: 'Deferred', Assigned: 'Assigned', Escalated: 'Escalated', Snoozed: 'Snoozed' };
     const types: Record<DecisionStatus, 'success' | 'warning' | 'info'> = { Pending: 'info', Approved: 'success', Deferred: 'info', Assigned: 'info', Escalated: 'warning', Snoozed: 'info' };
+    if (item) {
+      appendAuditEvent({ type: 'decision_actioned', actor: item.owner, description: `Decision ${labels[action].toLowerCase()}: ${item.title}`, detail: action });
+    }
     showToast(`Decision ${labels[action].toLowerCase()}.`, types[action]);
   }
 

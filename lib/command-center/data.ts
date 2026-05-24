@@ -38,7 +38,8 @@ export const nav: { key: View; label: string; note: string }[] = [
   { key: 'reports', label: 'Intelligence Library', note: 'Built Outputs' },
   { key: 'ask', label: 'AI Coach', note: 'Ask the System' },
   { key: 'catalog', label: 'Andwell Catalog', note: 'Baseline Capabilities' },
-  { key: 'diagnostics', label: 'System Health', note: 'Diagnostics' }
+  { key: 'diagnostics', label: 'System Health', note: 'Diagnostics' },
+  { key: 'audit', label: 'Audit Log', note: 'Activity History' }
 ];
 
 export const roleGuidance: Record<RoleView, { headline: string; focus: string; action: string }> = {
