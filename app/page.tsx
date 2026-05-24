@@ -445,6 +445,76 @@ function PageContent() {
     } catch (err) { showToast(err instanceof Error ? err.message : 'Unable to load report.', 'error'); } finally { setBusy(false); setPhase('Ready'); }
   }
 
+  async function deleteReports(ids: string[]) {
+    try {
+      await api<{ deleted: number }>('/api/reports', {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+      if (currentReport && ids.includes(currentReport.id)) setCurrentReport(null);
+      await refreshServerState();
+      showToast(`${ids.length} report${ids.length !== 1 ? 's' : ''} deleted.`, 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Delete failed.', 'error');
+    }
+  }
+
+  async function runSingleAnalysis(competitor: CompetitorInput) {
+    if (busy) return;
+    setBusy(true); setPhase(`Scanning ${competitor.name || competitor.url}`);
+    try {
+      const streamRes = await fetch('/api/analyze-stream', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ competitors: [competitor], maxPagesPerSite: 8, save: false, useAI: true }),
+      });
+      if (!streamRes.ok || !streamRes.body) throw new Error('Re-scan request failed.');
+      const reader = streamRes.body.getReader();
+      const decoder = new TextDecoder();
+      let sseBuffer = '';
+      let freshReport: IntelligenceReport | null = null;
+      outer: while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        sseBuffer += decoder.decode(value, { stream: true });
+        const parts = sseBuffer.split('\n\n');
+        sseBuffer = parts.pop() ?? '';
+        for (const part of parts) {
+          const line = part.trim();
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const ev = JSON.parse(line.slice(6)) as Record<string, unknown>;
+            if (ev.type === 'complete') { freshReport = ev.report as IntelligenceReport; break outer; }
+            if (ev.type === 'error') throw new Error(String(ev.message));
+          } catch (e) { if (e instanceof Error && e.message !== 'Unexpected token') throw e; }
+        }
+      }
+      if (!freshReport) throw new Error('Re-scan ended without a result.');
+      // Merge updated analysis back into current report
+      if (currentReport && freshReport.analyses[0]) {
+        const updatedAnalysis = freshReport.analyses[0];
+        const merged: IntelligenceReport = {
+          ...currentReport,
+          analyses: currentReport.analyses.map((a) =>
+            a.name.toLowerCase() === updatedAnalysis.name.toLowerCase() || a.url === updatedAnalysis.url
+              ? updatedAnalysis
+              : a
+          ),
+        };
+        setCurrentReport(merged);
+        showToast(`Re-scan complete for ${updatedAnalysis.name}.`, 'success');
+      } else {
+        setCurrentReport(freshReport);
+        showToast(`Re-scan complete.`, 'success');
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Re-scan failed.', 'error');
+    } finally {
+      setBusy(false); setPhase('Ready');
+    }
+  }
+
   async function askHub() {
     setBusy(true); setPhase('Ask the Hub'); setAskResponse(null);
     try {
@@ -547,13 +617,13 @@ function PageContent() {
         {view === 'expert' && <ExpertCenter currentReport={currentReport} setView={setView} />}
         {view === 'ai' && <AIIntelligence currentReport={currentReport} aiAnalyses={aiAnalyses} onRunScan={() => setView('intake')} />}
         {view === 'prompt' && <PromptEngine />}
-        {view === 'intake' && <Intake competitors={competitors} setCompetitors={setCompetitors} urlInput={urlInput} setUrlInput={setUrlInput} addUrls={addUrls} saveCompetitors={saveCompetitors} runAnalysis={runAnalysis} busy={busy} />}
+        {view === 'intake' && <Intake competitors={competitors} setCompetitors={setCompetitors} urlInput={urlInput} setUrlInput={setUrlInput} addUrls={addUrls} saveCompetitors={saveCompetitors} runAnalysis={runAnalysis} runSingleAnalysis={runSingleAnalysis} busy={busy} />}
         {view === 'matrix' && <Matrix currentReport={currentReport} matrixFilter={matrixFilter} setMatrixFilter={setMatrixFilter} matrixSearch={matrixSearch} setMatrixSearch={setMatrixSearch} onRunScan={() => setView('intake')} />}
         {view === 'battlecards' && <Battlecards currentReport={currentReport} onRunScan={() => setView('intake')} />}
         {view === 'governance' && <ClaimGovernance currentReport={currentReport} onRunScan={() => setView('intake')} />}
         {view === 'builder' && <BattlecardBuilder currentReport={currentReport} onRunScan={() => setView('intake')} />}
         {view === 'referrals' && <ReferralSources currentReport={currentReport} />}
-        {view === 'reports' && <Reports reports={reports} currentReport={currentReport} loadReport={loadReport} exportJson={exportJson} refreshServerState={refreshServerState} busy={busy} />}
+        {view === 'reports' && <Reports reports={reports} currentReport={currentReport} loadReport={loadReport} exportJson={exportJson} refreshServerState={refreshServerState} deleteReports={deleteReports} busy={busy} />}
         {view === 'ask' && <AskHub question={question} setQuestion={setQuestion} askHub={askHub} askResponse={askResponse} busy={busy} currentReport={currentReport} hasGrowthPlan={growthRows.length > 0} />}
         {view === 'catalog' && <Catalog />}
         {view === 'diagnostics' && <Diagnostics diagnostics={diagnostics} runDiagnostics={runDiagnostics} busy={busy} />}

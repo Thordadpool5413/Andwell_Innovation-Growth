@@ -431,3 +431,30 @@ export async function saveCatalogOverride(input: Omit<CatalogOverride, 'updatedA
   await writeStore(store);
   return override;
 }
+
+export async function deleteReport(id: string) {
+  if (isSupabaseConfigured() && !supabaseUnavailable) {
+    try {
+      await getSupabaseClient().from('cih_reports').delete().eq('id', id);
+      return readStore();
+    } catch (error) {
+      supabaseUnavailable = true;
+      logPersistenceFallback('Supabase', error);
+    }
+  }
+
+  if (isMongoConfigured() && !mongoUnavailable) {
+    try {
+      const col = await collection<IntelligenceReport>('reports');
+      await col.deleteOne({ id });
+      return readStore();
+    } catch (error) {
+      mongoUnavailable = true;
+      logPersistenceFallback('MongoDB', error);
+    }
+  }
+
+  const store = await readStore();
+  store.reports = store.reports.filter((r) => r.id !== id);
+  return writeStore(store);
+}

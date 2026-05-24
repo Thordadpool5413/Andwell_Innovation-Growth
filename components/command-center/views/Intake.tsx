@@ -12,6 +12,7 @@ export function Intake({
   addUrls,
   saveCompetitors,
   runAnalysis,
+  runSingleAnalysis,
   busy,
 }: {
   competitors: CompetitorInput[];
@@ -21,6 +22,7 @@ export function Intake({
   addUrls: () => void;
   saveCompetitors: () => void;
   runAnalysis: () => void;
+  runSingleAnalysis?: (competitor: CompetitorInput) => void;
   busy: boolean;
 }) {
   function updateCompetitor(index: number, patch: Partial<CompetitorInput>) {
@@ -143,13 +145,25 @@ export function Intake({
                     />
                   </label>
                 </div>
-                <button
-                  className="btn danger"
-                  onClick={() => removeCompetitor(index)}
-                  aria-label={`Remove ${competitor.name || competitor.url || 'competitor'}`}
-                >
-                  Remove
-                </button>
+                <div className="row" style={{ gap: '6px' }}>
+                  {runSingleAnalysis && (
+                    <button
+                      className="btn btn-sm"
+                      disabled={busy || !competitor.url}
+                      onClick={() => runSingleAnalysis(competitor)}
+                      aria-label={`Re-scan ${competitor.name || competitor.url || 'competitor'}`}
+                    >
+                      Re-scan
+                    </button>
+                  )}
+                  <button
+                    className="btn danger btn-sm"
+                    onClick={() => removeCompetitor(index)}
+                    aria-label={`Remove ${competitor.name || competitor.url || 'competitor'}`}
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             ))}
           </div>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getReport, readStore } from '../../../lib/store';
+import { getReport, readStore, deleteReport } from '../../../lib/store';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -28,4 +28,17 @@ export async function GET(req: NextRequest) {
       executiveSummary: report.executiveSummary
     }))
   });
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { ids } = await req.json() as { ids: string[] };
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: 'ids array required.' }, { status: 400 });
+    }
+    await Promise.all(ids.map((id) => deleteReport(id)));
+    return NextResponse.json({ deleted: ids.length });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Delete failed.' }, { status: 500 });
+  }
 }

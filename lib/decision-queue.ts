@@ -4,7 +4,7 @@ import { andwellCatalog } from './andwell';
 
 export type DecisionUrgency = 'Immediate' | 'Today' | 'This week' | 'This month' | 'This quarter';
 export type DecisionType = 'Leadership' | 'Governance' | 'Staffing' | 'Growth' | 'Competitive' | 'Compliance' | 'Field enablement' | 'Referral';
-export type DecisionStatus = 'Pending' | 'Approved' | 'Deferred' | 'Assigned' | 'Escalated';
+export type DecisionStatus = 'Pending' | 'Approved' | 'Deferred' | 'Assigned' | 'Escalated' | 'Snoozed';
 
 export type DecisionItem = {
   id: string;

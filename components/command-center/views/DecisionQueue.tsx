@@ -62,9 +62,9 @@ export function DecisionQueue({ currentReport, growthRows }: { currentReport: In
 
   function handleAction(id: string, action: DecisionStatus) {
     setItems((prev) => applyDecisionAction(prev || allItems, id, action));
-    const label = action === 'Approved' ? 'Approved' : action === 'Deferred' ? 'Deferred' : action === 'Assigned' ? 'Assigned' : 'Escalated';
-    const type = action === 'Approved' ? 'success' : action === 'Escalated' ? 'warning' : 'info';
-    showToast(`Decision ${label.toLowerCase()}.`, type);
+    const labels: Record<DecisionStatus, string> = { Pending: 'Re-opened', Approved: 'Approved', Deferred: 'Deferred', Assigned: 'Assigned', Escalated: 'Escalated', Snoozed: 'Snoozed' };
+    const types: Record<DecisionStatus, 'success' | 'warning' | 'info'> = { Pending: 'info', Approved: 'success', Deferred: 'info', Assigned: 'info', Escalated: 'warning', Snoozed: 'info' };
+    showToast(`Decision ${labels[action].toLowerCase()}.`, types[action]);
   }
 
   function resetQueue() {
@@ -117,7 +117,7 @@ export function DecisionQueue({ currentReport, growthRows }: { currentReport: In
         <div className="row" style={{ gap: '6px', flexWrap: 'wrap' }}>
           <span className="text-small" style={{ fontWeight: 600, minWidth: '80px' }}>Status</span>
           <button className={`btn ${statusFilter === 'all' ? 'primary' : ''} btn-sm`} onClick={() => setStatusFilter('all')}>All</button>
-          {(['Pending', 'Approved', 'Deferred', 'Assigned', 'Escalated'] as DecisionStatus[]).map((s) => <button key={s} className={`btn ${statusFilter === s ? 'primary' : ''} btn-sm`} onClick={() => setStatusFilter(s)}>{s}</button>)}
+          {(['Pending', 'Approved', 'Deferred', 'Assigned', 'Escalated', 'Snoozed'] as DecisionStatus[]).map((s) => <button key={s} className={`btn ${statusFilter === s ? 'primary' : ''} btn-sm`} onClick={() => setStatusFilter(s)}>{s}</button>)}
         </div>
         <div className="row" style={{ gap: '8px' }}>
           <button className="btn" onClick={resetQueue}>Reset queue</button>
@@ -166,13 +166,16 @@ export function DecisionQueue({ currentReport, growthRows }: { currentReport: In
               <div className="notice" style={{ fontSize: '13px', marginBottom: '10px' }}>
                 <strong>Recommended action</strong><br />{item.recommendedAction}
               </div>
-              {item.status === 'Pending' && (
+              {item.status === 'Pending' ? (
                 <div className="row" style={{ gap: '6px' }}>
                   <button className="btn primary btn-sm" onClick={() => handleAction(item.id, 'Approved')}>Approve</button>
                   <button className="btn btn-sm" onClick={() => handleAction(item.id, 'Deferred')}>Defer</button>
                   <button className="btn btn-sm" onClick={() => handleAction(item.id, 'Assigned')}>Assign</button>
+                  <button className="btn btn-sm" onClick={() => handleAction(item.id, 'Snoozed')}>Snooze</button>
                   <button className="btn btn-sm" style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }} onClick={() => handleAction(item.id, 'Escalated')}>Escalate</button>
                 </div>
+              ) : (
+                <button className="btn btn-sm" style={{ color: 'var(--color-text-tertiary)' }} onClick={() => handleAction(item.id, 'Pending')}>Re-open</button>
               )}
             </div>
           );

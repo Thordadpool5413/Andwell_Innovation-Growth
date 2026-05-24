@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Badge, Panel, Stat } from '../Shared';
 import { useToast } from '../../../components/Toast';
 import { money, whole, percent } from '../../../lib/command-center/utils';
+import { downloadXlsx } from '../../../lib/command-center/excel';
 import type { View } from '../../../lib/command-center/types';
 import { buildGrowthRows, growthDefaultScenario, summarizeGrowth } from '../../../lib/growth-plan';
 import type { GrowthRow, GrowthTotals, GrowthScenario, GrowthServiceName } from '../../../lib/growth-plan';
@@ -73,6 +74,27 @@ export function GrowthCommand({ rows, totals, serviceRollup, scenario, setScenar
     ? <span style={{ color: d > 0 ? 'var(--color-success)' : 'var(--color-danger)', marginLeft: '4px', fontWeight: 700 }}>{d > 0 ? '+' : ''}{fmt(d)}</span>
     : null;
 
+  function exportGrowthXlsx() {
+    downloadXlsx('andwell-growth-plan.xlsx', [
+      {
+        name: 'Growth Plan',
+        headers: ['County', 'Service', 'Launch Group', 'Opportunity Score', 'Y1 Revenue', 'Y2 Revenue', 'Y3 Revenue', 'Y1 Starts', 'Reason', 'Action'],
+        rows: rows.map((r) => [r.county, r.service, r.launchGroup, r.opportunityScore, r.revenue[0], r.revenue[1], r.revenue[2], r.starts[0], r.reason, r.action]),
+      },
+      {
+        name: 'Summary',
+        headers: ['Metric', 'Year 1', 'Year 2', 'Year 3'],
+        rows: [
+          ['Revenue', totals.revenue[0], totals.revenue[1], totals.revenue[2]],
+          ['Starts', totals.starts[0], totals.starts[1], totals.starts[2]],
+          ['Referrals', totals.referrals[0], totals.referrals[1], totals.referrals[2]],
+          ['Total contribution', totals.totalContribution, '', ''],
+        ],
+      },
+    ]);
+    showToast('Growth plan exported to Excel.', 'success');
+  }
+
   return <>
     <section className="hero growthHero">
       <div className="row spread"><Badge tone="dark">Merged app intelligence</Badge><Badge tone="green">{priorityOneCount} priority launches</Badge></div>
@@ -83,6 +105,7 @@ export function GrowthCommand({ rows, totals, serviceRollup, scenario, setScenar
         <button className="btn" onClick={() => setView('launch')}>View Launch Plan</button>
         <button className="btn" onClick={() => setView('intake')}>Run Competitor Scan</button>
         <button className={`btn${compareMode ? ' primary' : ''}`} onClick={() => setCompareMode(v => !v)}>{compareMode ? 'Exit Compare' : 'Compare Scenarios'}</button>
+        <button className="btn" onClick={exportGrowthXlsx}>Export Excel</button>
       </div>
     </section>
     <div className="grid cols4">

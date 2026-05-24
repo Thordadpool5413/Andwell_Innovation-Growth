@@ -2416,10 +2416,23 @@ td {
     grid-template-columns: 1fr;
   }
   /* table wrap: always allow horizontal scroll */
-  .tableWrap { -webkit-overflow-scrolling: touch; }
+  .tableWrap { -webkit-overflow-scrolling: touch; overflow-x: auto; }
+  .table-compact { min-width: 560px; }
   /* stat grid: 2-col on small screens */
   .cols4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .metricCard strong { font-size: 22px; }
+  /* decision queue: stack badge row */
+  .decision-card-badges { flex-wrap: wrap; gap: 4px; }
+  /* prompt engine cards: full width */
+  .promptCard { padding: 16px; }
+  /* list-grid: single column */
+  .list-grid { grid-template-columns: 1fr; }
+  /* section header: stack */
+  .sectionGroup > .sectionGroupHead { flex-direction: column; align-items: flex-start; gap: 8px; }
+  /* notice blocks: smaller padding */
+  .notice { padding: 10px 12px; }
+  /* score card grid: 2-col */
+  .grid.cols4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .homeHeroStage,
   .homeExecutiveStrip,
   .homeWorkflowPanel,

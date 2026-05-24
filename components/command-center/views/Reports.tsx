@@ -32,6 +32,7 @@ export function Reports({
   loadReport,
   exportJson,
   refreshServerState,
+  deleteReports,
   busy,
 }: {
   reports: ReportSummary[];
@@ -39,11 +40,31 @@ export function Reports({
   loadReport: (id: string) => void;
   exportJson: () => void;
   refreshServerState: () => void;
+  deleteReports?: (ids: string[]) => void;
   busy: boolean;
 }) {
   const [compareReport, setCompareReport] = useState<IntelligenceReport | null>(null);
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareId, setCompareId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelectedIds(selectedIds.size === reports.length ? new Set() : new Set(reports.map((r) => r.id)));
+  }
+
+  function handleDeleteSelected() {
+    if (!deleteReports || selectedIds.size === 0) return;
+    deleteReports([...selectedIds]);
+    setSelectedIds(new Set());
+  }
 
   async function loadCompare(id: string) {
     setCompareLoading(true);
@@ -95,7 +116,22 @@ export function Reports({
           <h1>Reports</h1>
           <p className="text-body">Stored intelligence reports. Load a report to activate all workspaces, or export the current report as JSON.</p>
         </div>
-        <div className="row" style={{ gap: '8px', flexShrink: 0 }}>
+        <div className="row" style={{ gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+          {deleteReports && reports.length > 0 && (
+            <button className="btn btn-sm" onClick={toggleAll}>
+              {selectedIds.size === reports.length ? 'Deselect all' : 'Select all'}
+            </button>
+          )}
+          {deleteReports && selectedIds.size > 0 && (
+            <button
+              className="btn btn-sm"
+              style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
+              disabled={busy}
+              onClick={handleDeleteSelected}
+            >
+              Delete {selectedIds.size}
+            </button>
+          )}
           <button className="btn" disabled={busy} onClick={refreshServerState}>
             {busy ? 'Loading…' : 'Refresh'}
           </button>
@@ -196,9 +232,18 @@ export function Reports({
                     alignItems: 'flex-start',
                     justifyContent: 'space-between',
                     gap: '16px',
-                    borderColor: isActive ? 'var(--color-accent)' : isCompare ? 'var(--color-info)' : undefined,
+                    borderColor: selectedIds.has(report.id) ? 'var(--color-danger)' : isActive ? 'var(--color-accent)' : isCompare ? 'var(--color-info)' : undefined,
                   }}
                 >
+                  {deleteReports && (
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(report.id)}
+                      onChange={() => toggleSelect(report.id)}
+                      style={{ marginTop: '4px', flexShrink: 0, accentColor: 'var(--color-accent)', width: '16px', height: '16px', cursor: 'pointer' }}
+                      aria-label={`Select report from ${report.generatedAt}`}
+                    />
+                  )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="row" style={{ gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
                       {isActive && <Badge tone="green">Active</Badge>}
