@@ -69,6 +69,7 @@ function includesAny(text: string, terms: string[]) {
 }
 
 export async function POST(req: NextRequest) {
+  try {
   const body = await req.json() as { question?: string; competitorName?: string; serviceLine?: string; reportId?: string; growthContext?: GrowthContext };
   const question = body.question?.trim() || '';
   if (!question) return NextResponse.json({ error: 'question is required.' }, { status: 400 });
@@ -157,6 +158,9 @@ export async function POST(req: NextRequest) {
       recommendedAction: fieldActionFromEvidence(item)
     }))
   });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Ask failed', answer: 'Ask failed. Please try again.', evidence: [], nextBestActions: [] }, { status: 500 });
+  }
 }
 
 export async function GET() {
