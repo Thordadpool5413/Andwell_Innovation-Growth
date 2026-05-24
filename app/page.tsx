@@ -73,7 +73,7 @@ const navGroups: { label: string; keys: View[] }[] = [
 ];
 
 const workspaceTools: Partial<Record<View, { label: string; keys: View[] }>> = {
-  heatmap: { label: 'Intelligence', keys: ['heatmap', 'expert', 'matrix', 'governance', 'brief'] },
+  heatmap: { label: 'Intelligence', keys: ['heatmap', 'expert', 'matrix', 'governance', 'brief', 'prompt'] },
   growth: { label: 'Growth', keys: ['growth', 'scenarios', 'financial-model', 'staffing-model', 'launch-checklist'] },
   battlecards: { label: 'Field', keys: ['battlecards', 'builder', 'referrals', 'coaching'] },
   'board-packet': { label: 'Board', keys: ['board-packet', 'board', 'narrative', 'board-report', 'decisions'] },
