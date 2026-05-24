@@ -372,10 +372,15 @@ function PageContent() {
         if (validationErr instanceof Error && validationErr.message.startsWith('No competitor')) throw validationErr;
       }
       setPhase('Starting scan');
+      let promptOverrides: Record<string, unknown> | undefined;
+      try {
+        const raw = localStorage.getItem('andwell:promptOverrides');
+        if (raw) promptOverrides = JSON.parse(raw) as Record<string, unknown>;
+      } catch {}
       const streamRes = await fetch('/api/analyze-stream', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ competitors, maxPagesPerSite: 8, save: true, useAI: true })
+        body: JSON.stringify({ competitors, maxPagesPerSite: 8, save: true, useAI: true, ...(promptOverrides ? { promptOverrides } : {}) })
       });
       if (!streamRes.ok || !streamRes.body) throw new Error('Analysis request failed to start.');
       const reader = streamRes.body.getReader();
@@ -471,10 +476,15 @@ function PageContent() {
     if (busy) return;
     setBusy(true); setPhase(`Scanning ${competitor.name || competitor.url}`);
     try {
+      let promptOverrides: Record<string, unknown> | undefined;
+      try {
+        const raw = localStorage.getItem('andwell:promptOverrides');
+        if (raw) promptOverrides = JSON.parse(raw) as Record<string, unknown>;
+      } catch {}
       const streamRes = await fetch('/api/analyze-stream', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ competitors: [competitor], maxPagesPerSite: 8, save: false, useAI: true }),
+        body: JSON.stringify({ competitors: [competitor], maxPagesPerSite: 8, save: false, useAI: true, ...(promptOverrides ? { promptOverrides } : {}) }),
       });
       if (!streamRes.ok || !streamRes.body) throw new Error('Re-scan request failed.');
       const reader = streamRes.body.getReader();

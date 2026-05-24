@@ -137,6 +137,18 @@ async function mapWithConcurrency<T, R>(items: T[], concurrency: number, worker:
   return results;
 }
 
+// ── Custom instructions ──────────────────────────────────────────────────────
+
+function buildCustomInstructions(overrides?: Record<string, { instructions?: string; purpose?: string }>): string | undefined {
+  if (!overrides) return undefined;
+  const lines: string[] = [];
+  for (const [id, patch] of Object.entries(overrides)) {
+    if (patch.instructions?.trim()) lines.push(`[${id}] ${patch.instructions.trim()}`);
+    else if (patch.purpose?.trim()) lines.push(`[${id}] Purpose override: ${patch.purpose.trim()}`);
+  }
+  return lines.length > 0 ? lines.join('\n') : undefined;
+}
+
 // ── Stream route ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -149,7 +161,8 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        const body = await req.json() as { competitors?: CompetitorInput[]; maxPagesPerSite?: number; save?: boolean; useAI?: boolean };
+        const body = await req.json() as { competitors?: CompetitorInput[]; maxPagesPerSite?: number; save?: boolean; useAI?: boolean; promptOverrides?: Record<string, { instructions?: string; purpose?: string }> };
+        const customInstructions = buildCustomInstructions(body.promptOverrides);
         const rawCompetitors = (body.competitors || []).filter(c => c.url?.trim()).slice(0, 25);
         const competitors = rawCompetitors.map(sanitizeCompetitorInput).filter((c): c is CompetitorInput => Boolean(c));
 
@@ -186,7 +199,7 @@ export async function POST(req: NextRequest) {
             if (shouldUseAI) {
               emit({ type: 'ai_start', index, name });
               try {
-                const aiExtraction = await extractCompetitorIntelligence(resolved, pages);
+                const aiExtraction = await extractCompetitorIntelligence(resolved, pages, customInstructions);
                 if (aiExtraction) analysis = applyAIEnhancement(analysis, aiExtraction);
                 emit({ type: 'ai_done', index, name });
               } catch (err) {

@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Badge, Panel, ExpandableSection, SectionGroup } from '../Shared';
 import { toneForStatus } from '../../../lib/command-center/utils';
-import { categorizeClaims, filterApprovedClaims } from '../../../lib/claim-governance';
+import { categorizeClaims, filterApprovedClaims, claimId } from '../../../lib/claim-governance';
 import { generateCoachingPlan } from '../../../lib/strategy-brief';
 import { objectionLibrary, clinicalChecklist, phaseForScore, generateDiscoveryQuestions } from '../../../lib/sales-model-data';
 import type { IntelligenceReport } from '../../../lib/types';
@@ -40,6 +40,14 @@ function phaseTone(phase: string): 'blue' | 'amber' | 'green' | 'neutral' {
 export function Battlecards({ currentReport, onRunScan }: { currentReport: IntelligenceReport | null; onRunScan?: () => void }) {
   const [approvedOnly, setApprovedOnly] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [approvedIds, setApprovedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('andwell:claimApprovals');
+      if (stored) setApprovedIds(new Set(JSON.parse(stored) as string[]));
+    } catch {}
+  }, []);
 
   const copyCard = useCallback(async (id: string, text: string) => {
     try {
@@ -64,11 +72,11 @@ export function Battlecards({ currentReport, onRunScan }: { currentReport: Intel
     if (approvedOnly) {
       list = list.filter((a) => {
         const claims = claimMap[a.id] || [];
-        return filterApprovedClaims(claims).length > 0;
+        return filterApprovedClaims(claims, approvedIds).length > 0;
       });
     }
     return list;
-  }, [currentReport, approvedOnly, claimMap]);
+  }, [currentReport, approvedOnly, claimMap, approvedIds]);
 
   if (!currentReport) {
     return (
@@ -110,7 +118,7 @@ export function Battlecards({ currentReport, onRunScan }: { currentReport: Intel
           {analyses.map((analysis) => {
             if (!(analysis.score as unknown)) return null;
             const claims = claimMap[analysis.id] || [];
-            const approved = filterApprovedClaims(claims);
+            const approved = filterApprovedClaims(claims, approvedIds);
             const plan = generateCoachingPlan(analysis.name, currentReport);
             const phase = phaseForScore(analysis.score.serviceLineMatchScore);
             const battlecards = analysis.aiExtraction?.salesBattlecards || [];

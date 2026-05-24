@@ -137,7 +137,7 @@ function normalizeExtraction(raw: any, input: CompetitorInput, pages: CrawledPag
   };
 }
 
-function promptFor(input: CompetitorInput, pages: CrawledPage[]) {
+function promptFor(input: CompetitorInput, pages: CrawledPage[], customInstructions?: string) {
   const catalog = andwellCatalog.map((service) => ({
     serviceLine: service.serviceLine,
     category: service.category,
@@ -260,7 +260,7 @@ Return JSON in this exact shape:
     }
   ],
   "rawConfidence": "High | Medium | Low"
-}`;
+}${customInstructions?.trim() ? `\n\nAdditional operator instructions (apply these on top of the rules above):\n${customInstructions.trim()}` : ''}`;
 }
 
 function extractJson(text: string) {
@@ -384,13 +384,13 @@ export function getAITransportDiagnostics() {
   };
 }
 
-export async function extractCompetitorIntelligence(input: CompetitorInput, pages: CrawledPage[]): Promise<AICompetitorExtraction | null> {
+export async function extractCompetitorIntelligence(input: CompetitorInput, pages: CrawledPage[], customInstructions?: string): Promise<AICompetitorExtraction | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 
   const payload = await callOpenAI(apiKey, {
     model: defaultModel,
-    input: promptFor(input, pages),
+    input: promptFor(input, pages, customInstructions),
     temperature: 0.2,
     max_output_tokens: maxOutputTokens
   });

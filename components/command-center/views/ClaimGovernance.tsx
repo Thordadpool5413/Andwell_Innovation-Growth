@@ -2,16 +2,12 @@
 
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Badge, Panel, SectionGroup } from '../Shared';
-import { categorizeAllClaims, claimStatusTone } from '../../../lib/claim-governance';
+import { categorizeAllClaims, claimStatusTone, claimId } from '../../../lib/claim-governance';
 import { appendAuditEvent } from '../../../lib/audit-log';
 import type { IntelligenceReport, ClaimStatus } from '../../../lib/types';
 
 const statusFilters: ClaimStatus[] = ['Safe', 'Needs review', 'Do not use', 'Internal only', 'High risk'];
 const APPROVAL_KEY = 'andwell:claimApprovals';
-
-function claimId(claim: string) {
-  return claim.trim().slice(0, 100);
-}
 
 async function fetchApprovals(): Promise<string[]> {
   try {
