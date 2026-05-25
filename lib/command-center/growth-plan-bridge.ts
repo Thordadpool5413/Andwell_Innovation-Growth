@@ -1,5 +1,5 @@
 import { buildRows } from '../../lib/growth-plan/utils/calculations';
-import type { GrowthRow } from '../../lib/growth-plan/data/constants';
+import type { GrowthRow, Scenario } from '../../lib/growth-plan/data/constants';
 import { DEFAULT_SCENARIO } from '../../lib/growth-plan/data/constants';
 
 export type GrowthPlanTotals = {
@@ -13,8 +13,8 @@ export type GrowthPlanTotals = {
   totalContribution: number;
 };
 
-export function getGrowthPlanData() {
-  const rows = buildRows(DEFAULT_SCENARIO);
+export function getGrowthPlanData(scenario?: Scenario) {
+  const rows = buildRows(scenario ?? DEFAULT_SCENARIO);
   const totals: GrowthPlanTotals = {
     y1Referrals: rows.reduce((s: number, r: GrowthRow) => s + r.referrals[0], 0),
     y2Referrals: rows.reduce((s: number, r: GrowthRow) => s + r.referrals[1], 0),

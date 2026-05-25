@@ -16,14 +16,26 @@ export function BoardPacket({ currentReport, growthRows, totals, staffingPlan }:
     const link = document.createElement('a'); link.href = url; link.download = 'andwell-board-packet.json'; link.click(); URL.revokeObjectURL(url);
   }
 
+  function handlePrint() {
+    window.print();
+  }
+
   return <>
     <section className="section">
       <div>
         <h1>Board Packet Mode</h1>
         <p className="text-body">Full export layout: executive summary, market opportunity, financial model, priority counties, staffing, risks, and appendix.</p>
       </div>
-      <button className="btn primary" onClick={handleExport}>Export Board Packet (JSON)</button>
+      <div className="row" style={{ gap: '8px' }}>
+        <button className="btn primary no-print" onClick={handlePrint}>Print / Export PDF</button>
+        <button className="btn no-print" onClick={handleExport}>Export JSON</button>
+      </div>
     </section>
+    {!currentReport && (
+      <div className="notice" style={{ marginBottom: '16px', marginTop: 0 }}>
+        <strong>No competitive data loaded.</strong> This packet uses growth model defaults only. Run a competitive scan in Competitor Intake to populate live market intelligence before distributing.
+      </div>
+    )}
     <div className="card" style={{ marginBottom: '16px' }}>
       <h3 className="text-subhead">{packet.title}</h3>
       <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Generated {packet.generatedAt}</span>
@@ -38,7 +50,7 @@ export function BoardPacket({ currentReport, growthRows, totals, staffingPlan }:
     </div>
     <SectionGroup title="Financial Model">
       <div className="grid cols4">{packet.financialModel.map((m, i) =>
-        <div key={i} className="hover-card" style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
+        <div key={i} className="list-card hover-card">
           <p className="text-xs text-overline" style={{ color: 'var(--color-text-tertiary)', margin: '0 0 4px' }}>{m.label}</p>
           <strong style={{ fontSize: '20px' }}>{m.value}</strong>
         </div>
@@ -46,7 +58,7 @@ export function BoardPacket({ currentReport, growthRows, totals, staffingPlan }:
     </SectionGroup>
     <SectionGroup title="Priority Counties">
       <div className="grid cols2">{packet.priorityCounties.map((pc, i) =>
-        <div key={i} className="hover-card" style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
+        <div key={i} className="list-card hover-card">
           <div className="row spread" style={{ marginBottom: '4px' }}>
             <h4 style={{ margin: 0 }}>{pc.county}</h4>
             <Badge>{pc.service}</Badge>
@@ -58,7 +70,7 @@ export function BoardPacket({ currentReport, growthRows, totals, staffingPlan }:
     </SectionGroup>
     <SectionGroup title="Staffing Summary">
       <div className="grid cols3">{packet.staffingSummary.map((s, i) =>
-        <div key={i} className="hover-card" style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
+        <div key={i} className="list-card hover-card">
           <h4 style={{ margin: '0 0 4px' }}>{s.role}</h4>
           <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
             <span>Y1: {s.y1Fte} FTE | Y3: {s.y3Fte} FTE</span>
@@ -68,8 +80,8 @@ export function BoardPacket({ currentReport, growthRows, totals, staffingPlan }:
       )}</div>
     </SectionGroup>
     <SectionGroup title="Risks & Mitigations">
-      <div style={{ display: 'grid', gap: '8px' }}>{packet.risks.map((r, i) =>
-        <div key={i} className="hover-card" style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
+      <div className="list-grid">{packet.risks.map((r, i) =>
+        <div key={i} className="list-card hover-card">
           <div className="row spread" style={{ marginBottom: '4px' }}>
             <span className="text-small" style={{ fontWeight: 600 }}>{r.risk}</span>
             <Badge tone={r.severity === 'High' ? 'red' : r.severity === 'Medium' ? 'amber' : 'green'}>{r.severity}</Badge>

@@ -81,7 +81,14 @@ export function categorizeAllClaims(report: { analyses: CompetitorAnalysis[] }):
   return report.analyses.flatMap((a) => categorizeClaims(a));
 }
 
-export function filterApprovedClaims(claims: CategorizedClaim[]): CategorizedClaim[] {
+export function claimId(claim: string): string {
+  return claim.trim().slice(0, 100);
+}
+
+export function filterApprovedClaims(claims: CategorizedClaim[], approvedIds?: Set<string>): CategorizedClaim[] {
+  if (approvedIds && approvedIds.size > 0) {
+    return claims.filter((c) => approvedIds.has(claimId(c.claim)));
+  }
   return claims.filter((c) => c.category === 'Safe');
 }
 

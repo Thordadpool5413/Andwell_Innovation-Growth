@@ -1,11 +1,98 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Badge, MetricGrid, Panel, SectionGroup, Stat } from '../Shared';
 import { roleGuidance } from '../../../lib/command-center/data';
 import { toneForStatus } from '../../../lib/command-center/utils';
 import type { View, RoleView } from '../../../lib/command-center/types';
 import type { AndwellExpertBrief, ExpertAction } from '../../../lib/andwell-expert';
+import type { GrowthRow, GrowthTotals } from '../../../lib/growth-plan';
+import type { CompetitorScore } from '../../../lib/types';
+import type { Insight } from '../../../app/api/insights/route';
+
+const INSIGHT_ICON: Record<string, { icon: string; iconColor: string; cssClass: string }> = {
+  opportunity: { icon: '↑', iconColor: 'var(--color-success)', cssClass: 'insight-card insight-card--opportunity' },
+  risk:        { icon: '!', iconColor: 'var(--color-danger)',   cssClass: 'insight-card insight-card--risk' },
+  alert:       { icon: '⚡', iconColor: 'var(--color-warning)', cssClass: 'insight-card insight-card--alert' },
+  tip:         { icon: '→', iconColor: 'var(--color-accent)',   cssClass: 'insight-card insight-card--tip' },
+};
+
+function InsightsBar({ rows, totals, setView, refreshKey }: { rows: GrowthRow[]; totals: GrowthTotals; setView: (v: View) => void; refreshKey?: number }) {
+  const [insights, setInsights] = useState<Insight[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(false);
+    fetch('/api/insights', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ rows, totals }),
+    })
+      .then((r) => r.json())
+      .then((data: { insights: Insight[] }) => { if (active) setInsights(data.insights ?? []); })
+      .catch(() => { if (active) setError(true); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [refreshKey]);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {[1, 2, 3].map((i) => (
+          <div key={i} style={{
+            flex: 1, height: '72px', borderRadius: 'var(--radius)',
+            background: 'linear-gradient(90deg, var(--color-bg-tertiary) 25%, var(--color-border-light) 50%, var(--color-bg-tertiary) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.4s ease infinite',
+          }} />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <p className="text-small" style={{ color: 'var(--color-text-tertiary)', margin: 0 }}>
+        Insights unavailable — check your API connection.
+      </p>
+    );
+  }
+
+  if (!insights.length) return null;
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
+      {insights.map((ins) => {
+        const s = INSIGHT_ICON[ins.type] ?? INSIGHT_ICON.tip;
+        return (
+          <div key={ins.id} className={`${s.cssClass} hover-card`}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: '18px', height: '18px', borderRadius: '50%',
+                color: s.iconColor, fontSize: '11px', fontWeight: 900, flexShrink: 0,
+              }}>{s.icon}</span>
+              <p className="text-small" style={{ margin: 0, fontWeight: 700 }}>{ins.title}</p>
+            </div>
+            <p className="text-small" style={{ margin: 0, color: 'var(--color-text-secondary)' }}>{ins.body}</p>
+            {ins.action && ins.actionView && (
+              <button
+                className="btn btn-sm"
+                style={{ alignSelf: 'start', marginTop: '2px' }}
+                onClick={() => setView(ins.actionView as View)}
+              >
+                {ins.action} →
+              </button>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function toneForPriority(priority: ExpertAction['priority']) {
   if (priority === 'Critical') return 'red';
@@ -62,6 +149,55 @@ function DecisionPath({ action }: { action: ExpertAction }) {
   </div>;
 }
 
+function ScoreModal({ score, onClose }: { score: CompetitorScore; onClose: () => void }) {
+  const bars: { label: string; value: number; tone: 'green' | 'amber' | 'red' | 'blue' }[] = [
+    { label: 'Service line match', value: score.serviceLineMatchScore, tone: score.serviceLineMatchScore >= 70 ? 'red' : score.serviceLineMatchScore >= 40 ? 'amber' : 'green' },
+    { label: 'Subservice depth', value: score.subserviceDepthScore, tone: score.subserviceDepthScore >= 70 ? 'red' : 'amber' },
+    { label: 'Andwell differentiation', value: score.andwellDifferentiationScore, tone: score.andwellDifferentiationScore >= 60 ? 'green' : 'amber' },
+    { label: 'Competitor visibility', value: score.competitorVisibilityScore, tone: score.competitorVisibilityScore >= 70 ? 'red' : 'blue' },
+    { label: 'Evidence strength', value: score.evidenceStrengthScore, tone: score.evidenceStrengthScore >= 60 ? 'green' : 'amber' },
+    { label: 'Review risk', value: score.reviewRiskScore, tone: score.reviewRiskScore >= 60 ? 'red' : 'green' },
+  ];
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }} onClick={onClose}>
+      <div style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', padding: '24px', maxWidth: '560px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+        <div className="row spread" style={{ marginBottom: '16px' }}>
+          <div>
+            <h3 style={{ margin: '0 0 4px' }}>{score.competitorName}</h3>
+            <Badge tone={toneForStatus(score.threatLevel)}>{score.threatLevel}</Badge>
+          </div>
+          <button className="btn btn-sm" onClick={onClose}>Close</button>
+        </div>
+        <p className="text-small" style={{ color: 'var(--color-text-secondary)', margin: '0 0 16px' }}>{score.executiveReadout}</p>
+        <div style={{ display: 'grid', gap: '10px', marginBottom: '16px' }}>
+          {bars.map((bar) => {
+            const color = bar.tone === 'green' ? 'var(--color-success)' : bar.tone === 'amber' ? 'var(--color-warning)' : bar.tone === 'red' ? 'var(--color-danger)' : 'var(--color-info)';
+            return (
+              <div key={bar.label}>
+                <div className="row spread" style={{ marginBottom: '4px' }}>
+                  <span className="text-small" style={{ fontWeight: 600 }}>{bar.label}</span>
+                  <Badge tone={bar.tone}>{bar.value}%</Badge>
+                </div>
+                <div className="meter"><i style={{ width: `${Math.max(4, bar.value)}%`, background: color }} /></div>
+              </div>
+            );
+          })}
+        </div>
+        {score.leadWith.length > 0 && (
+          <div className="notice" style={{ fontSize: '13px', marginBottom: '10px' }}>
+            <strong>Lead with</strong><br />{score.leadWith.join(' · ')}
+          </div>
+        )}
+        {score.strongestAndwellAdvantages.length > 0 && (
+          <div className="notice" style={{ fontSize: '13px' }}>
+            <strong>Andwell advantages</strong><br />{score.strongestAndwellAdvantages.join(' · ')}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function OpportunityTile({ row }: { row: AndwellExpertBrief['priorityMarkets'][number] }) {
   return <div className="countyRow hover-card" style={{ gridTemplateColumns: '1fr auto' }}>
     <div>
@@ -85,8 +221,29 @@ function PlainEnglishBlock({ title, body, tone = 'blue' }: { title: string; body
   </div>;
 }
 
-export function Dashboard({ expertBrief, roleView, setView, clearLegacyBrowserStorage }: { expertBrief: AndwellExpertBrief; roleView: RoleView; setView: (view: View) => void; clearLegacyBrowserStorage: () => void }) {
-  return <>
+const roleActionOwners: Record<RoleView, string[]> = {
+  'Executive': ['Growth', 'Field', 'Admin', 'Clinical'],
+  'Growth Leader': ['Growth'],
+  'Sales Leader': ['Field'],
+  'Sales Rep': ['Field'],
+  'Board': ['Growth', 'Clinical'],
+  'Admin': ['Admin'],
+};
+
+export function Dashboard({ expertBrief, roleView, setView, clearLegacyBrowserStorage, rows, totals }: { expertBrief: AndwellExpertBrief; roleView: RoleView; setView: (view: View) => void; clearLegacyBrowserStorage: () => void; rows: GrowthRow[]; totals: GrowthTotals }) {
+  const [manualRefreshKey, setManualRefreshKey] = useState(0);
+  const [scoreModal, setScoreModal] = useState<CompetitorScore | null>(null);
+  const autoRefreshKey = useMemo(() => Math.round((totals.revenue?.[0] ?? 0) / 10000), [totals]);
+  const insightRefreshKey = autoRefreshKey * 1000 + manualRefreshKey;
+
+  const allowedOwners = roleActionOwners[roleView] ?? roleActionOwners['Executive'];
+  const filteredActions = useMemo(
+    () => expertBrief.topActions.filter((a) => allowedOwners.includes(a.owner)),
+    [expertBrief.topActions, allowedOwners]
+  );
+  const visibleActions = filteredActions.length > 0 ? filteredActions : expertBrief.topActions;
+
+  return <>{scoreModal && <ScoreModal score={scoreModal} onClose={() => setScoreModal(null)} />}
     <section className="hero proHero">
       <Badge tone="dark">Andwell expert operating system</Badge>
       <h1>What should Andwell do next, why, with what evidence, and how do we execute it safely?</h1>
@@ -96,7 +253,6 @@ export function Dashboard({ expertBrief, roleView, setView, clearLegacyBrowserSt
         <button className="btn" onClick={() => setView('intake')}>Run Competitive Scan</button>
         <button className="btn" onClick={() => setView('growth')}>Review Growth Strategy</button>
         <button className="btn" onClick={() => setView('board-packet')}>Prepare Board Packet</button>
-        <button className="btn" onClick={clearLegacyBrowserStorage}>Clear cache keys</button>
       </div>
     </section>
 
@@ -119,16 +275,20 @@ export function Dashboard({ expertBrief, roleView, setView, clearLegacyBrowserSt
       </div>
     </SectionGroup>
 
-    <SectionGroup title="Top recommended actions">
+    <SectionGroup title="Top recommended actions" action={
+      filteredActions.length < expertBrief.topActions.length
+        ? <Badge tone="blue">Filtered for {roleView}</Badge>
+        : undefined
+    }>
       <div className="grid cols2">
-        {expertBrief.topActions.map((action) => <ActionCard key={action.id} action={action} setView={setView} />)}
+        {visibleActions.map((action) => <ActionCard key={action.id} action={action} setView={setView} />)}
       </div>
     </SectionGroup>
 
     <SectionGroup title="Decision path">
       <PlainEnglishBlock title="How to read this" body="Each recommendation now follows the same path: signal, meaning, recommendation, and next step. This gives users a quick way to understand the expert logic before opening detailed evidence." />
       <div style={{ marginTop: '14px' }}>
-        <DecisionPath action={expertBrief.topActions[0]} />
+        <DecisionPath action={visibleActions[0] ?? expertBrief.topActions[0]} />
       </div>
     </SectionGroup>
 
@@ -155,8 +315,11 @@ export function Dashboard({ expertBrief, roleView, setView, clearLegacyBrowserSt
         </Panel>
         <Panel title="Competitive pressure">
           <div className="briefList">
-            {expertBrief.competitorThreats.length ? expertBrief.competitorThreats.slice(0, 4).map((threat) => <div className="briefItem" key={threat.competitorId}>
-              <Badge tone={toneForStatus(threat.threatLevel)}>{threat.threatLevel}</Badge>
+            {expertBrief.competitorThreats.length ? expertBrief.competitorThreats.slice(0, 4).map((threat) => <div className="briefItem" key={threat.competitorId} style={{ cursor: 'pointer' }} onClick={() => setScoreModal(threat)}>
+              <div className="row spread">
+                <Badge tone={toneForStatus(threat.threatLevel)}>{threat.threatLevel}</Badge>
+                <button className="btn btn-sm" style={{ fontSize: '11px' }} onClick={(e) => { e.stopPropagation(); setScoreModal(threat); }}>Score details</button>
+              </div>
               <strong>{threat.competitorName}</strong>
               <span>{threat.executiveReadout}</span>
             </div>) : <p className="muted">Run or load a competitive scan to rank threats.</p>}
@@ -177,5 +340,15 @@ export function Dashboard({ expertBrief, roleView, setView, clearLegacyBrowserSt
         {expertBrief.priorityMarkets.slice(0, 3).map((row) => <OpportunityTile key={`${row.county}-${row.service}-tile`} row={row} />)}
       </div>
     </SectionGroup>
+
+    <SectionGroup title="AI-surfaced insights" action={<button className="btn btn-sm" onClick={() => setManualRefreshKey(k => k + 1)}>Refresh</button>}>
+      <InsightsBar rows={rows} totals={totals} setView={setView} refreshKey={insightRefreshKey} />
+    </SectionGroup>
+
+    <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '16px', marginTop: '8px' }}>
+      <button className="btn btn-sm" style={{ color: 'var(--color-text-tertiary)' }} onClick={clearLegacyBrowserStorage}>
+        Clear legacy cache keys
+      </button>
+    </div>
   </>;
 }

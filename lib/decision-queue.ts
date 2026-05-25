@@ -4,7 +4,7 @@ import { andwellCatalog } from './andwell';
 
 export type DecisionUrgency = 'Immediate' | 'Today' | 'This week' | 'This month' | 'This quarter';
 export type DecisionType = 'Leadership' | 'Governance' | 'Staffing' | 'Growth' | 'Competitive' | 'Compliance' | 'Field enablement' | 'Referral';
-export type DecisionStatus = 'Pending' | 'Approved' | 'Deferred' | 'Assigned' | 'Escalated';
+export type DecisionStatus = 'Pending' | 'Approved' | 'Deferred' | 'Assigned' | 'Escalated' | 'Snoozed';
 
 export type DecisionItem = {
   id: string;
@@ -24,13 +24,20 @@ export type DecisionItem = {
 
 const owners = ['CEO', 'COO', 'Sales Leader', 'Clinical Leader', 'Marketing', 'Admin'] as const;
 
-function randomOwner(): string {
-  return owners[Math.floor(Math.random() * owners.length)];
+function strHash(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
 }
 
-function pickUrgency(risk: 'High' | 'Medium' | 'Low'): DecisionUrgency {
-  if (risk === 'High') return Math.random() > 0.5 ? 'Immediate' : 'Today';
-  if (risk === 'Medium') return Math.random() > 0.5 ? 'This week' : 'This month';
+function deterministicOwner(seed: string): string {
+  return owners[strHash(seed) % owners.length];
+}
+
+function deterministicUrgency(risk: 'High' | 'Medium' | 'Low', seed: string): DecisionUrgency {
+  const bit = strHash(seed) % 2;
+  if (risk === 'High') return bit === 0 ? 'Immediate' : 'Today';
+  if (risk === 'Medium') return bit === 0 ? 'This week' : 'This month';
   return 'This quarter';
 }
 
@@ -44,8 +51,8 @@ export function generateDecisions(report?: IntelligenceReport | null, growthRows
       decisions.push({
         id: `dec-insight-${decisions.length}`,
         type: 'Leadership',
-        owner: randomOwner(),
-        urgency: pickUrgency(risk),
+        owner: deterministicOwner(insight.title),
+        urgency: deterministicUrgency(risk, insight.title),
         risk,
         title: insight.title,
         evidence: insight.summary,

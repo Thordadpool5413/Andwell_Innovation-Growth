@@ -37,8 +37,13 @@ function cleanEnvValue(value?: string) {
   return value?.trim().replace(/^['"]|['"]$/g, '');
 }
 
-const dataDir = cleanEnvValue(process.env.CIH_DATA_DIR) || path.join(process.cwd(), '.data');
-const storeFile = cleanEnvValue(process.env.CIH_STORE_FILE) || path.join(dataDir, 'competitive-intelligence-hub.json');
+const preferredDataDir = cleanEnvValue(process.env.CIH_DATA_DIR) || path.join(process.cwd(), '.data');
+const preferredStoreFile = cleanEnvValue(process.env.CIH_STORE_FILE) || path.join(preferredDataDir, 'competitive-intelligence-hub.json');
+const fallbackDataDir = path.join('/tmp', '.data');
+const fallbackStoreFile = path.join(fallbackDataDir, 'competitive-intelligence-hub.json');
+
+let resolvedDataDir: string | null = null;
+let resolvedStoreFile: string | null = null;
 let mongoUnavailable = false;
 let supabaseUnavailable = false;
 
@@ -51,8 +56,19 @@ const emptyStore = (): HubStore => ({
   catalogOverrides: []
 });
 
-async function ensureDataDir() {
-  await mkdir(dataDir, { recursive: true });
+async function ensureDataDir(): Promise<{ dataDir: string; storeFile: string }> {
+  if (resolvedDataDir && resolvedStoreFile) return { dataDir: resolvedDataDir, storeFile: resolvedStoreFile };
+  try {
+    await mkdir(preferredDataDir, { recursive: true });
+    resolvedDataDir = preferredDataDir;
+    resolvedStoreFile = preferredStoreFile;
+  } catch {
+    await mkdir(fallbackDataDir, { recursive: true });
+    resolvedDataDir = fallbackDataDir;
+    resolvedStoreFile = fallbackStoreFile;
+    console.warn(`Data dir ${preferredDataDir} not writable, using ${fallbackDataDir}`);
+  }
+  return { dataDir: resolvedDataDir, storeFile: resolvedStoreFile };
 }
 
 async function collection<T extends object>(name: string): Promise<Collection<T>> {
@@ -107,7 +123,7 @@ async function supabaseReadStore(): Promise<HubStore> {
 }
 
 async function jsonReadStore(): Promise<HubStore> {
-  await ensureDataDir();
+  const { storeFile } = await ensureDataDir();
   try {
     const raw = await readFile(storeFile, 'utf8');
     const parsed = JSON.parse(raw) as Partial<HubStore>;
@@ -127,7 +143,7 @@ async function jsonReadStore(): Promise<HubStore> {
 }
 
 async function jsonWriteStore(store: HubStore) {
-  await ensureDataDir();
+  const { storeFile } = await ensureDataDir();
   const next = { ...store, updatedAt: new Date().toISOString() };
   await writeFile(storeFile, JSON.stringify(next, null, 2), 'utf8');
   return next;
@@ -163,29 +179,25 @@ export async function writeStore(store: HubStore) {
   if (isSupabaseConfigured() && !supabaseUnavailable) {
     try {
       const supabase = getSupabaseClient();
-      const [competitorsDelete, reportsDelete, reviewsDelete, catalogDelete] = await Promise.all([
-        supabase.from('cih_competitors').delete().neq('url', '__cih_never__'),
-        supabase.from('cih_reports').delete().neq('id', '__cih_never__'),
-        supabase.from('cih_reviews').delete().neq('finding_id', '__cih_never__'),
-        supabase.from('cih_catalog_overrides').delete().neq('service_line', '__cih_never__')
+      const [competitorsResult, reportsResult, reviewsResult, catalogResult] = await Promise.all([
+        store.competitors.length
+          ? supabase.from('cih_competitors').upsert(store.competitors.filter((c) => c.url).map(competitorRow), { onConflict: 'url' })
+          : Promise.resolve({ error: null }),
+        store.reports.length
+          ? supabase.from('cih_reports').upsert(store.reports.map(reportRow), { onConflict: 'id' })
+          : Promise.resolve({ error: null }),
+        store.reviews.length
+          ? supabase.from('cih_reviews').upsert(store.reviews.map(reviewRow), { onConflict: 'finding_id' })
+          : Promise.resolve({ error: null }),
+        store.catalogOverrides.length
+          ? supabase.from('cih_catalog_overrides').upsert(store.catalogOverrides.map(catalogOverrideRow), { onConflict: 'service_line' })
+          : Promise.resolve({ error: null })
       ]);
 
-      assertSupabase('delete competitors', competitorsDelete.error);
-      assertSupabase('delete reports', reportsDelete.error);
-      assertSupabase('delete reviews', reviewsDelete.error);
-      assertSupabase('delete catalog overrides', catalogDelete.error);
-
-      const [competitorsInsert, reportsInsert, reviewsInsert, catalogInsert] = await Promise.all([
-        store.competitors.length ? supabase.from('cih_competitors').insert(store.competitors.filter((competitor) => competitor.url).map(competitorRow)) : Promise.resolve({ error: null }),
-        store.reports.length ? supabase.from('cih_reports').insert(store.reports.map(reportRow)) : Promise.resolve({ error: null }),
-        store.reviews.length ? supabase.from('cih_reviews').insert(store.reviews.map(reviewRow)) : Promise.resolve({ error: null }),
-        store.catalogOverrides.length ? supabase.from('cih_catalog_overrides').insert(store.catalogOverrides.map(catalogOverrideRow)) : Promise.resolve({ error: null })
-      ]);
-
-      assertSupabase('insert competitors', competitorsInsert.error);
-      assertSupabase('insert reports', reportsInsert.error);
-      assertSupabase('insert reviews', reviewsInsert.error);
-      assertSupabase('insert catalog overrides', catalogInsert.error);
+      assertSupabase('upsert competitors', competitorsResult.error);
+      assertSupabase('upsert reports', reportsResult.error);
+      assertSupabase('upsert reviews', reviewsResult.error);
+      assertSupabase('upsert catalog overrides', catalogResult.error);
 
       return { ...store, updatedAt: new Date().toISOString() };
     } catch (error) {
@@ -434,4 +446,31 @@ export async function saveCatalogOverride(input: Omit<CatalogOverride, 'updatedA
   store.catalogOverrides = [override, ...store.catalogOverrides.filter((item) => item.serviceLine !== input.serviceLine)];
   await writeStore(store);
   return override;
+}
+
+export async function deleteReport(id: string) {
+  if (isSupabaseConfigured() && !supabaseUnavailable) {
+    try {
+      await getSupabaseClient().from('cih_reports').delete().eq('id', id);
+      return readStore();
+    } catch (error) {
+      supabaseUnavailable = true;
+      logPersistenceFallback('Supabase', error);
+    }
+  }
+
+  if (isMongoConfigured() && !mongoUnavailable) {
+    try {
+      const col = await collection<IntelligenceReport>('reports');
+      await col.deleteOne({ id });
+      return readStore();
+    } catch (error) {
+      mongoUnavailable = true;
+      logPersistenceFallback('MongoDB', error);
+    }
+  }
+
+  const store = await readStore();
+  store.reports = store.reports.filter((r) => r.id !== id);
+  return writeStore(store);
 }

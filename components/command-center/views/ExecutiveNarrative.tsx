@@ -17,6 +17,11 @@ export function ExecutiveNarrative({ currentReport, growthRows, totals }: { curr
       </div>
       <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>{narrative.generatedAt}</span>
     </section>
+    {!currentReport && (
+      <div className="notice" style={{ marginBottom: '16px', marginTop: 0 }}>
+        <strong>No competitive data loaded.</strong> This narrative is based on your growth model only. Run a competitive scan in Competitor Intake to add live market intelligence.
+      </div>
+    )}
     <div className="card" style={{ marginBottom: '16px' }}>
       <h3 className="text-subhead">Executive Readout</h3>
       <p className="text-body" style={{ margin: '8px 0 0' }}>{narrative.executiveReadout}</p>
@@ -36,8 +41,8 @@ export function ExecutiveNarrative({ currentReport, growthRows, totals }: { curr
       </div>
     </div>
     <SectionGroup title="Strategic Priorities">
-      <div style={{ display: 'grid', gap: '8px' }}>{narrative.strategicPriorities.map((p, i) =>
-        <div key={i} className="hover-card" style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
+      <div className="list-grid">{narrative.strategicPriorities.map((p, i) =>
+        <div key={i} className="list-card hover-card">
           <div className="row" style={{ gap: '8px' }}>
             <Badge>{i + 1}</Badge>
             <span className="text-small">{p}</span>

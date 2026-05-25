@@ -1,10 +1,10 @@
 import type { IntelligenceReport } from '../types';
 
-export type View = 'home' | 'dashboard' | 'growth' | 'board' | 'launch' | 'heatmap' | 'expert' | 'ai' | 'prompt' | 'intake' | 'matrix' | 'battlecards' | 'reports' | 'ask' | 'catalog' | 'diagnostics' | 'governance' | 'builder' | 'referrals' | 'decisions' | 'scenarios' | 'brief' | 'narrative' | 'board-packet' | 'coaching' | 'executive-view' | 'county-plan' | 'referral-plan' | 'competitive-view' | 'service-lines' | 'cms-data' | 'financial-model' | 'staffing-model' | 'sensitivity' | 'opportunity-score' | 'launch-timeline' | 'board-report' | 'launch-checklist';
+export type View = 'home' | 'dashboard' | 'growth' | 'board' | 'launch' | 'heatmap' | 'expert' | 'ai' | 'prompt' | 'intake' | 'matrix' | 'battlecards' | 'reports' | 'ask' | 'catalog' | 'diagnostics' | 'governance' | 'builder' | 'referrals' | 'decisions' | 'scenarios' | 'brief' | 'narrative' | 'board-packet' | 'coaching' | 'executive-view' | 'county-plan' | 'referral-plan' | 'competitive-view' | 'service-lines' | 'cms-data' | 'financial-model' | 'staffing-model' | 'sensitivity' | 'opportunity-score' | 'launch-timeline' | 'board-report' | 'launch-checklist' | 'audit';
 export type RoleView = 'Executive' | 'Growth Leader' | 'Sales Leader' | 'Sales Rep' | 'Board' | 'Admin';
 export type MatrixFilter = 'all' | 'salesReady' | 'review' | 'advantage' | 'matched';
 export type ReportSummary = { id: string; generatedAt: string; competitorsAnalyzed: number; pagesReviewed: number; potentialAndwellAdvantages: number; humanReviewItems: number; competitors: string[]; executiveSummary: string };
 export type ApiCheck = { route: string; ok: boolean; status: number; message: string; preview?: string };
 export type AnyAnalysis = NonNullable<IntelligenceReport['analyses']>[number];
 export type AskEvidence = { type: string; smartScore?: number; competitorName: string; serviceLine: string; subservice?: string | null; status: string; confidence: string; sourceUrl?: string; sourceTitle?: string; evidenceExcerpt: string; safeSalesWording: string; reviewStatus: string; recommendedAction?: string };
-export type AskResponse = { answer: string; confidence: string; reportId?: string; questionTerms?: string[]; nextBestActions?: string[]; evidence?: AskEvidence[] };
+export type AskResponse = { answer: string; confidence: string; source?: 'ai' | 'template'; reportId?: string; questionTerms?: string[]; nextBestActions?: string[]; evidence?: AskEvidence[] };

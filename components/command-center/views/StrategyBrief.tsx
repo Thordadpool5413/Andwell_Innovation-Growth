@@ -20,8 +20,16 @@ export function StrategyBrief({ currentReport, growthRows, totals }: { currentRe
         <h1>AI Strategy Brief</h1>
         <p className="text-body">Generate multi-audience strategy briefs from competitive intelligence and growth model data.</p>
       </div>
-      <Badge>{brief.audience}</Badge>
+      <div className="row" style={{ gap: '8px' }}>
+        <Badge>{brief.audience}</Badge>
+        <button className="btn no-print" onClick={() => window.print()}>Print / Export PDF</button>
+      </div>
     </section>
+    {!currentReport && (
+      <div className="notice" style={{ marginBottom: '16px', marginTop: 0 }}>
+        <strong>Growth model data only.</strong> Run a competitive scan in Competitor Intake to add live market intelligence to this brief.
+      </div>
+    )}
     <Panel title="Audience selector">
       <div className="row" style={{ gap: '6px', flexWrap: 'wrap' }}>
         {audiences.map((a) => <button key={a} className={`btn ${audience === a ? 'primary' : ''}`} onClick={() => setAudience(a)}>{a}</button>)}
@@ -31,7 +39,7 @@ export function StrategyBrief({ currentReport, growthRows, totals }: { currentRe
       <div className="card">
         <p className="text-body">{brief.summary}</p>
         <div className="grid cols4" style={{ margin: '16px 0' }}>
-          {brief.keyMetrics.map((m) => <div key={m.label} className="hover-card" style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
+          {brief.keyMetrics.map((m) => <div key={m.label} className="list-card hover-card">
             <p className="text-xs text-overline" style={{ color: 'var(--color-text-tertiary)', margin: '0 0 4px' }}>{m.label}</p>
             <strong style={{ fontSize: '20px' }}>{m.value}</strong>
           </div>)}

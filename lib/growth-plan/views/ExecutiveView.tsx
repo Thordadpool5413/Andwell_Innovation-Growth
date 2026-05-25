@@ -30,7 +30,7 @@ export default function ExecutiveView({ rows, totals, apiReports, apiCompetitors
 
   const avgThreat = Object.keys(cmsCountyMarket)
     .map((c) => getCompetitiveThreatScore(c))
-    .filter(Boolean)
+    .filter((x): x is NonNullable<typeof x> => x !== null)
     .reduce((s, t, _, a) => s + t.score / a.length, 0);
 
   const totalFFS = Object.values(cmsCountyMarket).reduce((s, m) => s + m.ffs, 0);
@@ -121,7 +121,7 @@ export default function ExecutiveView({ rows, totals, apiReports, apiCompetitors
                 <XAxis dataKey="service" stroke={dark ? "#94a3b8" : "#64748b"} style={{ fontSize: "12px" }} />
                 <YAxis stroke={dark ? "#94a3b8" : "#64748b"} style={{ fontSize: "12px" }} />
                 <Tooltip
-                  formatter={(value) => currency(value)}
+                  formatter={(value) => currency(value as number)}
                   contentStyle={{
                     background: dark ? "#1e293b" : "#fff",
                     border: `1px solid ${dark ? "#334155" : "#e2e8f0"}`,
@@ -142,7 +142,7 @@ export default function ExecutiveView({ rows, totals, apiReports, apiCompetitors
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Tooltip
-                  formatter={(value) => currency(value)}
+                  formatter={(value) => currency(value as number)}
                   contentStyle={{
                     background: dark ? "#1e293b" : "#fff",
                     border: `1px solid ${dark ? "#334155" : "#e2e8f0"}`,
@@ -157,7 +157,7 @@ export default function ExecutiveView({ rows, totals, apiReports, apiCompetitors
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  label={({ service, value }) => `${service}: ${percent(value / totals.y1Revenue)}`}
+                  label={(props: any) => `${props.service}: ${percent((props.value as number) / totals.y1Revenue)}`}
                 >
                   {rollupByService(rows).map((_, index) => (
                     <Cell key={`cell-${index}`} fill={Object.values(COLORS)[index % Object.keys(COLORS).length]} />

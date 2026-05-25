@@ -5,6 +5,7 @@ import {
   CartesianGrid, Line, LineChart, Bar, BarChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis, Legend,
 } from "recharts";
+import { AppTooltip, currencyFormatter, numberFormatter } from "../../../components/command-center/ChartTooltip";
 import Card from "../components/Card";
 import Metric from "../components/Metric";
 import { useDarkMode } from "../components/DarkModeContext";
@@ -78,7 +79,7 @@ export default function FinancialModel({ rows }: FinancialModelProps) {
                 <XAxis dataKey="year" tick={{ fill: dark ? "#94a3b8" : "#475569" }} />
                 <YAxis yAxisId="left" tickFormatter={(value) => `$${Math.round(value / 1000000)}M`} tick={{ fill: dark ? "#94a3b8" : "#475569" }} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fill: dark ? "#94a3b8" : "#475569" }} />
-                <Tooltip formatter={(value, name) => name === "Revenue" || name === "Contribution" ? currency(value) : number(value)} contentStyle={dark ? { backgroundColor: "#1e293b", border: "1px solid #334155", color: "#f1f5f9" } : undefined} />
+                <Tooltip content={<AppTooltip formatValue={(v, n) => n === "Revenue" || n === "Contribution" ? currencyFormatter(v) : numberFormatter(v)} />} />
                 <Legend />
                 <Line yAxisId="left" type="monotone" dataKey="revenue" name="Revenue" stroke={COLORS.blue} strokeWidth={3} />
                 <Line yAxisId="left" type="monotone" dataKey="contribution" name="Contribution" stroke={COLORS.green} strokeWidth={3} strokeDasharray="5 5" />
@@ -95,7 +96,7 @@ export default function FinancialModel({ rows }: FinancialModelProps) {
                 <CartesianGrid strokeDasharray="3 3" stroke={dark ? "#334155" : "#e2e8f0"} />
                 <XAxis dataKey="year" tick={{ fill: dark ? "#94a3b8" : "#475569" }} />
                 <YAxis tickFormatter={(value) => `$${Math.round(value / 1000000)}M`} tick={{ fill: dark ? "#94a3b8" : "#475569" }} />
-                <Tooltip formatter={(value) => currency(value)} contentStyle={dark ? { backgroundColor: "#1e293b", border: "1px solid #334155", color: "#f1f5f9" } : undefined} />
+                <Tooltip content={<AppTooltip formatValue={currencyFormatter} />} />
                 <Legend />
                 <Bar dataKey="revenue" name="Revenue" fill={COLORS.blue} radius={[8, 8, 0, 0]} />
                 <Bar dataKey="contribution" name="Contribution" fill={COLORS.green} radius={[8, 8, 0, 0]} />

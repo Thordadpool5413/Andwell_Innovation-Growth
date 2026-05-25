@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState } from "react";
-import { DEFAULT_SCENARIO } from "../data/constants";
+import { DEFAULT_SCENARIO, Scenario } from "../data/constants";
 import { buildRows } from "../utils/calculations";
 import { currency, number, percent } from "../utils/formatters";
 import { useDarkMode } from "./DarkModeContext";
 
-const PRESET_SCENARIOS: Record<string, { conversionRate: number; hhCapture: number[]; woundCapture: number[]; therapyCapture: number[]; marginOverrides: Record<string, number> }> = {
+const PRESET_SCENARIOS: Record<string, Scenario> = {
   "Default Baseline": DEFAULT_SCENARIO,
   "Conservative": {
     conversionRate: 0.65,
