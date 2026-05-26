@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LayoutDashboard, TrendingUp, Presentation, Rocket, Brain, Cpu, FileText, Upload, Table, Swords, FileBarChart, MessageSquare, BookOpen, Activity, Shield, Hammer, Users, Map, CheckSquare, Sliders, Search, FileSpreadsheet, ScrollText, GraduationCap, Globe, MapPin, Phone, Crosshair, Layers, Database, DollarSign, Target, Clock, ListChecks, Home as HomeIcon, Menu, X, ClipboardList } from 'lucide-react';
+import { ThemeToggle } from '../components/command-center/ThemeToggle';
+import { ProgressRegion } from '../components/command-center/ProgressRegion';
+import { WorkspaceTools } from '../components/command-center/WorkspaceTools';
 import { ToastProvider, useToast } from '../components/Toast';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { andwellCatalog } from '../lib/andwell';
@@ -80,47 +83,7 @@ const workspaceTools: Partial<Record<View, { label: string; keys: View[] }>> = {
   reports: { label: 'Operations', keys: ['reports', 'ask', 'audit', 'diagnostics'] },
 };
 
-function AnalysisProgress({ items, busy, onDismiss }: { items: { name: string; status: 'queued' | 'crawling' | 'ai' | 'done' | 'error'; pages?: number; error?: string }[]; busy: boolean; onDismiss?: () => void }) {
-  const scanDone = !busy && items.length > 0;
-  const errorCount = items.filter((item) => item.status === 'error').length;
 
-  useEffect(() => {
-    if (!scanDone || errorCount > 0) return;
-    const timer = setTimeout(() => onDismiss?.(), 4000);
-    return () => clearTimeout(timer);
-  }, [scanDone, errorCount, onDismiss]);
-
-  if (!items.length) return null;
-  const statusLabel: Record<string, string> = { queued: 'Queued', crawling: 'Crawling…', ai: 'AI extraction…', done: 'Done', error: 'Failed' };
-  const statusColor: Record<string, string> = { queued: 'var(--color-text-tertiary)', crawling: 'var(--color-info)', ai: 'var(--color-accent)', done: 'var(--color-success)', error: 'var(--color-danger)' };
-  const headerLabel = scanDone
-    ? errorCount > 0 ? `Scan complete — ${errorCount} error${errorCount > 1 ? 's' : ''}` : 'Scan complete — closing…'
-    : 'Analysis in progress';
-  const headerColor = scanDone ? (errorCount > 0 ? 'var(--color-danger)' : 'var(--color-success)') : 'var(--color-text-tertiary)';
-  return (
-    <div style={{ position: 'fixed', bottom: '24px', right: '24px', width: '340px', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '16px', zIndex: 300, boxShadow: 'var(--color-shadow)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-        <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: headerColor }}>{headerLabel}</p>
-        {scanDone && onDismiss && <button className="btn btn-sm" onClick={onDismiss}>✕</button>}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {items.map((item, i) => (
-          <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-              <span style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: statusColor[item.status] || 'var(--color-text-tertiary)' }} />
-              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.name}>{item.name}</span>
-              <span style={{ color: statusColor[item.status] || 'var(--color-text-tertiary)', fontSize: '11px', whiteSpace: 'nowrap' }}>
-                {statusLabel[item.status] || item.status}
-                {item.pages && item.status !== 'queued' ? ` · ${item.pages}p` : ''}
-              </span>
-            </div>
-            {item.error && <p style={{ margin: '0 0 0 18px', fontSize: '11px', color: 'var(--color-danger)', lineHeight: 1.3 }}>{item.error}</p>}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 const SHORTCUTS: { key: string; label: string; view?: View; action?: string }[] = [
   { key: 'G', label: 'Growth command center', view: 'growth' },
@@ -156,43 +119,7 @@ function ShortcutsOverlay({ onClose }: { onClose: () => void }) {
   );
 }
 
-function WorkspaceTools({ view, setView }: { view: View; setView: (view: View) => void }) {
-  const tools = Object.values(workspaceTools).find((group) => group?.keys.includes(view));
-  if (!tools) return null;
-  return (
-    <div style={{ display: 'flex', borderBottom: '1px solid var(--color-border)', marginBottom: '24px', overflowX: 'auto', flexShrink: 0 }}>
-      {tools.keys.map((key) => {
-        const item = nav.find((entry) => entry.key === key);
-        if (!item) return null;
-        const active = view === key;
-        return (
-          <button
-            key={key}
-            onClick={() => setView(key)}
-            style={{
-              padding: '10px 18px',
-              background: 'none',
-              border: 'none',
-              borderBottom: active ? '2px solid var(--color-accent)' : '2px solid transparent',
-              marginBottom: '-1px',
-              color: active ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
-              fontSize: '13px',
-              fontWeight: active ? 700 : 400,
-              cursor: 'pointer',
-              transition: 'color 150ms ease, border-color 150ms ease',
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-            }}
-            onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = 'var(--color-text-secondary)'; }}
-            onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = 'var(--color-text-tertiary)'; }}
-          >
-            {item.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+
 
 function PageContent() {
   const { showToast } = useToast();
@@ -212,7 +139,7 @@ function PageContent() {
   const [growthScenario, setGrowthScenario] = useState<GrowthScenario>(growthDefaultScenario);
   const [navOpen, setNavOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [progressItems, setProgressItems] = useState<{ name: string; status: 'queued' | 'crawling' | 'ai' | 'done' | 'error'; pages?: number; error?: string }[]>([]);
+  const [progressItems, setProgressItems] = useState<{ name: string; status: 'queued' | 'crawling' | 'ai' | 'done' | 'error'; pages?: number; error?: string; errorType?: string }[]>([]);
   const dismissProgress = useCallback(() => setProgressItems([]), []);
 
   const aiAnalyses = currentReport?.analyses.filter((analysis) => Boolean(analysis.aiExtraction)) || [];
@@ -416,12 +343,14 @@ function PageContent() {
               const idx = Number(ev.index);
               setPhase(`AI done: ${ev.name}`);
               setProgressItems(prev => prev.map((item, i) => i === idx ? { ...item, status: 'done' } : item));
-            } else if (ev.type === 'ai_error') {
+            } else if (ev.type === 'ai_error' || ev.type === 'crawl_error') {
               const idx = Number(ev.index);
-              setProgressItems(prev => prev.map((item, i) => i === idx ? { ...item, status: 'error', error: String(ev.error || 'AI extraction failed') } : item));
-            } else if (ev.type === 'crawl_error') {
-              const idx = Number(ev.index);
-              setProgressItems(prev => prev.map((item, i) => i === idx ? { ...item, status: 'error', error: String(ev.error) } : item));
+              const errorType = typeof ev.errorType === 'string' ? ev.errorType : undefined;
+              const prefix = errorType ? `[${errorType}] ` : '';
+              setProgressItems(prev => prev.map((item, i) => i === idx ? { ...item, status: 'error', error: prefix + String(ev.error || 'Failed'), errorType } : item));
+            } else if (ev.type === 'progress_summary') {
+              // Live running summary for trust during long scans
+              setPhase(`Processing: ${ev.processed}/${ev.total} — ${ev.successes || 0} success, ${ev.errors || 0} errors`);
             } else if (ev.type === 'building') {
               setPhase(String(ev.message));
             } else if (ev.type === 'complete') {
@@ -587,7 +516,7 @@ function PageContent() {
     </button>
     {navOpen && <div className="sideOverlay" onClick={() => setNavOpen(false)} />}
     {showShortcuts && <ShortcutsOverlay onClose={() => setShowShortcuts(false)} />}
-    {progressItems.length > 0 && <AnalysisProgress items={progressItems} busy={busy} onDismiss={dismissProgress} />}
+    {progressItems.length > 0 && <ProgressRegion items={progressItems} busy={busy} onDismiss={dismissProgress} summary={phase.includes('Processing:') ? phase : undefined} />}
     <div className="proShell">
     <aside className={`side${navOpen ? ' open' : ''}`}>
       <div className="brand proBrand" style={{ marginBottom: '12px' }}><p>Andwell Innovation</p><h1>Intelligence Platform</h1></div>
@@ -601,8 +530,27 @@ function PageContent() {
     </aside>
     <main className={`main proMain ${view === 'home' ? 'homeMain' : ''}`}>
       <div className="sticky-top-group">
-        {view !== 'home' && <header className="head proHead"><div><small>{nav.find((item) => item.key === view)?.note || ''}</small><h2>{nav.find((item) => item.key === view)?.label || 'Andwell Innovation'}</h2></div><div className="row" style={{ gap: '8px', alignItems: 'center' }}>{currentReport ? <span className="badge green">Report loaded</span> : <span className="badge amber">No report</span>}{busy && <span className="badge amber">{phase}</span>}<button className="btn btn-sm no-print" onClick={() => setView('ask')}>Ask AI</button><CommandSearch currentReport={currentReport} growthRows={growthRows} onNavigate={setView} /></div></header>}
-        <WorkspaceTools view={view} setView={setView} />
+        {view !== 'home' && (
+        <header className="head proHead">
+          <div style={{ minWidth: 0, flex: '1 1 auto', overflow: 'hidden' }}>
+            <small style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nav.find((item) => item.key === view)?.note || ''}</small>
+            <h2 style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nav.find((item) => item.key === view)?.label || 'Andwell Innovation'}</h2>
+          </div>
+          <div className="row" style={{ gap: '8px', alignItems: 'center', flex: '0 1 auto', minWidth: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {currentReport ? <span className="badge green">Report loaded</span> : <span className="badge amber">No report</span>}
+            {busy && <span className="badge amber">{phase}</span>}
+            <button className="btn btn-sm no-print" onClick={() => setView('ask')}>Ask AI</button>
+            <ThemeToggle />
+            <CommandSearch currentReport={currentReport} growthRows={growthRows} onNavigate={setView} />
+          </div>
+        </header>
+      )}
+        <WorkspaceTools 
+          view={view} 
+          setView={setView} 
+          workspaceTools={workspaceTools} 
+          nav={nav} 
+        />
       </div>
       <div className="content proContent">
         <ErrorBoundary label={view} key={view}>

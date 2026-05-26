@@ -1,6 +1,7 @@
 import type { IntelligenceReport } from './types';
 import type { GrowthRow, GrowthTotals, StaffingPlanItem } from './growth-plan';
 import { andwellCatalog } from './andwell';
+import { categorizeAllClaims } from './claim-governance';
 
 export type BriefAudience = 'Executive' | 'Sales Leader' | 'Field Rep' | 'Board' | 'Compliance' | 'Referral Partner';
 
@@ -48,6 +49,16 @@ export type CoachingPlan = {
 
 function formatMoney(v: number): string {
   return '$' + (v / 1000000).toFixed(1) + 'M';
+}
+
+function getHighRiskClaimsCount(report?: IntelligenceReport | null): number {
+  if (!report?.analyses?.length) return 0;
+  try {
+    const all = categorizeAllClaims(report);
+    return all.filter((c: any) => c.category === 'High risk').length;
+  } catch {
+    return 0;
+  }
 }
 
 export function generateStrategyBrief(audience: BriefAudience, report?: IntelligenceReport | null, growthRows?: GrowthRow[], totals?: GrowthTotals): StrategyBrief {
@@ -138,6 +149,7 @@ export function generateExecutiveNarrative(report?: IntelligenceReport | null, g
       threatCount > 0 ? `${threatCount} strategic competitor threats require active monitoring and field coaching.` : '',
       report.humanReviewItems > 0 ? `${report.humanReviewItems} intelligence findings need human review before field use.` : '',
       report.expertBrief?.governanceWarning ? `Governance warning: ${report.expertBrief.governanceWarning}` : '',
+      getHighRiskClaimsCount(report) > 0 ? `${getHighRiskClaimsCount(report)} high-risk claims flagged by AI governance (review in Claim Governance before sales use).` : '',
       growthRows?.some((r) => r.launchGroup !== 'Priority 1') ? `${growthRows.filter((r) => r.launchGroup !== 'Priority 1').length} county-service combos in lower priority groups need validation before full investment.` : ''
     ].filter(Boolean).join(' ') || 'No significant risks identified at this time.'
     : 'No report data available for risk assessment.';
@@ -186,6 +198,8 @@ export function generateBoardPacket(report?: IntelligenceReport | null, growthRo
   const risks = [];
   if (report?.humanReviewItems) risks.push({ risk: `${report.humanReviewItems} AI findings pending human review`, mitigation: 'Assign content team to review and approve before field use', severity: 'Medium' as const });
   if (report?.competitorScores?.some((s) => s.threatLevel === 'Strategic threat')) risks.push({ risk: 'Strategic competitor threats identified', mitigation: 'Deploy battlecard coaching and field positioning updates', severity: 'High' as const });
+  const hr = getHighRiskClaimsCount(report);
+  if (hr > 0) risks.push({ risk: `${hr} high-risk claims from AI governance`, mitigation: 'Review and approve or reject in Claim Governance view before any sales/field use', severity: 'High' as const });
   if (growthRows?.some((r) => r.launchGroup === 'Priority 3')) risks.push({ risk: 'Rural county staffing constraints', mitigation: 'Validate remote staffing model and telehealth infrastructure', severity: 'Medium' as const });
   risks.push({ risk: 'Referral source dependency', mitigation: 'Diversify referral base across hospital, SNF, and primary care channels', severity: 'Low' as const });
 

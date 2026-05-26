@@ -22,12 +22,19 @@ export function ExecutiveNarrative({ currentReport, growthRows, totals }: { curr
         <strong>No competitive data loaded.</strong> This narrative is based on your growth model only. Run a competitive scan in Competitor Intake to add live market intelligence.
       </div>
     )}
-    <div className="card" style={{ marginBottom: '16px' }}>
-      <h3 className="text-subhead">Executive Readout</h3>
+    <div className="card expert-surface" style={{ marginBottom: '16px' }}>
+      <div className="row spread" style={{marginBottom:6}}>
+        <h3 className="text-subhead">Executive Readout</h3>
+        <span className="expert-badge governed">Andwell Expert Layer</span>
+      </div>
       <p className="text-body" style={{ margin: '8px 0 0' }}>{narrative.executiveReadout}</p>
+      <div className="provenance" style={{marginTop:8}}>Derived from governed competitive intelligence and Andwell catalog.</div>
     </div>
-    <div className="card" style={{ marginBottom: '16px' }}>
-      <h3 className="text-subhead">Board Narrative</h3>
+    <div className="card expert-surface" style={{ marginBottom: '16px' }}>
+      <div className="row spread" style={{marginBottom:6}}>
+        <h3 className="text-subhead">Board Narrative</h3>
+        <span className="governance-pill">Governed</span>
+      </div>
       <p className="text-body" style={{ margin: '8px 0 0' }}>{narrative.boardNarrative}</p>
     </div>
     <div className="grid cols2" style={{ marginBottom: '16px' }}>

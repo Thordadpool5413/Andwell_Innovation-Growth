@@ -136,6 +136,10 @@ export function buildGrowthRows(scenario: GrowthScenario = growthDefaultScenario
     let reimbursement = meta.reimbursement;
     let basis = 'Planning proxy';
 
+    // Data accuracy note: CMS numbers (hh.users, ppu, prov counts) are from the latest publicly available
+    // CMS Home Health / Hospice utilization files at the time of implementation. Update periodically for board accuracy.
+    // Opportunity scoring balances priority group, demand, Andwell footprint gap, and provider pressure.
+
     if (market && row.service === 'Home Healthcare') {
       demandPool = market.hh.users;
       reimbursement = market.hh.ppu;
@@ -149,7 +153,9 @@ export function buildGrowthRows(scenario: GrowthScenario = growthDefaultScenario
     }
 
     const capture = row.service === 'Home Healthcare' ? scenario.hhCapture : row.service === 'Mobile Wound' ? scenario.woundCapture : scenario.therapyCapture;
-    const starts = capture.map((rate) => Math.round(demandPool * rate)) as [number, number, number];
+    // Growth accuracy: clamp capture rates to [0, 1] to prevent invalid scenarios from producing nonsensical results
+    const safeCapture = capture.map((r) => Math.max(0, Math.min(1, r))) as [number, number, number];
+    const starts = safeCapture.map((rate) => Math.round(demandPool * rate)) as [number, number, number];
     const referrals = starts.map((value) => Math.ceil(value / scenario.conversionRate)) as [number, number, number];
     const revenue = starts.map((value) => value * reimbursement) as [number, number, number];
     const contribution = revenue.map((value) => Math.round(value * meta.margin)) as [number, number, number];

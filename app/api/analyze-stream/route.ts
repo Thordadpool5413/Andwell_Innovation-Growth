@@ -4,6 +4,7 @@ import { analyzeCompetitor, buildReport, buildScore } from '../../../lib/analysi
 import { extractCompetitorIntelligence, isAIExtractionConfigured } from '../../../lib/ai-extractor';
 import { saveReport } from '../../../lib/store';
 import { normalizeCompetitorInput } from '../../../lib/provider-identity';
+import { categorizeClaims } from '../../../lib/claim-governance';
 import type { CompetitorAnalysis, CompetitorInput, Confidence, CrawledPage, ReviewStatus, Status, SubserviceFinding } from '../../../lib/types';
 
 export const runtime = 'nodejs';
@@ -108,7 +109,15 @@ function applyAIEnhancement(analysis: CompetitorAnalysis, aiExtraction: NonNulla
   });
   const subserviceFindings = findings.flatMap(f => f.subserviceFindings);
   const next = { ...analysis, findings, subserviceFindings, aiExtraction, aiEnhanced: true };
-  return { ...next, score: buildScore(next) };
+  const enhancedWithScore = { ...next, score: buildScore(next) };
+
+  // Pull in full claim-governance categorization so AI-enhanced results automatically
+  // benefit from High-risk / Do-not-use / Safe / Needs-review logic (better evidence quality & sales safety).
+  try {
+    (enhancedWithScore as any).categorizedClaims = categorizeClaims(enhancedWithScore);
+  } catch {}
+
+  return enhancedWithScore;
 }
 
 // ── Concurrency helpers ──────────────────────────────────────────────────────
@@ -124,14 +133,57 @@ function crawlMaxPagesLimit() {
   return Math.max(4, Math.min(35, Number.isFinite(v) ? Math.floor(v) : 8));
 }
 
+function perCompetitorTimeoutMs() {
+  const v = Number(process.env.PER_COMPETITOR_TIMEOUT_MS || 45000);
+  return Math.max(15000, Math.min(120000, Number.isFinite(v) ? Math.floor(v) : 45000));
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+// Lightweight one-shot retry for transient network/timeout errors (big win for flaky sites)
+async function withRetry<T>(fn: () => Promise<T>, shouldRetry: (err: unknown) => boolean, label: string): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (shouldRetry(err)) {
+      try {
+        return await fn();
+      } catch (retryErr) {
+        throw retryErr; // surface the retry failure
+      }
+    }
+    throw err;
+  }
+}
+
 async function mapWithConcurrency<T, R>(items: T[], concurrency: number, worker: (item: T, index: number) => Promise<R>): Promise<R[]> {
   const results = new Array<R>(items.length);
   let nextIndex = 0;
   const workerCount = Math.min(Math.max(1, concurrency), items.length);
+  const timeoutMs = perCompetitorTimeoutMs();
   await Promise.all(Array.from({ length: workerCount }, async () => {
     while (nextIndex < items.length) {
       const i = nextIndex++;
-      results[i] = await worker(items[i], i);
+      const item = items[i];
+      try {
+        results[i] = await withTimeout(worker(item, i), timeoutMs, `Competitor ${i + 1}`);
+      } catch (err) {
+        // Surface timeout/other errors as a crawl-style error so the stream continues
+        const message = err instanceof Error ? err.message : 'Operation timed out';
+        // We still need to produce a result shape the caller expects; the worker itself will have emitted progress
+        // For safety, rethrow so the outer per-competitor catch in the caller handles it uniformly
+        throw new Error(message);
+      }
     }
   }));
   return results;
@@ -147,6 +199,47 @@ function buildCustomInstructions(overrides?: Record<string, { instructions?: str
     else if (patch.purpose?.trim()) lines.push(`[${id}] Purpose override: ${patch.purpose.trim()}`);
   }
   return lines.length > 0 ? lines.join('\n') : undefined;
+}
+
+// ── Error classification for better surfacing ────────────────────────────────
+
+function classifyError(message: string, phase: 'crawl' | 'ai'): { type: string; message: string } {
+  const lower = message.toLowerCase();
+
+  // Timeouts (most common transient failure)
+  if (lower.includes('timeout') || lower.includes('timed out') || lower.includes('etimedout')) {
+    return { type: 'timeout', message };
+  }
+
+  // Explicit HTTP / fetch status and connection errors
+  if (lower.includes('403') || lower.includes('forbidden') || lower.includes('blocked') || lower.includes('not allowed') || lower.includes('denied') || lower.includes('access denied')) {
+    return { type: 'blocked', message };
+  }
+  if (lower.includes('429') || lower.includes('too many requests') || lower.includes('rate limit')) {
+    return { type: phase === 'ai' ? 'ai' : 'network', message };
+  }
+  if (lower.includes('5') && (lower.includes('5xx') || lower.includes('500') || lower.includes('502') || lower.includes('503') || lower.includes('504'))) {
+    return { type: 'network', message };
+  }
+  if (lower.includes('404') || lower.includes('not found')) {
+    return { type: 'parse', message }; // treat as "nothing useful to parse"
+  }
+
+  if (lower.includes('network') || lower.includes('econn') || lower.includes('fetch failed') || lower.includes('unreachable') || lower.includes('enotfound') || lower.includes('econnreset') || lower.includes('socket hang up')) {
+    return { type: 'network', message };
+  }
+
+  // Parsing / content issues
+  if (lower.includes('pdf') || lower.includes('parse') || lower.includes('invalid html') || lower.includes('no content') || lower.includes('empty response')) {
+    return { type: 'parse', message };
+  }
+
+  // AI / OpenAI specific
+  if (phase === 'ai' && (lower.includes('openai') || lower.includes('rate') || lower.includes('quota') || lower.includes('model') || lower.includes('context') || lower.includes('token') || lower.includes('authentication') || lower.includes('api key'))) {
+    return { type: 'ai', message };
+  }
+
+  return { type: phase === 'ai' ? 'ai' : 'crawl', message };
 }
 
 // ── Stream route ─────────────────────────────────────────────────────────────
@@ -181,7 +274,16 @@ export async function POST(req: NextRequest) {
 
         emit({ type: 'start', total, ai: shouldUseAI });
 
-        type AnalyzeResult = { analysis: CompetitorAnalysis; crawlError?: { url: string; error: string }; aiError?: { url: string; error: string } };
+        // Running progress counters for live summary during long scans (big trust win)
+        let processed = 0;
+        let successes = 0;
+        let errors = 0;
+
+        function emitProgressSummary() {
+          emit({ type: 'progress_summary', processed, total, successes, errors });
+        }
+
+        type AnalyzeResult = { analysis: CompetitorAnalysis; crawlError?: { url: string; error: string; errorType?: string }; aiError?: { url: string; error: string; errorType?: string } };
 
         const results = await mapWithConcurrency<CompetitorInput, AnalyzeResult>(competitors, concurrency, async (competitor, index) => {
           const name = competitor.name || (() => { try { return new URL(competitor.url).hostname; } catch { return competitor.url; } })();
@@ -203,17 +305,32 @@ export async function POST(req: NextRequest) {
                 if (aiExtraction) analysis = applyAIEnhancement(analysis, aiExtraction);
                 emit({ type: 'ai_done', index, name });
               } catch (err) {
-                aiError = { url: competitor.url, error: err instanceof Error ? err.message : 'AI extraction failed' };
-                emit({ type: 'ai_error', index, name, error: aiError.error });
+                const raw = err instanceof Error ? err.message : 'AI extraction failed';
+                const classified = classifyError(raw, 'ai');
+                aiError = { url: competitor.url, error: classified.message, errorType: classified.type };
+                emit({ type: 'ai_error', index, name, error: aiError?.error || 'AI extraction failed', errorType: classified.type });
+                errors++;
+                processed++;
+                emitProgressSummary();
               }
+            }
+
+            if (!aiError) {
+              successes++;
+              processed++;
+              emitProgressSummary();
             }
 
             return { analysis, aiError };
           } catch (err) {
-            const error = err instanceof Error ? err.message : 'Crawl failed';
-            emit({ type: 'crawl_error', index, name, error });
+            const raw = err instanceof Error ? err.message : 'Crawl failed';
+            const classified = classifyError(raw, 'crawl');
+            emit({ type: 'crawl_error', index, name, error: classified.message, errorType: classified.type });
+            processed++;
+            errors++;
+            emitProgressSummary();
             const fallbackPage: CrawledPage = { url: competitor.url, title: 'Crawl limitation', text: '', excerpt: 'No readable public content could be extracted.' };
-            return { analysis: analyzeCompetitor(normalizeCompetitorInput(competitor), [fallbackPage], index), crawlError: { url: competitor.url, error } };
+            return { analysis: analyzeCompetitor(normalizeCompetitorInput(competitor), [fallbackPage], index), crawlError: { url: competitor.url, error: classified.message, errorType: classified.type } };
           }
         });
 
@@ -222,6 +339,20 @@ export async function POST(req: NextRequest) {
         const analyses = results.map(r => r.analysis);
         const crawlErrors = results.flatMap(r => r.crawlError ? [r.crawlError] : []);
         const aiErrors = results.flatMap(r => r.aiError ? [r.aiError] : []);
+
+        // Rich scan summary for UI + downstream board/sales outputs (trust + transparency)
+        const scanSummary = {
+          total: competitors.length,
+          successes,
+          errors,
+          crawlFailures: crawlErrors.length,
+          aiFailures: aiErrors.length,
+          errorBreakdown: [
+            ...crawlErrors.map(e => ({ url: e.url, type: e.errorType || 'crawl', message: e.error })),
+            ...aiErrors.map(e => ({ url: e.url, type: e.errorType || 'ai', message: e.error }))
+          ]
+        };
+
         const report = buildReport(analyses, [...crawlErrors, ...aiErrors.map(e => ({ url: e.url, error: `AI extraction: ${e.error}` }))]);
         const aiSummaries = analyses.map(a => a.aiExtraction?.leadershipSummary).filter(Boolean);
         const enhancedReport = {
@@ -231,11 +362,14 @@ export async function POST(req: NextRequest) {
           analysisConcurrency: concurrency,
           crawlMaxPagesPerSite: maxPages,
           aiLeadershipSummary: aiSummaries.length ? aiSummaries.join('\n\n') : undefined,
-          executiveSummary: aiSummaries.length ? `${report.executiveSummary}\n\nAI leadership summary: ${aiSummaries.join(' ')}` : report.executiveSummary
+          executiveSummary: aiSummaries.length ? `${report.executiveSummary}\n\nAI leadership summary: ${aiSummaries.join(' ')}` : report.executiveSummary,
+          scanSummary
         };
 
         if (body.save !== false) await saveReport(enhancedReport);
 
+        // Final progress summary for complete visibility
+        emit({ type: 'progress_summary', processed, total, successes, errors });
         emit({ type: 'complete', report: enhancedReport });
       } catch (err) {
         emit({ type: 'error', message: err instanceof Error ? err.message : 'Analysis failed' });

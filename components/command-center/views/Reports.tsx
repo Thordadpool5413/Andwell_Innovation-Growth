@@ -147,6 +147,17 @@ export function Reports({
         </div>
       )}
 
+      {currentReport && (currentReport as any).scanSummary && (
+        <div className="notice" style={{ marginBottom: '12px', marginTop: 0, background: 'rgba(16, 185, 129, 0.08)', borderColor: 'var(--color-success)' }}>
+          <strong>Scan health:</strong> {(currentReport as any).scanSummary.successes} succeeded, {(currentReport as any).scanSummary.errors} errors
+          {(currentReport as any).scanSummary.errorBreakdown?.length > 0 && (
+            <span style={{ marginLeft: 8, color: 'var(--color-text-tertiary)', fontSize: '11px' }}>
+              (see details in raw report or re-run for fresh data)
+            </span>
+          )}
+        </div>
+      )}
+
       {thinDataCompetitors.length > 0 && (
         <div className="notice" style={{ marginBottom: '8px', marginTop: 0, borderColor: 'var(--color-warning)' }}>
           <strong>Data quality warning —</strong> {thinDataCompetitors.map((a) => a.name).join(', ')} had fewer than 4 pages crawled. Intelligence for {thinDataCompetitors.length === 1 ? 'this competitor' : 'these competitors'} may be incomplete. Consider re-running the scan with updated URLs.

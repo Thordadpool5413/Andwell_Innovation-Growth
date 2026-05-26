@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"C:\\Users\\NickL\\Andwell_Innovation-Growth\" && npm run typecheck 2>&1 | tail -5",
+            "shell": "powershell",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}

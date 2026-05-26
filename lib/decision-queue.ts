@@ -112,6 +112,25 @@ export function generateDecisions(report?: IntelligenceReport | null, growthRows
           createdAt: now
         });
       }
+
+      // Use pre-computed categorizedClaims from AI-enhanced scan for stronger governance/compliance decisions
+      const claims = (analysis as any).categorizedClaims || [];
+      const highRisk = claims.filter((c: any) => c.category === 'High risk');
+      if (highRisk.length > 0) {
+        decisions.push({
+          id: `dec-highrisk-${decisions.length}`,
+          type: 'Governance',
+          owner: 'Admin',
+          urgency: 'Today',
+          risk: 'High',
+          title: `${highRisk.length} high-risk claims detected for ${analysis.name}`,
+          evidence: highRisk.slice(0, 2).map((c: any) => c.claim).join(' | '),
+          recommendedAction: 'Review in Claim Governance view, approve or rewrite before any field use. Escalate to legal if needed.',
+          status: 'Pending',
+          relatedCompetitor: analysis.name,
+          createdAt: now
+        });
+      }
     }
 
     if (report.humanReviewItems > 0) {

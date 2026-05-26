@@ -35,9 +35,10 @@ export function StrategyBrief({ currentReport, growthRows, totals }: { currentRe
         {audiences.map((a) => <button key={a} className={`btn ${audience === a ? 'primary' : ''}`} onClick={() => setAudience(a)}>{a}</button>)}
       </div>
     </Panel>
-    <SectionGroup title={brief.title} action={<span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>{brief.generatedAt}</span>}>
-      <div className="card">
+    <SectionGroup title={brief.title} action={<span className="expert-badge governed" style={{marginLeft:8}}>Andwell Expert Layer</span>}>
+      <div className="card expert-surface">
         <p className="text-body">{brief.summary}</p>
+        <div className="provenance" style={{marginTop:8}}>Grounded in Andwell catalog + claim governance review of live market data.</div>
         <div className="grid cols4" style={{ margin: '16px 0' }}>
           {brief.keyMetrics.map((m) => <div key={m.label} className="list-card hover-card">
             <p className="text-xs text-overline" style={{ color: 'var(--color-text-tertiary)', margin: '0 0 4px' }}>{m.label}</p>

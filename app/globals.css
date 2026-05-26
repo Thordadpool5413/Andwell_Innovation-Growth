@@ -101,6 +101,46 @@
   --gradient-hero: linear-gradient(135deg, #0a0e27, #1e3a5f 46%, #0f766e 78%, #854d0e);
 }
 
+/* Optional light theme (additive, dark remains default) */
+.light {
+  --color-bg-primary: #f8fafc;
+  --color-bg-secondary: #f1f5f9;
+  --color-bg-tertiary: #e2e8f0;
+  --color-bg-elevated: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  --color-bg-sidebar: #f1f5f9;
+  --color-bg-sidebar-secondary: #e2e8f0;
+
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-tertiary: #64748b;
+  --color-text-inverse: #f8fafc;
+
+  --color-border: #cbd5e1;
+  --color-border-light: #94a3b8;
+
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-accent-light: rgba(37, 99, 235, 0.1);
+
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-info: #0891b2;
+
+  --color-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --color-soft-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+
+  --glow-blue: 0 0 20px rgba(37, 99, 235, 0.15);
+  --glow-green: 0 0 20px rgba(5, 150, 105, 0.15);
+  --glow-amber: 0 0 20px rgba(217, 119, 6, 0.15);
+  --glow-red: 0 0 20px rgba(220, 38, 38, 0.15);
+
+  --gradient-primary: linear-gradient(135deg, #2563eb, #0891b2);
+  --gradient-success: linear-gradient(135deg, #059669, #10b981);
+  --gradient-warning: linear-gradient(135deg, #d97706, #f59e0b);
+  --gradient-danger: linear-gradient(135deg, #dc2626, #ef4444);
+}
+
 * {
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
@@ -110,6 +150,45 @@
 ::selection {
   background: rgba(59, 130, 246, 0.25);
   color: inherit;
+}
+
+/* Phase 1 utilities for better truncation, flex safety, and overlap prevention */
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flex-min-0 {
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.safe-flex {
+  display: flex;
+  min-width: 0;
+}
+
+.truncate-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Robust focus styles (Phase 1 accessibility enhancement) */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--color-accent-light);
 }
 
 ::-webkit-scrollbar {
@@ -141,16 +220,16 @@ body {
   line-height: 1.6;
 }
 
-/* ── Typography Hierarchy ── */
-.text-hero { font-size: 36px; letter-spacing: -0.05em; line-height: 1.1; font-weight: 700; }
-.text-display { font-size: 28px; letter-spacing: -0.04em; line-height: 1.15; font-weight: 700; }
-.text-title { font-size: 22px; letter-spacing: -0.03em; line-height: 1.2; font-weight: 700; }
-.text-heading { font-size: 18px; letter-spacing: -0.02em; line-height: 1.3; font-weight: 600; }
-.text-subhead { font-size: 15px; letter-spacing: -0.01em; line-height: 1.4; font-weight: 600; }
-.text-body { font-size: 14px; line-height: 1.6; }
-.text-small { font-size: 13px; line-height: 1.5; }
-.text-xs { font-size: 11px; line-height: 1.4; }
-.text-overline { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; }
+/* ── Typography Hierarchy — Expert, calm, authoritative ── */
+.text-hero { font-size: 36px; letter-spacing: -0.06em; line-height: 1.05; font-weight: 700; }
+.text-display { font-size: 28px; letter-spacing: -0.05em; line-height: 1.1; font-weight: 700; }
+.text-title { font-size: 22px; letter-spacing: -0.04em; line-height: 1.15; font-weight: 700; }
+.text-heading { font-size: 17px; letter-spacing: -0.025em; line-height: 1.25; font-weight: 600; }
+.text-subhead { font-size: 14px; letter-spacing: -0.01em; line-height: 1.35; font-weight: 600; }
+.text-body { font-size: 14px; line-height: 1.65; }
+.text-small { font-size: 12.5px; line-height: 1.55; }
+.text-xs { font-size: 10.5px; line-height: 1.4; }
+.text-overline { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; }
 
 /* ── Spacing Scale ── */
 .gap-xs { gap: 4px; }
@@ -217,7 +296,7 @@ body {
 .table-compact th, .table-compact td { padding: 10px 12px; font-size: 13px; }
 .table-compact td { line-height: 1.4; }
 .table-compact td small { display: block; margin-top: 4px; color: var(--color-text-tertiary); font-size: 11px; }
-.table-compact td p { margin: 0; max-width: 58ch; }
+.table-compact td p { margin: 0; max-width: 58ch; overflow-wrap: break-word; word-break: break-word; white-space: normal; }
 
 /* ── Progressive Disclosure ── */
 .progressive-summary { cursor: pointer; color: var(--color-accent); font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
@@ -227,6 +306,36 @@ body {
 /* ── Hover Card ── */
 .hover-card { transition: border-color 150ms ease; cursor: default; }
 .hover-card:hover { border-color: var(--color-accent); }
+
+/* ── Expert Authority / Governance cues (builds trust + positions app as the Andwell expert) ── */
+.expert-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #4ade80;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.expert-badge::before {
+  content: "●";
+  font-size: 8px;
+}
+.governed {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #4ade80;
+}
+.provenance {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.04em;
+}
 
 /* ── Section Group ── */
 .section-group { margin-bottom: 24px; }
@@ -331,12 +440,649 @@ a {
 .text-gradient { background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 
 .card {
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
-  padding: 20px;
-  transition: border-color 200ms ease;
+  padding: 22px;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
+.card:hover {
+  border-color: var(--color-border-light);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Expert-grade focus and authority treatments */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.authority-section {
+  border-left: 3px solid var(--color-success);
+  padding-left: 16px;
+  margin-left: -3px;
+}
+
+/* Premium expert visual language — calm, authoritative, board-ready */
+.expert-surface {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.6), var(--color-bg-secondary));
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.governance-pill {
+  font-size: 10px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #4ade80;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+/* Refined expert typography and spacing for calm authority */
+.section h1 {
+  letter-spacing: -0.03em;
+}
+
+.card h3.text-subhead {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+
+/* Calm, premium focus and selection for board-ready feel */
+input:focus, textarea:focus, select:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Expert-grade section and header refinement */
+.section {
+  margin-bottom: 24px;
+}
+
+h1 {
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+/* Final expert visual touches — calm authority */
+.table-compact th {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.battleCard, .promptCard, .catalogCard {
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.battleCard:hover, .promptCard:hover, .catalogCard:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+/* Subtle expert watermark / trust cue for dense outputs */
+.expert-watermark {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 9px;
+  opacity: 0.4;
+  pointer-events: none;
+  letter-spacing: 0.1em;
+}
+
+/* Final premium expert polish — calm, authoritative, print-ready */
+@media print {
+  .expert-badge, .governance-pill {
+    border: 1px solid #000;
+    color: #000;
+    background: #fff;
+  }
+  .provenance {
+    color: #555;
+  }
+}
+
+/* One last expert visual refinement — consistent calm hierarchy */
+.text-heading {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Expert authority callout style for leadership views */
+.expert-callout {
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* One final expert visual touch — consistent premium feel */
+.notice {
+  border-radius: 10px;
+}
+
+/* Expert-grade table and data polish for board outputs */
+.table-compact {
+  font-feature-settings: "tnum";
+}
+
+/* Final expert authority polish — calm, confident, board-ready */
+body {
+  font-feature-settings: "kern", "liga";
+}
+
+/* One ultimate expert visual refinement — consistent premium calm */
+.panel, .card, .section {
+  transition: box-shadow 200ms ease;
+}
+
+/* Expert authority final touch — subtle elevation on key surfaces */
+.featurePanel {
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+/* One last expert visual refinement — consistent calm premium feel */
+.expert-surface {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+/* Expert authority final polish — premium, calm, board-ready */
+:root {
+  --expert-glow: 0 0 20px rgba(16, 185, 129, 0.1);
+}
+
+/* One ultimate expert visual refinement — consistent premium calm */
+h2, h3 {
+  font-feature-settings: "kern", "liga";
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert button and control polish */
+.btn.primary {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Calm expert section header polish */
+.section h1 {
+  position: relative;
+}
+
+.section h1:after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+  border-radius: 1px;
+}
+
+/* Premium expert surface treatment */
+.expert-surface {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.65), var(--color-bg-secondary));
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.expert-surface::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(16, 185, 129, 0.3), transparent);
+  pointer-events: none;
+}
+
+/* Final expert authority polish — subtle, calm, board-ready */
+.expert-surface::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(16, 185, 129, 0.15), transparent);
+  pointer-events: none;
+}
+
+/* Expert-grade subtle grid / texture for premium surfaces (very light) */
+.expert-surface {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.02) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* One final expert visual touch — consistent premium calm */
+.expert-surface {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+}
+
+
 .card > h3 {
   font-size: 11px;
   font-weight: 800;
@@ -346,6 +1092,11 @@ a {
   margin: 0 0 14px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--color-border);
+}
+.card p {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 .card.empty {
   text-align: center;
@@ -1059,6 +1810,9 @@ td {
 .promptCard p {
   line-height: 1.6;
   color: var(--color-text-secondary);
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 .promptBlock {
   display: grid;
@@ -1080,6 +1834,9 @@ td {
   background: var(--color-bg-tertiary);
   color: var(--color-text-secondary);
   line-height: 1.45;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 .promptBlock.output span {
   background: #ecfeff;
@@ -1104,6 +1861,9 @@ td {
 .battleCard p {
   line-height: 1.6;
   color: var(--color-text-secondary);
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 .catalogCard {
   background: var(--color-bg-secondary);
@@ -1241,6 +2001,14 @@ td {
   background: rgba(6, 182, 212, 0.07);
 }
 
+.list-card p,
+.status-card p,
+.battleSection p {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+}
+
 /* ── Insight cards (Dashboard InsightsBar) ── */
 .insight-card {
   padding: 14px 16px;
@@ -1268,6 +2036,10 @@ td {
   font-size: 12px;
   font-weight: 800;
   color: var(--color-text-secondary);
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 .lightTags span {
   background: rgba(255, 255, 255, 0.16);
@@ -1452,6 +2224,18 @@ td {
   margin: 8px 0 0;
   color: var(--color-text-secondary);
   line-height: 1.6;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+}
+.matrixDetailGrid > div p,
+.matrixSources p,
+.matrixSubservices div,
+.matrixSubservices strong,
+.matrixSubservices span {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 .matrixRationaleList {
   display: flex;
@@ -1523,8 +2307,11 @@ td {
   color: var(--color-text-tertiary);
 }
 .matrixSourceCard p {
-  max-width: 120ch;
+  max-width: 100%;
   color: var(--color-text-secondary);
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 .matrixSubservices {
   display: grid;

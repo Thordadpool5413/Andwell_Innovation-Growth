@@ -40,11 +40,15 @@ export function BoardPacket({ currentReport, growthRows, totals, staffingPlan }:
       <h3 className="text-subhead">{packet.title}</h3>
       <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Generated {packet.generatedAt}</span>
     </div>
-    <div className="card" style={{ marginBottom: '16px' }}>
-      <h3 className="text-subhead">Executive Summary</h3>
+    <div className="card expert-surface" style={{ marginBottom: '16px' }}>
+      <div className="row spread" style={{marginBottom:6}}>
+        <h3 className="text-subhead">Executive Summary</h3>
+        <span className="expert-badge governed">Governed</span>
+      </div>
       <p className="text-body" style={{ margin: '8px 0 0' }}>{packet.executiveSummary}</p>
+      <div className="provenance" style={{marginTop:8}}>Andwell Expert Layer • Live competitive intelligence + catalog governance.</div>
     </div>
-    <div className="card" style={{ marginBottom: '16px' }}>
+    <div className="card expert-surface" style={{ marginBottom: '16px' }}>
       <h3 className="text-subhead">Market Opportunity</h3>
       <p className="text-body" style={{ margin: '8px 0 0' }}>{packet.marketOpportunity}</p>
     </div>

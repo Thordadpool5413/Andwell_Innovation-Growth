@@ -256,13 +256,14 @@ export function Dashboard({ expertBrief, roleView, setView, clearLegacyBrowserSt
       </div>
     </section>
 
-    <SectionGroup title="Expert posture">
+    <SectionGroup title="Expert posture" action={<span className="expert-badge governed">Andwell Expert Layer • Governed</span>}>
       <div className="grid cols2 commandGrid">
         <Panel title="Current expert readout" className="featurePanel">
           <Badge tone="blue">{roleGuidance[roleView].headline}</Badge>
           <h2 style={{ margin: '12px 0 8px' }}>{expertBrief.posture}</h2>
           <p className="text-body">{roleGuidance[roleView].focus}</p>
           <div className="notice" style={{ fontSize: '13px' }}><strong>Board narrative</strong><br />{expertBrief.boardNarrative}</div>
+          <div className="provenance" style={{marginTop:8}}>Generated from Andwell catalog + claim governance review of live competitive intelligence.</div>
         </Panel>
         <Panel title="Key metrics">
           <MetricGrid cols={2}>

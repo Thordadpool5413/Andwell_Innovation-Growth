@@ -61,7 +61,8 @@ export function Battlecards({ currentReport, onRunScan }: { currentReport: Intel
     if (!currentReport) return {};
     const map: Record<string, ReturnType<typeof categorizeClaims>> = {};
     for (const analysis of currentReport.analyses) {
-      map[analysis.id] = categorizeClaims(analysis);
+      // Prefer pre-computed categorizedClaims from AI-enhanced scan (stronger claim-governance integration)
+      map[analysis.id] = (analysis as any).categorizedClaims || categorizeClaims(analysis);
     }
     return map;
   }, [currentReport]);
@@ -141,6 +142,7 @@ export function Battlecards({ currentReport, onRunScan }: { currentReport: Intel
                     <Badge tone={analysis.aiEnhanced ? 'green' : toneForStatus(analysis.score.threatLevel)}>
                       {analysis.aiEnhanced ? 'AI enhanced' : analysis.score.threatLevel}
                     </Badge>
+                    <span className="expert-badge governed">Governed</span>
                     <button
                       className="btn btn-sm"
                       onClick={() => copyCard(analysis.id, copyText)}

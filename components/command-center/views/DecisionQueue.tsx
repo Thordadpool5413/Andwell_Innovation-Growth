@@ -99,7 +99,7 @@ export function DecisionQueue({ currentReport, growthRows }: { currentReport: In
         <h1>Decision Queue</h1>
         <p className="text-body">Actionable decision items from competitive intelligence, growth modeling, governance, and field readiness. Approve, defer, assign, or escalate each item.</p>
       </div>
-      <Badge>{counts.pending} pending</Badge>
+      <span className="expert-badge governed">Andwell Expert Layer</span>
     </section>
     <MetricGrid cols={4}>
       <Stat label="Total decisions" value={counts.total} hint="In queue" />

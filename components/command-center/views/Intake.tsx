@@ -108,10 +108,10 @@ export function Intake({
         }>
           <div className="grid cols2">
             {competitors.map((competitor, index) => (
-              <div className="briefItem hover-card competitorIntakeCard" key={`${competitor.url}${index}`}>
-                <div className="competitorIntakeFields">
-                  <label htmlFor={`name-${index}`}>
-                    <span>Provider name</span>
+              <div className="briefItem hover-card competitorIntakeCard" key={`${competitor.url}${index}`} style={{ minWidth: 0 }}>
+                <div className="competitorIntakeFields" style={{ minWidth: 0 }}>
+                  <label htmlFor={`name-${index}`} style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Provider name</span>
                     <input
                       id={`name-${index}`}
                       className="input"
@@ -119,10 +119,11 @@ export function Intake({
                       onChange={(e) => updateCompetitor(index, { name: e.target.value })}
                       placeholder="Provider name"
                       aria-label="Provider name"
+                      style={{ maxWidth: '100%' }}
                     />
                   </label>
-                  <label htmlFor={`url-${index}`}>
-                    <span>Website</span>
+                  <label htmlFor={`url-${index}`} style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Website</span>
                     <input
                       id={`url-${index}`}
                       className="input"
@@ -131,10 +132,11 @@ export function Intake({
                       placeholder="https://provider.org"
                       aria-label="Provider website URL"
                       type="url"
+                      style={{ maxWidth: '100%' }}
                     />
                   </label>
-                  <label htmlFor={`market-${index}`}>
-                    <span>Market / note</span>
+                  <label htmlFor={`market-${index}`} style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Market / note</span>
                     <input
                       id={`market-${index}`}
                       className="input"
@@ -142,10 +144,11 @@ export function Intake({
                       onChange={(e) => updateCompetitor(index, { market: e.target.value })}
                       placeholder="Needs review"
                       aria-label="Market or note"
+                      style={{ maxWidth: '100%' }}
                     />
                   </label>
                 </div>
-                <div className="row" style={{ gap: '6px' }}>
+                <div className="row" style={{ gap: '6px', flexShrink: 0 }}>
                   {runSingleAnalysis && (
                     <button
                       className="btn btn-sm"

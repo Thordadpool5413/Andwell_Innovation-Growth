@@ -68,6 +68,7 @@ function ExpandedFinding({ finding }: { finding: Finding }) {
         <p><strong>Andwell advantage:</strong> {finding.andwellAdvantage}</p>
         <p><strong>Competitor advantage:</strong> {finding.competitorAdvantage}</p>
         <p><strong>Avoid saying:</strong> {finding.avoidSaying}</p>
+        <div className="provenance" style={{marginTop:8}}>Safe language &amp; advantages derived from Andwell catalog + claim governance review.</div>
       </div>
     </div>
     <div className="matrixSources">
@@ -167,7 +168,10 @@ export function Matrix({ currentReport, matrixFilter, setMatrixFilter, matrixSea
             <td><strong>{sourceCount(finding)}</strong><small>{safeSources(finding)[0]?.pageType || 'No page type'}</small></td>
             <td><strong>{finding.subserviceDepthScore}%</strong><small>subservice depth</small></td>
             <td><Badge tone={reviewTone(finding.reviewStatus)}>{finding.reviewStatus}</Badge><ConfidenceBadge confidence={details} details /></td>
-            <td><p>{finding.safeSalesWording}</p></td>
+            <td>
+              <p>{finding.safeSalesWording}</p>
+              <div style={{marginTop: 4}}><span className="expert-badge governed">Governed</span></div>
+            </td>
           </tr>
           {isExpanded ? <ExpandedFinding finding={finding} /> : null}
         </React.Fragment>;
