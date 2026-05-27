@@ -6,6 +6,19 @@ export type ExpertPriority = 'Critical' | 'High' | 'Medium' | 'Low';
 export type ExpertAudience = 'CEO' | 'COO' | 'Sales Leader' | 'Sales Rep' | 'Admin' | 'Marketing' | 'Clinical Leader';
 export type CrawledPageType = 'Service page' | 'Program page' | 'Referral page' | 'Eligibility page' | 'Location page' | 'About page' | 'News or blog' | 'Low value' | 'General page';
 
+export type TrustMetadata = {
+  sourceCount: number;
+  confidence: string;
+  reviewStatus: string;
+  approvedClaimsCount: number;
+  scanDate?: string;
+  model?: string;
+  knowledgeVersion: string;
+  publicEvidenceCount: number;
+  aiInterpretationCount: number;
+  warnings: string[];
+};
+
 export type ConfidenceDetails = {
   overall: Confidence;
   evidenceQuality: 'Strong' | 'Moderate' | 'Weak';
@@ -55,6 +68,12 @@ export type CompetitorInput = {
   url: string;
   market?: string;
   notes?: string;
+  sourceScope?: string;
+  preloaded?: boolean;
+  lastScanDate?: string;
+  sourceCount?: number;
+  confidence?: string;
+  reviewStatus?: string;
 };
 
 export type AIServiceLineDepth = {
@@ -222,6 +241,7 @@ export type ExpertRecommendation = {
   action: string;
   safeLanguage: string;
   reviewRequired: boolean;
+  trustMetadata?: TrustMetadata;
 };
 
 export type ExpertFieldPlay = {
@@ -319,4 +339,18 @@ export type IntelligenceReport = {
   aiModel?: string;
   aiLeadershipSummary?: string;
   expertBrief?: ExpertBrief;
+  trustMetadata?: TrustMetadata;
+  sourceLibraryMode?: string;
+  geography?: string;
+  andwellBaselineSources?: string[];
+  analysisConcurrency?: number;
+  crawlMaxPagesPerSite?: number;
+  scanSummary?: {
+    total: number;
+    successes: number;
+    errors: number;
+    crawlFailures: number;
+    aiFailures: number;
+    errorBreakdown?: { url: string; type: string; message: string }[];
+  };
 };

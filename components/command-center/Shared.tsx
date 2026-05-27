@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { Confidence, ConfidenceDetails } from '../../lib/types';
+import type { Confidence, ConfidenceDetails, TrustMetadata } from '../../lib/types';
 import { useCountUpOnMount } from '../../lib/useCountUp';
 
 export function Badge({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'neutral' | 'green' | 'amber' | 'red' | 'blue' | 'dark' }) {
@@ -75,4 +75,43 @@ export function MetricGrid({ children, cols = 4 }: { children: React.ReactNode; 
 
 export function SectionGroup({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return <div className="section-group"><div className="section-group-header"><h3>{title}</h3>{action}</div>{children}</div>;
+}
+
+function trustTone(value?: string): 'neutral' | 'green' | 'amber' | 'red' | 'blue' | 'dark' {
+  const text = (value || '').toLowerCase();
+  if (text.includes('ready') || text.includes('approved') || text.includes('high') || text.includes('evidence backed')) return 'green';
+  if (text.includes('review') || text.includes('moderate') || text.includes('partial')) return 'amber';
+  if (text.includes('risk') || text.includes('error') || text.includes('do not')) return 'red';
+  if (text.includes('growth') || text.includes('modeled') || text.includes('template')) return 'blue';
+  return 'neutral';
+}
+
+export function TrustPanel({ metadata, title = 'Trust Panel' }: { metadata?: TrustMetadata | null; title?: string }) {
+  const scanDate = metadata?.scanDate ? new Date(metadata.scanDate).toLocaleDateString() : 'Not scanned';
+  return (
+    <aside className="trustPanel">
+      <div className="row spread" style={{ marginBottom: '10px' }}>
+        <h3 className="text-overline" style={{ margin: 0, color: 'var(--color-text-tertiary)' }}>{title}</h3>
+        <Badge tone={trustTone(metadata?.reviewStatus)}>{metadata?.reviewStatus || 'No scan loaded'}</Badge>
+      </div>
+      <div className="trustGrid">
+        <div><span>Sources</span><strong>{metadata?.sourceCount ?? 0}</strong></div>
+        <div><span>Confidence</span><strong>{metadata?.confidence || 'Not set'}</strong></div>
+        <div><span>Approved claims</span><strong>{metadata?.approvedClaimsCount ?? 0}</strong></div>
+        <div><span>Last scan</span><strong>{scanDate}</strong></div>
+      </div>
+      <div className="trustSplit">
+        <span>Public evidence: {metadata?.publicEvidenceCount ?? 0}</span>
+        <span>AI interpretation: {metadata?.aiInterpretationCount ?? 0}</span>
+      </div>
+      <p className="text-xs" style={{ margin: '10px 0 0', color: 'var(--color-text-tertiary)' }}>
+        Model: {metadata?.model || 'Not configured'} · Knowledge: {metadata?.knowledgeVersion || 'local'}
+      </p>
+      {metadata?.warnings?.length ? (
+        <div className="trustWarnings">
+          {metadata.warnings.slice(0, 3).map((warning) => <Badge key={warning} tone="amber">{warning}</Badge>)}
+        </div>
+      ) : null}
+    </aside>
+  );
 }

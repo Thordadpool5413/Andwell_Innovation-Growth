@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Badge, Panel, SectionGroup, ExpandableSection, Stat } from '../Shared';
 import { computeCountyHeatMap, computeReadinessScores, computeStaffingAlerts, heatCategoryTone, readinessTone } from '../../../lib/opportunity-heatmap';
 import { money, whole } from '../../../lib/command-center/utils';
-import type { GrowthRow, GrowthTotals } from '../../../lib/growth-plan';
+import type { GrowthRow, GrowthServiceName, GrowthTotals } from '../../../lib/growth-plan';
 import type { HeatCategory } from '../../../lib/opportunity-heatmap';
 import { useSortableTable } from '../../../lib/useSortableTable';
 import { downloadCsv } from '../../../lib/command-center/csv';
@@ -13,20 +13,50 @@ import { useToast } from '../../../components/Toast';
 export function OpportunityHeatMap({ rows, totals }: { rows: GrowthRow[]; totals: GrowthTotals }) {
   const { showToast } = useToast();
   const [categoryFilter, setCategoryFilter] = useState<HeatCategory | 'all'>('all');
+  const [serviceFilter, setServiceFilter] = useState<GrowthServiceName | 'all'>('all');
+  const [riskFilter, setRiskFilter] = useState<'all' | 'High' | 'Medium' | 'Low'>('all');
+  const [readinessFilter, setReadinessFilter] = useState<'all' | 'Ready' | 'Review' | 'Not ready'>('all');
 
   const heatMap = useMemo(() => computeCountyHeatMap(rows), [rows]);
   const readiness = useMemo(() => computeReadinessScores(rows), [rows]);
   const alerts = useMemo(() => computeStaffingAlerts(rows), [rows]);
 
-  const filtered = useMemo(() => {
-    if (categoryFilter === 'all') return heatMap;
-    return heatMap.filter((h) => h.category === categoryFilter);
-  }, [heatMap, categoryFilter]);
-
   const categories = [...new Set(heatMap.map((h) => h.category))] as HeatCategory[];
+  const services = [...new Set(rows.map((r) => r.service))] as GrowthServiceName[];
 
   const criticalAlerts = alerts.filter((a) => a.severity === 'critical');
   const warningAlerts = alerts.filter((a) => a.severity === 'warning');
+
+  const countyTiles = useMemo(() => heatMap.map((heat) => {
+    const countyRows = rows.filter((row) => row.county === heat.county);
+    const topRow = [...countyRows].sort((a, b) => b.revenue[0] - a.revenue[0])[0];
+    const readinessRows = readiness.filter((item) => item.county === heat.county);
+    const avgReadiness = readinessRows.length ? Math.round(readinessRows.reduce((sum, item) => sum + item.readinessPercent, 0) / readinessRows.length) : 0;
+    const countyAlerts = alerts.filter((alert) => alert.county === heat.county || alert.service === topRow?.service);
+    const highestRisk = countyAlerts.some((alert) => alert.severity === 'critical') ? 'High' : countyAlerts.some((alert) => alert.severity === 'warning') ? 'Medium' : 'Low';
+    const readinessLabel = avgReadiness >= 70 ? 'Ready' : avgReadiness >= 45 ? 'Review' : 'Not ready';
+    return {
+      heat,
+      county: heat.county,
+      score: heat.composite,
+      category: heat.category,
+      serviceLine: topRow?.service || heat.topService,
+      priority: topRow?.launchGroup || 'Priority 3',
+      y1Revenue: countyRows.reduce((sum, row) => sum + row.revenue[0], 0),
+      threeYearRevenue: countyRows.reduce((sum, row) => sum + row.totalRevenue, 0),
+      staffingRisk: highestRisk,
+      confidence: avgReadiness,
+      readiness: readinessLabel
+    };
+  }), [heatMap, rows, readiness, alerts]);
+
+  const filteredTiles = useMemo(() => countyTiles.filter((tile) => {
+    if (categoryFilter !== 'all' && tile.category !== categoryFilter) return false;
+    if (serviceFilter !== 'all' && tile.serviceLine !== serviceFilter) return false;
+    if (riskFilter !== 'all' && tile.staffingRisk !== riskFilter) return false;
+    if (readinessFilter !== 'all' && tile.readiness !== readinessFilter) return false;
+    return true;
+  }), [countyTiles, categoryFilter, serviceFilter, riskFilter, readinessFilter]);
 
   const tableData = useMemo(() => heatMap.map((h) => ({
     county: h.county,
@@ -34,7 +64,7 @@ export function OpportunityHeatMap({ rows, totals }: { rows: GrowthRow[]; totals
     composite: h.composite,
     topService: h.topService,
     revenue: rows.filter((r) => r.county === h.county).reduce((s, r) => s + (r.revenue?.[0] ?? 0), 0),
-  })), [heatMap, rows]);
+  })).filter((row) => filteredTiles.some((tile) => tile.county === row.county)), [heatMap, rows, filteredTiles]);
 
   const { sorted: sortedTable, thProps, SortIndicator } = useSortableTable(tableData, 'composite', 'desc');
 
@@ -68,6 +98,39 @@ export function OpportunityHeatMap({ rows, totals }: { rows: GrowthRow[]; totals
       <Stat label="Counties scored" value={heatMap.length} hint="Across 3 service lines" />
       <Stat label="Critical alerts" value={criticalAlerts.length} hint="Staffing constraints" />
     </div>
+
+    <Panel title="Growth map filters">
+      <div className="filterGrid">
+        <label><span>Service line</span><select className="select" value={serviceFilter} onChange={(event) => setServiceFilter(event.target.value as GrowthServiceName | 'all')}><option value="all">All service lines</option>{services.map((service) => <option key={service} value={service}>{service}</option>)}</select></label>
+        <label><span>County priority</span><select className="select" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value as HeatCategory | 'all')}><option value="all">All priorities</option>{categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}</select></label>
+        <label><span>Staffing risk</span><select className="select" value={riskFilter} onChange={(event) => setRiskFilter(event.target.value as typeof riskFilter)}><option value="all">All risks</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select></label>
+        <label><span>Launch readiness</span><select className="select" value={readinessFilter} onChange={(event) => setReadinessFilter(event.target.value as typeof readinessFilter)}><option value="all">All readiness</option><option value="Ready">Ready</option><option value="Review">Review</option><option value="Not ready">Not ready</option></select></label>
+      </div>
+    </Panel>
+
+    <SectionGroup title={`Ranked county tiles (${filteredTiles.length})`} action={<button className="btn btn-sm" onClick={() => { setServiceFilter('all'); setCategoryFilter('all'); setRiskFilter('all'); setReadinessFilter('all'); }}>Reset filters</button>}>
+      <div className="countyTileGrid">
+        {filteredTiles.map((tile, index) => (
+          <button key={tile.county} className="countyTile" onClick={() => setDrawerCounty(tile.county)}>
+            <div className="row spread" style={{ gap: '8px' }}>
+              <Badge tone="dark">#{index + 1}</Badge>
+              <Badge tone={heatCategoryTone(tile.category)}>{tile.category}</Badge>
+            </div>
+            <h3>{tile.county}</h3>
+            <div className="heatScale"><i style={{ width: `${tile.score}%` }} /></div>
+            <div className="countyTileStats">
+              <span><strong>{tile.score}%</strong><small>County score</small></span>
+              <span><strong>{money(tile.y1Revenue)}</strong><small>Y1 revenue</small></span>
+              <span><strong>{money(tile.threeYearRevenue)}</strong><small>3-year revenue</small></span>
+              <span><strong>{tile.serviceLine}</strong><small>Service line</small></span>
+              <span><strong>{tile.staffingRisk}</strong><small>Staffing risk</small></span>
+              <span><strong>{tile.confidence}%</strong><small>Confidence</small></span>
+            </div>
+            <p>{tile.heat.recommendation}</p>
+          </button>
+        ))}
+      </div>
+    </SectionGroup>
 
     {alerts.length > 0 &&
       <SectionGroup title={`Staffing constraint alerts (${alerts.length})`}>
@@ -211,18 +274,8 @@ export function OpportunityHeatMap({ rows, totals }: { rows: GrowthRow[]; totals
       </div>
     </Panel>
 
-    <Panel title="Filter by category">
-      <div className="row" style={{ gap: '8px', flexWrap: 'wrap' }}>
-        <button className={`btn ${categoryFilter === 'all' ? 'primary' : ''}`} onClick={() => setCategoryFilter('all')}>All ({heatMap.length})</button>
-        {categories.map((cat) => {
-          const count = heatMap.filter((h) => h.category === cat).length;
-          return <button key={cat} className={`btn ${categoryFilter === cat ? 'primary' : ''}`} onClick={() => setCategoryFilter(cat)}>{cat} ({count})</button>;
-        })}
-      </div>
-    </Panel>
-
     <div style={{ display: 'grid', gap: '12px' }}>
-      {filtered.map((county) =>
+      {filteredTiles.map(({ heat: county }) =>
         <ExpandableSection key={county.county} title={`${county.county} — ${county.category}`} defaultOpen={false} badge={<Badge tone={heatCategoryTone(county.category)}>{county.topService}</Badge>}>
           <div style={{ display: 'grid', gap: '16px' }}>
             <div className="grid cols2" style={{ gap: '8px' }}>

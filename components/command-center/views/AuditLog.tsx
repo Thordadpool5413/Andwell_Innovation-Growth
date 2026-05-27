@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Badge, Panel, SectionGroup } from '../Shared';
-import { readAuditEvents, clearAuditLog } from '../../../lib/audit-log';
+import { fetchAuditEvents, clearAuditEvents } from '../../../lib/audit-log';
 import type { AuditEvent, AuditEventType } from '../../../lib/audit-log';
 import { useToast } from '../../../components/Toast';
 
@@ -15,6 +15,10 @@ const TYPE_LABELS: Record<AuditEventType, string> = {
   analysis_started: 'Scan started',
   analysis_complete: 'Scan complete',
   rescan_complete: 'Re-scan complete',
+  source_library_saved: 'Source library',
+  referral_action_saved: 'Referral action',
+  coaching_session_saved: 'Coaching session',
+  ask_question_run: 'Ask Hub',
 };
 
 const TYPE_TONES: Record<AuditEventType, 'green' | 'amber' | 'red' | 'blue' | 'neutral' | 'dark'> = {
@@ -26,11 +30,16 @@ const TYPE_TONES: Record<AuditEventType, 'green' | 'amber' | 'red' | 'blue' | 'n
   analysis_started: 'amber',
   analysis_complete: 'green',
   rescan_complete: 'green',
+  source_library_saved: 'blue',
+  referral_action_saved: 'green',
+  coaching_session_saved: 'blue',
+  ask_question_run: 'neutral',
 };
 
 const ALL_TYPES: AuditEventType[] = [
   'decision_actioned', 'claim_approved', 'claim_removed',
   'report_loaded', 'report_deleted', 'analysis_started', 'analysis_complete', 'rescan_complete',
+  'source_library_saved', 'referral_action_saved', 'coaching_session_saved', 'ask_question_run',
 ];
 
 function formatTs(iso: string) {
@@ -45,7 +54,9 @@ export function AuditLog() {
   const [typeFilter, setTypeFilter] = useState<AuditEventType | 'all'>('all');
   const [search, setSearch] = useState('');
 
-  const reload = useCallback(() => setEvents(readAuditEvents()), []);
+  const reload = useCallback(() => {
+    void fetchAuditEvents().then(setEvents);
+  }, []);
 
   useEffect(() => {
     reload();
@@ -54,7 +65,7 @@ export function AuditLog() {
   }, [reload]);
 
   function handleClear() {
-    clearAuditLog();
+    void clearAuditEvents();
     setEvents([]);
     showToast('Audit log cleared.', 'info');
   }
@@ -75,7 +86,7 @@ export function AuditLog() {
     <section className="section">
       <div>
         <h1>Audit Log</h1>
-        <p className="text-body">A local record of every significant action taken in this session — decisions, claim approvals, report loads, and scans.</p>
+        <p className="text-body">Server-backed activity history for major actions: decisions, claim approvals, report loads, and scans. Local browser storage is used only as a development fallback.</p>
       </div>
       <div className="row" style={{ gap: '8px' }}>
         <Badge>{events.length} events</Badge>

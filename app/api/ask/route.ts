@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readStore } from '../../../lib/store';
 import { fieldActionFromEvidence, questionTerms, rankEvidenceForQuestion, type EvidenceLike } from '../../../lib/smart-ranking';
+import { buildAskTrustMetadata } from '../../../lib/trust-metadata';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -34,7 +35,7 @@ async function callOpenAIForAnswer(apiKey: string, question: string, evidence: {
 
   const growthSection = growthContext ? growthContextBlock(growthContext) : '';
 
-  const prompt = `You are a competitive intelligence analyst for Andwell Health Partners (home health, wound care, therapy in Maine).
+  const prompt = `You are the expert intelligence layer for Andwell Health Partners in Maine. You know the Andwell service catalog, the stored public competitor evidence, and the growth model. Your job is to give a direct, practical answer while separating public evidence from AI interpretation.
 
 A sales or strategy leader asked: "${question}"
 ${growthSection ? `\n${growthSection}\n` : ''}
@@ -42,7 +43,7 @@ Here is the ranked evidence from the competitive intelligence database:
 
 ${evidenceBlock || '(No competitive evidence available — answer using the growth plan context above if relevant.)'}
 
-Write a direct, actionable answer in 2–3 sentences. Use specific county names, competitor names, and service lines where available. State clearly what Andwell's differentiation opportunity or growth priority is. Do not use bullet points. Use confident, professional language.`;
+Write a direct, actionable answer in 2–3 sentences. Use specific county names, competitor names, and service lines where available. State clearly what Andwell's differentiation opportunity or growth priority is. Do not use bullet points. Use confident, professional language. Do not state that a competitor lacks a service unless the evidence explicitly supports that; say "not found publicly in reviewed sources" when appropriate.`;
 
   const res = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
@@ -83,16 +84,29 @@ export async function POST(req: NextRequest) {
     if (growthContext?.y1Revenue && process.env.OPENAI_API_KEY) {
       try {
         const aiAnswer = await callOpenAIForAnswer(process.env.OPENAI_API_KEY, question, [], growthContext);
-        if (aiAnswer) return NextResponse.json({ answer: aiAnswer, source: 'ai', confidence: 'Growth plan only', questionTerms: questionTerms(question), nextBestActions: [], evidence: [] });
+        if (aiAnswer) {
+          const confidence = 'Growth plan only';
+          return NextResponse.json({
+            answer: aiAnswer,
+            source: 'ai',
+            confidence,
+            questionTerms: questionTerms(question),
+            nextBestActions: [],
+            evidence: [],
+            trustMetadata: buildAskTrustMetadata({ evidence: [], source: 'ai', confidence, growthOnly: true })
+          });
+        }
       } catch { /* fall through */ }
     }
+    const confidence = growthContext?.y1Revenue ? 'Growth plan only' : 'Needs review';
     return NextResponse.json({
       answer: growthContext?.y1Revenue
         ? `Based on your growth plan, your top Y1 markets include ${growthContext.topCounties?.map(c => c.county).slice(0, 3).join(', ') || 'your modeled counties'}. Run a competitor analysis to add competitive intelligence to this answer.`
         : 'No stored intelligence report was found yet. Run a competitor analysis first, then ask again.',
       evidence: [],
-      confidence: 'Needs review',
-      nextBestActions: []
+      confidence,
+      nextBestActions: [],
+      trustMetadata: buildAskTrustMetadata({ evidence: [], source: 'template', confidence, growthOnly: true })
     });
   }
 
@@ -135,28 +149,33 @@ export async function POST(req: NextRequest) {
     } catch { /* fall through to template */ }
   }
 
+  const responseConfidence = reviewItems.length ? 'Manager review suggested' : 'Evidence backed';
+  const evidencePayload = ranked.map((item) => ({
+    type: item.type,
+    smartScore: item.smartScore,
+    competitorName: item.competitorName,
+    serviceLine: item.serviceLine,
+    subservice: item.subservice || null,
+    status: item.competitorStatus,
+    confidence: item.confidence,
+    sourceUrl: item.sourceUrl,
+    sourceTitle: item.sourceTitle,
+    evidenceExcerpt: item.evidenceExcerpt,
+    safeSalesWording: item.safeSalesWording,
+    avoidSaying: item.avoidSaying,
+    reviewStatus: item.reviewStatus,
+    recommendedAction: fieldActionFromEvidence(item)
+  }));
+
   return NextResponse.json({
     answer,
     source,
-    confidence: reviewItems.length ? 'Manager review suggested' : 'Evidence backed',
+    confidence: responseConfidence,
     reportId: latest.id,
     questionTerms: terms,
     nextBestActions,
-    evidence: ranked.map((item) => ({
-      type: item.type,
-      smartScore: item.smartScore,
-      competitorName: item.competitorName,
-      serviceLine: item.serviceLine,
-      subservice: item.subservice || null,
-      status: item.competitorStatus,
-      confidence: item.confidence,
-      sourceUrl: item.sourceUrl,
-      sourceTitle: item.sourceTitle,
-      evidenceExcerpt: item.evidenceExcerpt,
-      safeSalesWording: item.safeSalesWording,
-      reviewStatus: item.reviewStatus,
-      recommendedAction: fieldActionFromEvidence(item)
-    }))
+    evidence: evidencePayload,
+    trustMetadata: buildAskTrustMetadata({ evidence: ranked, report: latest, source, confidence: responseConfidence })
   });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Ask failed', answer: 'Ask failed. Please try again.', evidence: [], nextBestActions: [] }, { status: 500 });

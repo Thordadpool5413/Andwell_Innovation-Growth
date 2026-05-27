@@ -14,6 +14,23 @@ const STORAGE_KEY = 'andwell:decisionQueue';
 
 const typeFilters: DecisionType[] = ['Leadership', 'Governance', 'Staffing', 'Growth', 'Competitive', 'Compliance', 'Field enablement', 'Referral'];
 const urgencyFilters: DecisionUrgency[] = ['Immediate', 'Today', 'This week', 'This month', 'This quarter'];
+const boardColumns = [
+  { key: 'new', title: 'New', desc: 'Ready to triage' },
+  { key: 'review', title: 'Needs review', desc: 'Urgent, high risk, or governance sensitive' },
+  { key: 'approved', title: 'Approved', desc: 'Ready for execution' },
+  { key: 'deferred', title: 'Deferred', desc: 'Later or paused' },
+  { key: 'escalated', title: 'Escalated', desc: 'Assigned or leadership escalation' },
+] as const;
+
+type BoardColumnKey = typeof boardColumns[number]['key'];
+
+function boardColumnFor(item: ReturnType<typeof generateDecisions>[number]): BoardColumnKey {
+  if (item.status === 'Approved') return 'approved';
+  if (item.status === 'Deferred' || item.status === 'Snoozed') return 'deferred';
+  if (item.status === 'Assigned' || item.status === 'Escalated') return 'escalated';
+  if (item.risk === 'High' || item.urgency === 'Immediate' || item.urgency === 'Today' || item.type === 'Governance' || item.type === 'Compliance') return 'review';
+  return 'new';
+}
 
 export function DecisionQueue({ currentReport, growthRows }: { currentReport: IntelligenceReport | null; growthRows?: GrowthRow[] }) {
   const [items, setItems] = useState<ReturnType<typeof generateDecisions> | null>(null);
@@ -93,6 +110,11 @@ export function DecisionQueue({ currentReport, growthRows }: { currentReport: In
     highRisk: allItems.filter((d) => d.risk === 'High').length
   }), [allItems]);
 
+  const grouped = useMemo(() => boardColumns.map((column) => ({
+    ...column,
+    items: filtered.filter((item) => boardColumnFor(item) === column.key)
+  })), [filtered]);
+
   return <>
     <section className="section">
       <div>
@@ -138,53 +160,53 @@ export function DecisionQueue({ currentReport, growthRows }: { currentReport: In
         </button>
       </Panel>
     ) : (
-      <div className="list-grid">
-        {filtered.map((item) => {
-          const statusClass =
-            item.status === 'Approved' ? 'status-card--success' :
-            item.status === 'Escalated' ? 'status-card--danger' :
-            item.status === 'Assigned' ? 'status-card--info' :
-            item.status === 'Deferred' ? '' : '';
-          const borderColor =
-            item.urgency === 'Immediate' ? 'var(--color-danger)' :
-            item.urgency === 'Today' ? 'var(--color-warning)' :
-            undefined;
-          return (
-            <div
-              key={item.id}
-              className={`briefItem hover-card${item.status === 'Pending' && item.urgency === 'Immediate' ? ' decision-urgent' : ''}${statusClass ? ` ${statusClass}` : ''}`}
-              style={{ padding: '16px', borderColor }}
-            >
-              <div className="row spread" style={{ marginBottom: '8px' }}>
-                <div className="row" style={{ gap: '6px', flexWrap: 'wrap' }}>
-                  <Badge tone={riskTone(item.risk)}>{item.risk} risk</Badge>
-                  <Badge tone={item.urgency === 'Immediate' ? 'red' : item.urgency === 'Today' ? 'amber' : 'neutral'}>{item.urgency}</Badge>
-                  <Badge>{item.type}</Badge>
-                  {item.status !== 'Pending' && (
-                    <Badge tone={item.status === 'Approved' ? 'green' : item.status === 'Escalated' ? 'red' : 'blue'}>{item.status}</Badge>
-                  )}
-                </div>
-                <span className="text-xs" style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }}>{item.owner}</span>
+      <div className="decisionBoard">
+        {grouped.map((column) => (
+          <section className="decisionColumn" key={column.key}>
+            <div className="decisionColumnHeader">
+              <div>
+                <h3>{column.title}</h3>
+                <p>{column.desc}</p>
               </div>
-              <h4 style={{ margin: '0 0 4px', fontSize: '14px' }}>{item.title}</h4>
-              <p className="text-small" style={{ margin: '0 0 10px', color: 'var(--color-text-secondary)' }}>{item.evidence}</p>
-              <div className="notice" style={{ fontSize: '13px', marginBottom: '10px' }}>
-                <strong>Recommended action</strong><br />{item.recommendedAction}
-              </div>
-              {item.status === 'Pending' ? (
-                <div className="row" style={{ gap: '6px' }}>
-                  <button className="btn primary btn-sm" onClick={() => handleAction(item.id, 'Approved')}>Approve</button>
-                  <button className="btn btn-sm" onClick={() => handleAction(item.id, 'Deferred')}>Defer</button>
-                  <button className="btn btn-sm" onClick={() => handleAction(item.id, 'Assigned')}>Assign</button>
-                  <button className="btn btn-sm" onClick={() => handleAction(item.id, 'Snoozed')}>Snooze</button>
-                  <button className="btn btn-sm" style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }} onClick={() => handleAction(item.id, 'Escalated')}>Escalate</button>
-                </div>
-              ) : (
-                <button className="btn btn-sm" style={{ color: 'var(--color-text-tertiary)' }} onClick={() => handleAction(item.id, 'Pending')}>Re-open</button>
-              )}
+              <Badge tone={column.key === 'approved' ? 'green' : column.key === 'review' ? 'amber' : column.key === 'escalated' ? 'red' : 'blue'}>{column.items.length}</Badge>
             </div>
-          );
-        })}
+            <div className="decisionColumnList">
+              {column.items.length === 0 ? <p className="muted">No items.</p> : column.items.map((item) => {
+                const statusClass =
+                  item.status === 'Approved' ? 'status-card--success' :
+                  item.status === 'Escalated' ? 'status-card--danger' :
+                  item.status === 'Assigned' ? 'status-card--info' :
+                  item.status === 'Deferred' ? '' : '';
+                return (
+                  <article key={item.id} className={`decisionCard hover-card${item.status === 'Pending' && item.urgency === 'Immediate' ? ' decision-urgent' : ''}${statusClass ? ` ${statusClass}` : ''}`}>
+                    <div className="row" style={{ gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                      <Badge tone={riskTone(item.risk)}>{item.risk}</Badge>
+                      <Badge tone={item.urgency === 'Immediate' ? 'red' : item.urgency === 'Today' ? 'amber' : 'neutral'}>{item.urgency}</Badge>
+                      <Badge>{item.type}</Badge>
+                    </div>
+                    <h4>{item.title}</h4>
+                    <p><strong>Evidence:</strong> {item.evidence}</p>
+                    <p><strong>Next step:</strong> {item.recommendedAction}</p>
+                    <div className="row spread" style={{ gap: '8px', marginTop: '10px' }}>
+                      <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>{item.owner}</span>
+                      {item.status !== 'Pending' && <Badge tone={item.status === 'Approved' ? 'green' : item.status === 'Escalated' ? 'red' : 'blue'}>{item.status}</Badge>}
+                    </div>
+                    {item.status === 'Pending' ? (
+                      <div className="decisionActions">
+                        <button className="btn primary btn-sm" onClick={() => handleAction(item.id, 'Approved')}>Approve</button>
+                        <button className="btn btn-sm" onClick={() => handleAction(item.id, 'Deferred')}>Defer</button>
+                        <button className="btn btn-sm" onClick={() => handleAction(item.id, 'Assigned')}>Assign</button>
+                        <button className="btn btn-sm" style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }} onClick={() => handleAction(item.id, 'Escalated')}>Escalate</button>
+                      </div>
+                    ) : (
+                      <button className="btn btn-sm" style={{ marginTop: '10px', color: 'var(--color-text-tertiary)' }} onClick={() => handleAction(item.id, 'Pending')}>Re-open</button>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ))}
       </div>
     )}
   </>;

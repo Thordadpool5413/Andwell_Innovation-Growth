@@ -1,6 +1,7 @@
 import { andwellCatalog } from './andwell';
 import { buildExpertBrief } from './expert-engine';
 import { cleanProviderName, nameFromUrl } from './provider-identity';
+import { buildReportTrustMetadata } from './trust-metadata';
 import type { CompetitorAnalysis, CompetitorInput, Confidence, CrawledPage, EvidenceSource, ExecutiveInsight, Finding, IntelligenceReport, MatrixScore, Status, SubserviceFinding, CompetitorScore, ThreatLevel } from './types';
 
 function norm(text: string) {
@@ -351,7 +352,7 @@ export function buildReport(analyses: CompetitorAnalysis[], crawlErrors: { url: 
   const humanReviewItems = allFindings.filter((f) => f.reviewStatus !== 'Sales usable with evidence').length + allSubserviceFindings.filter((f) => f.reviewStatus !== 'Sales usable with evidence').length;
   const topScore = [...competitorScores].sort((a, b) => b.andwellDifferentiationScore - a.andwellDifferentiationScore)[0];
   const expertBrief = buildExpertBrief(analyses, competitorScores, allFindings, allSubserviceFindings, humanReviewItems);
-  return {
+  const report: IntelligenceReport = {
     id: `report_${Date.now()}`,
     generatedAt: new Date().toISOString(),
     baselineProvider: 'Andwell Health Partners',
@@ -371,4 +372,5 @@ export function buildReport(analyses: CompetitorAnalysis[], crawlErrors: { url: 
     crawlErrors,
     expertBrief
   };
+  return { ...report, trustMetadata: buildReportTrustMetadata(report) };
 }
