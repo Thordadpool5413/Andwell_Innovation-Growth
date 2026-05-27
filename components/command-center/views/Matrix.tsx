@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { Badge, ConfidenceBadge, Panel, Stat } from '../Shared';
+import { Badge, ConfidenceBadge, Panel, Stat, TrustPanel } from '../Shared';
+import { buildReportTrustMetadata } from '../../../lib/trust-metadata';
 import { computeConfidenceDetails } from '../../../lib/smart-ranking';
 import type { MatrixFilter } from '../../../lib/command-center/types';
 import type { Finding, IntelligenceReport, MatrixScore } from '../../../lib/types';
@@ -141,6 +142,16 @@ export function Matrix({ currentReport, matrixFilter, setMatrixFilter, matrixSea
         <Stat label="AI enhanced" value={stats.aiEnhanced} hint="Competitor sites with AI extraction" />
         <Stat label="Pages reviewed" value={currentReport.pagesReviewed} hint="Website pages scrubbed" />
       </div>
+      <div className="matrixTrustLayout">
+        <Panel title="Comparison language">
+          <div className="legendGrid">
+            <div><Badge tone="green">Clearly offered</Badge><p>Competitor public evidence supports a visible capability.</p></div>
+            <div><Badge tone="blue">Not found publicly</Badge><p>Visibility gap only. This is not the same as saying the competitor does not offer it.</p></div>
+            <div><Badge tone="amber">Needs review</Badge><p>Use only after a manager confirms wording, source quality, and field context.</p></div>
+          </div>
+        </Panel>
+        <TrustPanel metadata={currentReport.trustMetadata || buildReportTrustMetadata(currentReport)} />
+      </div>
       <Panel title="Matrix controls" action={<button className="btn btn-sm" onClick={exportCsv}>Export CSV</button>}>
         <div className="row" style={{ gap: '8px', flexWrap: 'wrap' }}>
           <input className="input searchInput" value={matrixSearch} onChange={(event) => setMatrixSearch(event.target.value)} placeholder="Search competitor, service, evidence, rationale, or safe wording" />
@@ -159,11 +170,12 @@ export function Matrix({ currentReport, matrixFilter, setMatrixFilter, matrixSea
       {filtered.length > 0 && <div className="tableWrap proTable evidenceMatrixTable"><table className="table-compact"><thead><tr><th>Competitor</th><th>Andwell service</th><th>Status</th><th>Matrix score</th><th>Sources</th><th>Depth</th><th>Review</th><th>Safe field wording</th></tr></thead><tbody>{filtered.map((finding) => {
         const details = computeConfidenceDetails({ status: finding.competitorStatus, sourceCount: sourceCount(finding), hasFreshSource: sourceCount(finding) > 0, hasCmsSupport: false, hasInternalValidation: finding.reviewStatus === 'Approved for sales use', competitorOverlap: finding.competitorStatus === 'Clearly offered' ? 'High' : finding.competitorStatus === 'Not found publicly' ? 'Low' : 'Moderate', humanReviewed: finding.reviewStatus === 'Approved for sales use' || finding.reviewStatus === 'Rejected' });
         const isExpanded = expandedRows.has(finding.id);
+        const isNotFound = finding.competitorStatus === 'Not found publicly';
         return <React.Fragment key={finding.id}>
           <tr onClick={() => toggleRow(finding.id)} style={{ cursor: 'pointer' }}>
             <td><strong>{finding.competitorName}</strong><small>{isExpanded ? 'Hide evidence' : 'Open evidence'}</small></td>
             <td><strong>{finding.serviceLine}</strong><small>{finding.clearlyMatchedSubservices}/{finding.totalSubservices} subservices matched</small></td>
-            <td><Badge tone={finding.competitorStatus === 'Clearly offered' ? 'green' : finding.competitorStatus === 'Not found publicly' ? 'blue' : 'amber'}>{finding.competitorStatus}</Badge></td>
+            <td className={isNotFound ? 'notFoundStatusCell' : ''}><Badge tone={finding.competitorStatus === 'Clearly offered' ? 'green' : isNotFound ? 'blue' : 'amber'}>{finding.competitorStatus}</Badge>{isNotFound ? <small>Public visibility gap, not proof of absence</small> : null}</td>
             <td><Badge tone={scoreTone(finding.matrixScore?.overall || 0)}>{scoreLabel(finding.matrixScore)}</Badge><small>{finding.matrixScore ? `${finding.matrixScore.evidenceStrength} evidence` : 'Legacy row'}</small></td>
             <td><strong>{sourceCount(finding)}</strong><small>{safeSources(finding)[0]?.pageType || 'No page type'}</small></td>
             <td><strong>{finding.subserviceDepthScore}%</strong><small>subservice depth</small></td>

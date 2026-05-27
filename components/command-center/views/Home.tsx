@@ -1,135 +1,205 @@
 'use client';
 
-import React from 'react';
-import type { View } from '../../../lib/command-center/types';
+import React, { useMemo } from 'react';
+import { Badge, TrustPanel } from '../Shared';
+import { generateDecisions, riskTone, urgencyOrder } from '../../../lib/decision-queue';
+import { buildReportTrustMetadata } from '../../../lib/trust-metadata';
+import { money, whole } from '../../../lib/command-center/utils';
+import { SOURCE_LIBRARY_GEOGRAPHY, SOURCE_LIBRARY_MODE } from '../../../lib/preloaded-competitors';
+import type { View, RoleView } from '../../../lib/command-center/types';
 import type { CompetitorInput, IntelligenceReport } from '../../../lib/types';
+import type { GrowthRow, GrowthTotals } from '../../../lib/growth-plan';
 
-type RoleView = string;
+const roleLayouts: Record<RoleView, { title: string; focus: string; primary: View; secondary: View; measure: string }> = {
+  Executive: {
+    title: 'Executive command brief',
+    focus: 'See the decision, financial impact, risk, confidence, and field readiness before the details.',
+    primary: 'decisions',
+    secondary: 'board-packet',
+    measure: 'Decision clarity',
+  },
+  'Growth Leader': {
+    title: 'Growth leader view',
+    focus: 'Start with county opportunity, staffing constraints, launch readiness, and revenue sequence.',
+    primary: 'heatmap',
+    secondary: 'growth',
+    measure: 'Launch readiness',
+  },
+  'Sales Leader': {
+    title: 'Sales leader view',
+    focus: 'Start with battlecards, referral source plays, manager coaching, and safe wording.',
+    primary: 'battlecards',
+    secondary: 'coaching',
+    measure: 'Field readiness',
+  },
+  'Sales Rep': {
+    title: 'Field rep view',
+    focus: 'Use direct answers, referral questions, safe language, and do-not-say guardrails before a call.',
+    primary: 'ask',
+    secondary: 'referrals',
+    measure: 'Call readiness',
+  },
+  Board: {
+    title: 'Board packet view',
+    focus: 'Review the leadership narrative, changed risk, growth case, and export-ready output.',
+    primary: 'board-packet',
+    secondary: 'reports',
+    measure: 'Packet readiness',
+  },
+  Admin: {
+    title: 'Admin control view',
+    focus: 'Maintain source library, scans, audit history, diagnostics, and claim review controls.',
+    primary: 'intake',
+    secondary: 'diagnostics',
+    measure: 'System confidence',
+  },
+};
 
-const innovationStatement = 'Innovation and Growth is where Andwell Health Partners turns vision into infrastructure. We are building the future of high acuity community care, creating post acute partnerships that make us essential to Maine, connecting complex services through technology, and developing the value based contracting model that allows us to take risk, deliver better outcomes, save payers money, and grow because we are built for the complexity others cannot manage.';
-
-const intelligenceCards: { title: string; desc: string; view: View; eyebrow: string }[] = [
-  { title: 'Advantage Matrix', eyebrow: 'Capability Comparison', desc: 'Compare Andwell capabilities against public competitor evidence with safe positioning language.', view: 'matrix' },
-  { title: 'Growth Map', eyebrow: 'Market Opportunity', desc: 'Understand where growth potential, saturation, partnership value, and field focus intersect.', view: 'heatmap' },
-  { title: 'Strategy', eyebrow: 'Growth Plays', desc: 'Translate market evidence into referral source angles, payer value positioning, and next moves.', view: 'growth' },
-  { title: 'Executive Report', eyebrow: 'Leadership Output', desc: 'Turn source based intelligence into a polished leadership ready report package.', view: 'board-packet' },
+const workflow = [
+  { step: '1', title: 'Brief', body: 'Start with the answer: what leadership should do, why it matters, and what risk needs attention.', view: 'decisions' as View },
+  { step: '2', title: 'Growth', body: 'Move into ranked Maine counties, revenue impact, staffing risk, and launch readiness.', view: 'heatmap' as View },
+  { step: '3', title: 'Evidence', body: 'Inspect source-backed competitor findings without treating public silence as proof of absence.', view: 'matrix' as View },
+  { step: '4', title: 'Field', body: 'Turn intelligence into referral plays, battlecards, coaching plans, and safe wording.', view: 'battlecards' as View },
 ];
 
-const focusAreas = [
-  { title: 'Capability intelligence', body: 'The system organizes Andwell service strengths and compares them against public competitor evidence.' },
-  { title: 'Market intelligence', body: 'The Growth Map connects capability differences to geography, saturation, and field focus priorities.' },
-  { title: 'Field execution', body: 'Field Guidance turns intelligence into safe talk tracks, questions, and what not to say.' },
-  { title: 'Leadership output', body: 'The Executive Report packages market signals, strategy, payer value, and recommended actions.' },
-];
+function reviewTone(count: number) {
+  if (count === 0) return 'green';
+  if (count < 10) return 'amber';
+  return 'red';
+}
 
-export function Home({ setView }: {
+export function Home({
+  roleView = 'Executive',
+  setView,
+  currentReport,
+  competitors = [],
+  busy,
+  onRefresh,
+  growthRows = [],
+  growthTotals,
+  urgentDecisionCount = 0,
+}: {
   roleView?: RoleView;
   setView?: (view: View) => void;
   currentReport?: IntelligenceReport | null;
   competitors?: CompetitorInput[];
   busy?: boolean;
   onRefresh?: () => void;
+  growthRows?: GrowthRow[];
+  growthTotals?: GrowthTotals;
+  urgentDecisionCount?: number;
 }) {
+  const trustMetadata = currentReport ? (currentReport.trustMetadata || buildReportTrustMetadata(currentReport)) : null;
+  const decisions = useMemo(() => generateDecisions(currentReport || null, growthRows), [currentReport, growthRows]);
+  const rankedDecisions = useMemo(() => [...decisions].sort((a, b) => urgencyOrder(a.urgency) - urgencyOrder(b.urgency)).slice(0, 4), [decisions]);
+  const leadDecision = rankedDecisions[0];
+  const role = roleLayouts[roleView] || roleLayouts.Executive;
+  const reviewItems = currentReport?.humanReviewItems || 0;
+  const highRisk = decisions.filter((item) => item.risk === 'High').length;
+  const preloadedSources = competitors.filter((competitor) => competitor.preloaded).length;
+  const totalRevenue = growthTotals?.totalRevenue || growthRows.reduce((sum, row) => sum + row.totalRevenue, 0);
+  const yearOneRevenue = growthTotals?.revenue?.[0] || growthRows.reduce((sum, row) => sum + row.revenue[0], 0);
+  const yearOneStarts = growthTotals?.starts?.[0] || growthRows.reduce((sum, row) => sum + row.starts[0], 0);
+  const topCounty = [...growthRows].sort((a, b) => b.revenue[0] - a.revenue[0])[0];
+
   return (
-    <div style={{ maxWidth: '1180px', padding: '36px 32px 88px' }}>
-      <section style={{
-        background: 'var(--color-bg-primary)',
-        border: '1px solid var(--color-border)',
-        borderRadius: '28px',
-        padding: '44px',
-        marginBottom: '22px',
-        boxShadow: 'var(--color-shadow)'
-      }}>
-        <p style={{ margin: '0 0 14px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--color-info)' }}>
-          Andwell Innovation and Growth
-        </p>
-        <h1 style={{ margin: 0, maxWidth: '900px', fontSize: 'clamp(36px, 5.2vw, 64px)', letterSpacing: '-0.065em', lineHeight: 0.98 }}>
-          Intelligence for capability, market, field, and leadership decisions.
-        </h1>
-        <p style={{ margin: '22px 0 0', maxWidth: '880px', fontSize: '16px', color: 'var(--color-text-secondary)', lineHeight: 1.78 }}>
-          {innovationStatement}
-        </p>
-      </section>
-
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(235px, 1fr))', gap: '14px', marginBottom: '22px' }}>
-        {intelligenceCards.map((card) => (
-          <button
-            key={card.view}
-            onClick={() => setView?.(card.view)}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              minHeight: '210px',
-              width: '100%',
-              padding: '24px',
-              textAlign: 'left',
-              cursor: 'pointer',
-              background: 'var(--color-bg-primary)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '24px',
-              transition: 'border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease'
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-info)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--color-shadow)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-          >
-            <span style={{ marginBottom: '18px', fontSize: '10px', fontWeight: 900, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>{card.eyebrow}</span>
-            <span style={{ display: 'block' }}>
-              <strong style={{ display: 'block', fontSize: '22px', letterSpacing: '-0.04em', color: 'var(--color-text-primary)' }}>{card.title}</strong>
-              <span style={{ display: 'block', marginTop: '12px', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.65 }}>{card.desc}</span>
-            </span>
-          </button>
-        ))}
-      </section>
-
-      <section style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 0.95fr) minmax(320px, 1.05fr)',
-        gap: '18px',
-        marginBottom: '22px'
-      }} className="homeHeroGrid">
-        <div style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '28px' }}>
-          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>
-            Leadership view
-          </p>
-          <h2 style={{ margin: 0, fontSize: '28px', letterSpacing: '-0.05em', lineHeight: 1.08 }}>
-            A clear view of market position, growth signals, and strategic next actions.
-          </h2>
-          <p style={{ margin: '16px 0 0', fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.75 }}>
-            Leadership can move from public market evidence to strategic implications without reading through raw findings, review queues, or operational diagnostics.
-          </p>
-        </div>
-        <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '28px' }}>
-          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>
-            Current intelligence focus
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px' }}>
-            {focusAreas.map((item) => (
-              <div key={item.title} style={{ border: '1px solid var(--color-border)', borderRadius: '18px', padding: '16px', background: 'var(--color-bg-secondary)' }}>
-                <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 900, color: 'var(--color-text-primary)' }}>{item.title}</p>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>{item.body}</p>
-              </div>
-            ))}
+    <div className="guidedHome">
+      <section className="guidedHero">
+        <div className="guidedHeroCopy">
+          <div className="homeStatusLine">
+            <Badge tone={currentReport ? 'green' : 'amber'}>{currentReport ? 'Competitive scan loaded' : 'No scan loaded'}</Badge>
+            <Badge tone="green">{SOURCE_LIBRARY_MODE}</Badge>
+            <Badge tone="blue">{SOURCE_LIBRARY_GEOGRAPHY}</Badge>
+            {urgentDecisionCount > 0 ? <Badge tone="amber">{urgentDecisionCount} urgent decisions</Badge> : null}
+          </div>
+          <h1>{role.title}</h1>
+          <p>{role.focus}</p>
+          <div className="guidedHeroActions">
+            <button className="btn primary" onClick={() => setView?.(role.primary)}>Open primary view</button>
+            <button className="btn" onClick={() => setView?.(role.secondary)}>Open supporting view</button>
+            <button className="btn" disabled={busy} onClick={onRefresh}>{busy ? 'Refreshing...' : 'Refresh data'}</button>
           </div>
         </div>
+
+        <aside className="guidedReadinessPanel">
+          <span className="text-overline">System readiness</span>
+          <div className="readinessMeter">
+            <strong>{trustMetadata?.confidence || 'Model ready'}</strong>
+            <p>{currentReport ? `${trustMetadata?.sourceCount || 0} sources reviewed. ${trustMetadata?.reviewStatus || 'Evidence needs review'}.` : `${preloadedSources || competitors.length} Maine sources are preloaded. Run a full scan to attach evidence.`}</p>
+          </div>
+          <div className="readinessFacts">
+            <div><span>Sources</span><strong>{preloadedSources || competitors.length}</strong></div>
+            <div><span>Measure</span><strong>{role.measure}</strong></div>
+            <div><span>Review</span><strong>{reviewItems || 'Clear'}</strong></div>
+          </div>
+        </aside>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
-        <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '26px' }}>
-          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Field use</p>
-          <h3 style={{ margin: 0, fontSize: '22px', letterSpacing: '-0.04em' }}>Safe language for real referral conversations.</h3>
-          <p style={{ margin: '14px 0 0', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>Field teams get practical language, questions to ask, and boundaries that prevent unsupported competitor claims.</p>
+      <section className="homeExecutiveDashboard">
+        <article className="homeExecutiveCard action">
+          <span>Recommended action</span>
+          <h2>{leadDecision?.title || 'Run the Maine competitor scan'}</h2>
+          <p>{leadDecision?.recommendedAction || 'Use the preloaded source library to build the first evidence-backed competitor report, then review the decision board.'}</p>
+          <button className="btn btn-sm" onClick={() => setView?.(leadDecision ? 'decisions' : 'intake')}>{leadDecision ? 'Open decision' : 'Open source library'}</button>
+        </article>
+        <article className="homeExecutiveCard">
+          <span>Growth impact</span>
+          <h2>{money(totalRevenue)}</h2>
+          <p>Three-year modeled revenue. Year 1 is {money(yearOneRevenue)} across {whole(yearOneStarts)} starts{topCounty ? `, led by ${topCounty.county} ${topCounty.service}` : ''}.</p>
+        </article>
+        <article className="homeExecutiveCard">
+          <span>Evidence confidence</span>
+          <h2>{trustMetadata?.confidence || 'Pending scan'}</h2>
+          <p>{trustMetadata ? `${trustMetadata.publicEvidenceCount} public evidence sources and ${trustMetadata.aiInterpretationCount} AI interpretations.` : 'The source library is ready, but evidence has not been scanned into a report yet.'}</p>
+        </article>
+        <article className="homeExecutiveCard">
+          <span>Risk / review</span>
+          <h2>{highRisk} high risk</h2>
+          <p>{reviewItems ? `${reviewItems} items need review or manager attention before broad field use.` : 'No report-level review burden is active.'}</p>
+          <Badge tone={highRisk ? 'red' : reviewTone(reviewItems)}>{highRisk ? 'Review now' : reviewItems ? 'Review needed' : 'Ready'}</Badge>
+        </article>
+      </section>
+
+      <section className="homeEducationBand">
+        <div>
+          <span className="text-overline">How to use the app</span>
+          <h2>Read it in layers. Do not start in the raw data.</h2>
+          <p>The app is designed to move from leadership answer to growth opportunity, then public evidence, then safe field action. Each layer keeps the AI interpretation tied back to the source trail.</p>
         </div>
-        <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '26px' }}>
-          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Market opportunity</p>
-          <h3 style={{ margin: 0, fontSize: '22px', letterSpacing: '-0.04em' }}>Where capability advantage meets geography.</h3>
-          <p style={{ margin: '14px 0 0', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>The Growth Map turns source evidence into area based opportunity, saturation, partnership, and payer value signals.</p>
+        <div className="homeWorkflowCards">
+          {workflow.map((item) => (
+            <button className="homeWorkflowCard" key={item.title} onClick={() => setView?.(item.view)}>
+              <span>{item.step}</span>
+              <strong>{item.title}</strong>
+              <p>{item.body}</p>
+            </button>
+          ))}
         </div>
-        <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '26px' }}>
-          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Evidence discipline</p>
-          <h3 style={{ margin: 0, fontSize: '22px', letterSpacing: '-0.04em' }}>Useful intelligence without overclaiming.</h3>
-          <p style={{ margin: '14px 0 0', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>Outputs stay tied to public source evidence, confidence, safe positioning, and what not to say.</p>
+      </section>
+
+      <section className="homeDecisionLayout">
+        <div className="homeDecisionStack">
+          <div className="section-group-header">
+            <h3>What needs attention now</h3>
+            <button className="btn btn-sm" onClick={() => setView?.('decisions')}>Open board</button>
+          </div>
+          {rankedDecisions.map((item, index) => (
+            <article className="decisionStackItem homeDecisionItem" key={item.id}>
+              <div className="decisionRank">{index + 1}</div>
+              <div>
+                <div className="row" style={{ gap: '6px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                  <Badge tone={item.urgency === 'Immediate' ? 'red' : item.urgency === 'Today' ? 'amber' : 'blue'}>{item.urgency}</Badge>
+                  <Badge tone={riskTone(item.risk)}>{item.risk} risk</Badge>
+                  <Badge>{item.owner}</Badge>
+                </div>
+                <h3>{item.title}</h3>
+                <p><strong>Evidence:</strong> {item.evidence}</p>
+                <p><strong>Next step:</strong> {item.recommendedAction}</p>
+              </div>
+            </article>
+          ))}
         </div>
+        <TrustPanel metadata={trustMetadata} />
       </section>
     </div>
   );

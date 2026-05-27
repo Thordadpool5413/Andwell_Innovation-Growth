@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getReport, readStore, deleteReport } from '../../../lib/store';
+import { buildReportTrustMetadata } from '../../../lib/trust-metadata';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,8 @@ export async function GET(req: NextRequest) {
         potentialAndwellAdvantages: report.potentialAndwellAdvantages,
         humanReviewItems: report.humanReviewItems,
         competitors: report.analyses.map((analysis) => analysis.name),
-        executiveSummary: report.executiveSummary
+        executiveSummary: report.executiveSummary,
+        trustMetadata: report.trustMetadata || buildReportTrustMetadata(report)
       }))
     });
   } catch (err) {

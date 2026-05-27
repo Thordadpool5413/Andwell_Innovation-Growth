@@ -1,12 +1,47 @@
 'use client';
 
 import React from 'react';
-import { Badge, Panel, ConfidenceBadge, SectionGroup } from '../Shared';
+import { Badge, Panel, SectionGroup, TrustPanel } from '../Shared';
 import { toneForStatus } from '../../../lib/command-center/utils';
 import type { AskResponse } from '../../../lib/command-center/types';
 import type { IntelligenceReport } from '../../../lib/types';
 
-export function AskHub({ question, setQuestion, askHub, askResponse, busy, currentReport, hasGrowthPlan }: { question: string; setQuestion: (value: string) => void; askHub: () => void; askResponse: AskResponse | null; busy: boolean; currentReport: IntelligenceReport | null; hasGrowthPlan?: boolean }) {
+const questionBanks = [
+  {
+    group: 'Executive',
+    questions: [
+      'What is the single most important decision leadership should make from the current Maine intelligence?',
+      'Which competitor creates the highest strategic risk for Andwell, and what should we do next?',
+      'What is ready for a board packet and what still needs evidence?',
+    ],
+  },
+  {
+    group: 'Growth',
+    questions: [
+      'Which Maine counties should Andwell prioritize first, and why?',
+      'Where does the growth model show revenue upside but staffing risk?',
+      'Which service line has the best three-year growth case in Maine?',
+    ],
+  },
+  {
+    group: 'Sales',
+    questions: [
+      'What should a sales leader coach before a referral source call?',
+      'What safe language should we use against the most relevant competitor?',
+      'Which referral source type should we target first for this opportunity?',
+    ],
+  },
+  {
+    group: 'Evidence',
+    questions: [
+      'What public evidence was used for the answer, and what is AI interpretation?',
+      'Which findings are not found publicly versus confirmed competitor services?',
+      'What should the field team avoid saying?',
+    ],
+  },
+];
+
+export function AskHub({ question, setQuestion, askHub, askResponse, busy, currentReport, hasGrowthPlan }: { question: string; setQuestion: (value: string) => void; askHub: (questionOverride?: string) => void | Promise<void>; askResponse: AskResponse | null; busy: boolean; currentReport: IntelligenceReport | null; hasGrowthPlan?: boolean }) {
   return <>
     <section className="section">
       <div>
@@ -19,6 +54,33 @@ export function AskHub({ question, setQuestion, askHub, askResponse, busy, curre
       </div>
     </section>
 
+    <section className="askPromptLibrary">
+      <div>
+        <span className="text-overline">Questions to start from</span>
+        <h2>Ask from a role or a task</h2>
+        <p className="text-body">Use these prebuilt questions to get expert answers from the stored Maine intelligence, growth model, and source-backed evidence.</p>
+      </div>
+      <div className="askPromptGrid">
+        {questionBanks.map((bank) => (
+          <article key={bank.group}>
+            <h3>{bank.group}</h3>
+            <div>
+              {bank.questions.map((prompt) => (
+                <button
+                  key={prompt}
+                  className="askPromptButton"
+                  disabled={busy}
+                  onClick={() => askHub(prompt)}
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
     <Panel title="Ask a competitive question">
       <textarea
         className="textarea largeInput"
@@ -28,7 +90,7 @@ export function AskHub({ question, setQuestion, askHub, askResponse, busy, curre
         onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && question.trim()) askHub(); }}
       />
       <div className="row" style={{ marginTop: '8px', gap: '8px' }}>
-        <button className="btn primary" disabled={busy || !question.trim()} onClick={askHub}>
+        <button className="btn primary" disabled={busy || !question.trim()} onClick={() => askHub()}>
           {busy ? 'Thinking…' : 'Ask the Hub'}
         </button>
         {!currentReport && <span className="text-small" style={{ color: 'var(--color-text-tertiary)', alignSelf: 'center' }}>Run a competitor scan first to load intelligence data.</span>}
@@ -36,31 +98,53 @@ export function AskHub({ question, setQuestion, askHub, askResponse, busy, curre
     </Panel>
 
     {askResponse && (
-      <section className="hero answerHero">
-        <div className="row spread" style={{ marginBottom: '12px' }}>
-          <div className="row" style={{ gap: '8px', alignItems: 'center' }}>
-            <h2 style={{ margin: 0 }}>Answer</h2>
-            {askResponse.source === 'ai' && <Badge tone="green">AI synthesized</Badge>}
-            {askResponse.source === 'template' && <Badge tone="dark">Template (add OpenAI key for AI)</Badge>}
+      <section className="askAnswerLayout">
+        <div className="askAnswerMain">
+          <div className="answerBlock direct">
+            <div className="row spread" style={{ marginBottom: '10px', gap: '8px', flexWrap: 'wrap' }}>
+              <h2 style={{ margin: 0 }}>Direct answer</h2>
+              <div className="row" style={{ gap: '6px', flexWrap: 'wrap' }}>
+                {askResponse.source === 'ai' && <Badge tone="green">AI synthesized</Badge>}
+                {askResponse.source === 'template' && <Badge tone="dark">Template</Badge>}
+                <Badge tone={toneForStatus(askResponse.confidence)}>{askResponse.confidence}</Badge>
+              </div>
+            </div>
+            <p>{askResponse.answer}</p>
+            {askResponse.questionTerms?.length ? (
+              <div className="tagCloud lightTags">
+                {askResponse.questionTerms.map((term) => <span key={term}>{term}</span>)}
+              </div>
+            ) : null}
           </div>
-          <Badge tone={toneForStatus(askResponse.confidence)}>{askResponse.confidence}</Badge>
+          <div className="askSections">
+            <article className="answerBlock">
+              <h3>Confidence explanation</h3>
+              <p>{askResponse.trustMetadata?.warnings?.length ? askResponse.trustMetadata.warnings.join(' ') : `${askResponse.trustMetadata?.sourceCount ?? 0} sources were used with ${askResponse.trustMetadata?.reviewStatus || 'no review status'} review status.`}</p>
+            </article>
+            <article className="answerBlock">
+              <h3>Safe language</h3>
+              <p>{askResponse.evidence?.find((item) => item.safeSalesWording)?.safeSalesWording || 'Use evidence-based language and avoid definitive competitor absence claims unless approved.'}</p>
+            </article>
+            <article className="answerBlock guardrail">
+              <h3>Do-not-say guardrail</h3>
+              <p>{askResponse.evidence?.find((item) => item.avoidSaying)?.avoidSaying || 'Do not say a competitor does not offer a service when the system only found that it was not visible in reviewed public pages.'}</p>
+            </article>
+          </div>
         </div>
-        <p style={{ margin: '0 0 12px', lineHeight: 1.75, fontSize: '15px' }}>{askResponse.answer}</p>
-        {askResponse.questionTerms?.length ? (
-          <div className="tagCloud lightTags">
-            {askResponse.questionTerms.map((term) => <span key={term}>{term}</span>)}
-          </div>
-        ) : null}
+        <TrustPanel metadata={askResponse.trustMetadata} />
       </section>
     )}
 
     {askResponse?.nextBestActions?.length ? (
-      <SectionGroup title="Recommended next moves">
-        <div className="briefList">
+      <SectionGroup title="Recommended next actions">
+        <div className="decisionStack compact">
           {askResponse.nextBestActions.map((action, i) => (
-            <div className="briefItem hover-card" key={i} style={{ padding: '12px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-              <Badge tone="blue">Action</Badge>
-              <span className="text-small" style={{ color: 'var(--color-text-secondary)' }}>{action}</span>
+            <div className="decisionStackItem" key={i}>
+              <div className="decisionRank">{i + 1}</div>
+              <div>
+                <h3>Next move</h3>
+                <p>{action}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -84,6 +168,11 @@ export function AskHub({ question, setQuestion, askHub, askResponse, busy, curre
               <div className="notice" style={{ fontSize: '12px', padding: '8px', marginTop: '6px' }}>
                 <strong>Safe wording</strong><br />{item.safeSalesWording}
               </div>
+              {item.avoidSaying ? (
+                <div className="notice danger-soft" style={{ fontSize: '12px', padding: '8px', marginTop: '6px' }}>
+                  <strong>Do not say</strong><br />{item.avoidSaying}
+                </div>
+              ) : null}
               {item.recommendedAction ? (
                 <div className="success" style={{ fontSize: '12px', padding: '8px', marginTop: '6px' }}>
                   <strong>Action</strong><br />{item.recommendedAction}

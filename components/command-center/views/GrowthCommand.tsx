@@ -75,7 +75,7 @@ export function GrowthCommand({ rows, totals, serviceRollup, scenario, setScenar
     : null;
 
   function exportGrowthXlsx() {
-    downloadXlsx('andwell-growth-plan.xlsx', [
+    downloadXlsx('andwell-growth-plan.csv', [
       {
         name: 'Growth Plan',
         headers: ['County', 'Service', 'Launch Group', 'Opportunity Score', 'Y1 Revenue', 'Y2 Revenue', 'Y3 Revenue', 'Y1 Starts', 'Reason', 'Action'],
@@ -92,7 +92,7 @@ export function GrowthCommand({ rows, totals, serviceRollup, scenario, setScenar
         ],
       },
     ]);
-    showToast('Growth plan exported to Excel.', 'success');
+    showToast('Growth plan exported to CSV.', 'success');
   }
 
   return <>
@@ -105,7 +105,7 @@ export function GrowthCommand({ rows, totals, serviceRollup, scenario, setScenar
         <button className="btn" onClick={() => setView('launch')}>View Launch Plan</button>
         <button className="btn" onClick={() => setView('intake')}>Run Competitor Scan</button>
         <button className={`btn${compareMode ? ' primary' : ''}`} onClick={() => setCompareMode(v => !v)}>{compareMode ? 'Exit Compare' : 'Compare Scenarios'}</button>
-        <button className="btn" onClick={exportGrowthXlsx}>Export Excel</button>
+        <button className="btn" onClick={exportGrowthXlsx}>Export CSV</button>
       </div>
     </section>
     <div className="grid cols4">

@@ -57,6 +57,7 @@ import { GrowthLaunchChecklist } from '../components/command-center/views/Growth
 import { AuditLog } from '../components/command-center/views/AuditLog';
 import { generateDecisions } from '../lib/decision-queue';
 import { appendAuditEvent } from '../lib/audit-log';
+import { FULL_SCAN_MAX_PAGES_PER_SITE } from '../lib/preloaded-competitors';
 
 const navIcons: Record<View, React.ComponentType<{ className?: string }>> = {
   home: HomeIcon, dashboard: LayoutDashboard, decisions: CheckSquare, scenarios: Sliders, growth: TrendingUp, board: Presentation, launch: Rocket, heatmap: Map,
@@ -70,13 +71,16 @@ const navIcons: Record<View, React.ComponentType<{ className?: string }>> = {
 };
 
 const navGroups: { label: string; keys: View[] }[] = [
-  { label: 'Home', keys: ['home', 'dashboard'] },
-  { label: 'Workspaces', keys: ['heatmap', 'growth', 'battlecards', 'board-packet'] },
-  { label: 'Operations', keys: ['intake', 'reports'] }
+  { label: 'Brief', keys: ['home', 'dashboard', 'decisions'] },
+  { label: 'Growth', keys: ['heatmap', 'growth', 'financial-model'] },
+  { label: 'Evidence', keys: ['matrix', 'expert'] },
+  { label: 'Field', keys: ['battlecards', 'referrals', 'coaching'] },
+  { label: 'Reports', keys: ['board-packet', 'reports', 'ask'] },
+  { label: 'Admin', keys: ['intake', 'audit', 'diagnostics'] }
 ];
 
 const workspaceTools: Partial<Record<View, { label: string; keys: View[] }>> = {
-  heatmap: { label: 'Intelligence', keys: ['heatmap', 'expert', 'matrix', 'governance', 'brief', 'prompt'] },
+  heatmap: { label: 'Intelligence', keys: ['heatmap', 'expert', 'matrix', 'brief', 'prompt'] },
   growth: { label: 'Growth', keys: ['growth', 'scenarios', 'financial-model', 'staffing-model', 'launch-checklist'] },
   battlecards: { label: 'Field', keys: ['battlecards', 'builder', 'referrals', 'coaching'] },
   'board-packet': { label: 'Board', keys: ['board-packet', 'board', 'narrative', 'board-report', 'decisions'] },
@@ -307,7 +311,7 @@ function PageContent() {
       const streamRes = await fetch('/api/analyze-stream', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ competitors, maxPagesPerSite: 8, save: true, useAI: true, ...(promptOverrides ? { promptOverrides } : {}) })
+        body: JSON.stringify({ competitors, maxPagesPerSite: FULL_SCAN_MAX_PAGES_PER_SITE, save: true, useAI: true, ...(promptOverrides ? { promptOverrides } : {}) })
       });
       if (!streamRes.ok || !streamRes.body) throw new Error('Analysis request failed to start.');
       const reader = streamRes.body.getReader();
@@ -367,7 +371,6 @@ function PageContent() {
       setCurrentReport(report);
       appendAuditEvent({ type: 'analysis_complete', actor: roleView, description: `Scan complete — ${report.competitorsAnalyzed} competitors analyzed`, detail: `${report.pagesReviewed} pages reviewed` });
       showToast(report.expertBrief ? 'Expert analysis complete.' : 'Analysis complete.', 'success');
-      setView(report.expertBrief ? 'expert' : 'dashboard');
     } catch (err) { showToast(err instanceof Error ? err.message : 'Analysis failed.', 'error'); } finally {
       setProgressItems(prev => prev.map((item) => item.status !== 'done' && item.status !== 'error' ? { ...item, status: 'done' } : item));
       setBusy(false); setPhase('Ready');
@@ -381,7 +384,6 @@ function PageContent() {
       setCurrentReport(response.report);
       appendAuditEvent({ type: 'report_loaded', actor: roleView, description: `Loaded report from ${new Date(response.report.generatedAt).toLocaleDateString()}`, detail: `${response.report.competitorsAnalyzed} competitors, ${response.report.pagesReviewed} pages` });
       showToast('Report loaded.', 'success');
-      setView(response.report.expertBrief ? 'expert' : 'dashboard');
     } catch (err) { showToast(err instanceof Error ? err.message : 'Unable to load report.', 'error'); } finally { setBusy(false); setPhase('Ready'); }
   }
 
@@ -413,7 +415,7 @@ function PageContent() {
       const streamRes = await fetch('/api/analyze-stream', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ competitors: [competitor], maxPagesPerSite: 8, save: false, useAI: true, ...(promptOverrides ? { promptOverrides } : {}) }),
+        body: JSON.stringify({ competitors: [competitor], maxPagesPerSite: FULL_SCAN_MAX_PAGES_PER_SITE, save: false, useAI: true, ...(promptOverrides ? { promptOverrides } : {}) }),
       });
       if (!streamRes.ok || !streamRes.body) throw new Error('Re-scan request failed.');
       const reader = streamRes.body.getReader();
@@ -462,14 +464,18 @@ function PageContent() {
     }
   }
 
-  async function askHub() {
+  async function askHub(questionOverride?: string) {
+    const prompt = (questionOverride || question).trim();
+    if (!prompt) return;
+    if (questionOverride) setQuestion(questionOverride);
     setBusy(true); setPhase('Ask the Hub'); setAskResponse(null);
+    appendAuditEvent({ type: 'ask_question_run', actor: roleView, description: 'Ask Hub question run', detail: prompt.slice(0, 180) });
     try {
       const response = await api<AskResponse>('/api/ask', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          question,
+          question: prompt,
           reportId: currentReport?.id,
           growthContext: {
             y1Revenue: growthTotals.revenue[0],
@@ -555,7 +561,7 @@ function PageContent() {
       <div className="content proContent">
         <ErrorBoundary label={view} key={view}>
         <div className="view-enter">
-        {view === 'home' && <Home roleView={roleView} setView={setView} currentReport={currentReport} competitors={competitors} busy={busy} onRefresh={refreshServerState} />}
+        {view === 'home' && <Home roleView={roleView} setView={setView} currentReport={currentReport} competitors={competitors} busy={busy} onRefresh={refreshServerState} growthRows={growthRows} growthTotals={growthTotals} urgentDecisionCount={urgentDecisionCount} />}
         {view === 'dashboard' && <Dashboard expertBrief={expertBrief} roleView={roleView} setView={setView} clearLegacyBrowserStorage={clearLegacyBrowserStorage} rows={growthRows} totals={growthTotals} />}
         {view === 'growth' && <GrowthCommand rows={growthRows} totals={growthTotals} serviceRollup={growthServiceRollup} scenario={growthScenario} setScenario={setGrowthScenario} setView={setView} currentReport={currentReport} />}
         {view === 'board' && <BoardRoom currentReport={currentReport} totals={growthTotals} rows={growthRows} topThreat={topThreat} topOpportunity={topOpportunity} setView={setView} scenario={growthScenario} />}

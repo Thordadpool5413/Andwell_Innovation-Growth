@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Badge, Panel, SectionGroup } from '../Shared';
+import { Badge, Panel, SectionGroup, TrustPanel } from '../Shared';
+import { buildReportTrustMetadata } from '../../../lib/trust-metadata';
 import type { ReportSummary } from '../../../lib/command-center/types';
 import type { IntelligenceReport } from '../../../lib/types';
 
@@ -87,6 +88,7 @@ export function Reports({
 
   const thinDataCompetitors = currentReport?.analyses.filter((a) => a.pagesReviewed.length < 4) || [];
   const lowConfidenceCompetitors = currentReport?.analyses.filter((a) => a.aiExtraction?.rawConfidence === 'Low') || [];
+  const activeTrust = currentReport ? (currentReport.trustMetadata || buildReportTrustMetadata(currentReport)) : null;
 
   const diff = (() => {
     if (!currentReport || !compareReport) return null;
@@ -106,7 +108,11 @@ export function Reports({
     });
     const added = [...bMap.keys()].filter((k) => !aMap.has(k)).map((k) => bMap.get(k)!.name);
     const removed = [...aMap.keys()].filter((k) => !bMap.has(k)).map((k) => aMap.get(k)!.name);
-    return { shared, added, removed };
+    const oldRecommendations = new Set((compareReport.expertBrief?.recommendations || []).map((item) => item.title.toLowerCase()));
+    const changedRecommendations = (currentReport.expertBrief?.recommendations || []).filter((item) => !oldRecommendations.has(item.title.toLowerCase())).slice(0, 5);
+    const oldWatch = new Set((compareReport.expertBrief?.watchlist || []).map((item) => `${item.competitorName}:${item.signal}`.toLowerCase()));
+    const newRisks = (currentReport.expertBrief?.watchlist || []).filter((item) => !oldWatch.has(`${item.competitorName}:${item.signal}`.toLowerCase())).slice(0, 5);
+    return { shared, added, removed, changedRecommendations, newRisks };
   })();
 
   return (
@@ -144,6 +150,18 @@ export function Reports({
       {currentReport && (
         <div className="notice" style={{ marginBottom: thinDataCompetitors.length > 0 || lowConfidenceCompetitors.length > 0 ? '8px' : '20px', marginTop: 0 }}>
           <strong>Active report:</strong> {currentReport.competitorsAnalyzed} competitors analyzed · {currentReport.pagesReviewed} pages reviewed
+        </div>
+      )}
+
+      {currentReport && activeTrust && (
+        <div className="reportSummaryLayout">
+          <div className="reportSummaryCards">
+            <article><span>Scan health</span><strong>{currentReport.scanSummary ? `${currentReport.scanSummary.successes}/${currentReport.scanSummary.total}` : `${currentReport.pagesReviewed} pages`}</strong><p>{currentReport.scanSummary ? `${currentReport.scanSummary.errors} scan errors` : 'Legacy report without live scan summary'}</p></article>
+            <article><span>Competitors</span><strong>{currentReport.competitorsAnalyzed}</strong><p>{currentReport.analyses.map((analysis) => analysis.name).slice(0, 3).join(', ')}</p></article>
+            <article><span>Review burden</span><strong>{currentReport.humanReviewItems}</strong><p>{activeTrust.reviewStatus}</p></article>
+            <article><span>AI confidence</span><strong>{activeTrust.confidence}</strong><p>{activeTrust.aiInterpretationCount} AI-enhanced interpretations</p></article>
+          </div>
+          <TrustPanel metadata={activeTrust} title="Report Trust" />
         </div>
       )}
 
@@ -217,6 +235,18 @@ export function Reports({
               </table>
             </div>
           )}
+          {(diff.newRisks.length > 0 || diff.changedRecommendations.length > 0) && (
+            <div className="reportDiffGrid">
+              <div className="notice" style={{ margin: 0 }}>
+                <strong>New risks</strong>
+                {diff.newRisks.length ? diff.newRisks.map((item) => <p key={`${item.competitorName}:${item.signal}`} className="text-small">{item.competitorName}: {item.signal}</p>) : <p className="text-small">No new watchlist risks.</p>}
+              </div>
+              <div className="notice" style={{ margin: 0 }}>
+                <strong>Changed recommendations</strong>
+                {diff.changedRecommendations.length ? diff.changedRecommendations.map((item) => <p key={item.id} className="text-small">{item.title}: {item.action}</p>) : <p className="text-small">No new recommendation titles.</p>}
+              </div>
+            </div>
+          )}
           {diff.shared.length === 0 && diff.added.length === 0 && diff.removed.length === 0 && (
             <p className="text-body">No differences found between the two reports.</p>
           )}
@@ -266,6 +296,13 @@ export function Reports({
                     <p className="text-small" style={{ margin: '0 0 4px', color: 'var(--color-text-tertiary)' }}>
                       {formatDate(report.generatedAt)} · {report.pagesReviewed} pages · {report.humanReviewItems} review items
                     </p>
+                    <div className="row" style={{ gap: '6px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                      <Badge tone={report.trustMetadata?.reviewStatus?.includes('Ready') ? 'green' : report.trustMetadata?.reviewStatus?.includes('review') ? 'amber' : 'blue'}>
+                        {report.trustMetadata?.reviewStatus || 'Trust pending'}
+                      </Badge>
+                      <Badge tone="blue">{report.trustMetadata?.sourceCount ?? 0} sources</Badge>
+                      <Badge tone={report.trustMetadata?.confidence === 'High' ? 'green' : 'amber'}>{report.trustMetadata?.confidence || 'No confidence'}</Badge>
+                    </div>
                     <p className="text-small" style={{ margin: 0, color: 'var(--color-text-secondary)', maxWidth: '60ch' }}>
                       {report.executiveSummary}
                     </p>
