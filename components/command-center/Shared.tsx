@@ -8,15 +8,19 @@ export function Badge({ children, tone = 'neutral' }: { children: React.ReactNod
   return <span className={`badge ${tone}`}>{children}</span>;
 }
 
-export function Panel({ title, children, className = '', action }: { title: string; children: React.ReactNode; className?: string; action?: React.ReactNode }) {
+export function Panel({ title, children, className = '', action, variant = 'default' }: { title: string; children: React.ReactNode; className?: string; action?: React.ReactNode; variant?: 'default' | 'elevated' | 'hero' }) {
+  const variantClass = variant === 'hero' ? 'panel-hero' : variant === 'elevated' ? 'panel-elevated' : '';
+  const panelClassName = `card ${variantClass} ${className}`.trim();
+  const hasHeader = Boolean(title || action);
+
   return (
-    <div className={`card ${className}`}>
-      {action ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid var(--color-border)' }}>
-          <h3 className="text-overline" style={{ margin: 0, color: 'var(--color-text-tertiary)' }}>{title}</h3>
+    <div className={panelClassName}>
+      {hasHeader ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: title || action ? '10px' : 0, borderBottom: title || action ? '1px solid var(--color-border)' : 0 }}>
+          {title ? <h3 className="text-overline" style={{ margin: 0, color: 'var(--color-text-tertiary)' }}>{title}</h3> : <span />}
           {action}
         </div>
-      ) : <h3>{title}</h3>}
+      ) : null}
       {children}
     </div>
   );
@@ -27,13 +31,20 @@ function AnimatedNumber({ value }: { value: number }) {
   return <>{animated.toLocaleString()}</>;
 }
 
-export function Stat({ label, value, hint }: { label: string; value: string | number; hint?: React.ReactNode }) {
+export function Stat({ label, value, hint, icon: Icon, tone }: { label: string; value: string | number; hint?: React.ReactNode; icon?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; tone?: 'green' | 'amber' | 'red' | 'blue' | 'purple' | 'neutral' }) {
   const isNumber = typeof value === 'number';
+  const iconContainerColor = tone === 'green' ? 'var(--color-icon-success-bg)' : tone === 'amber' ? 'var(--color-icon-warning-bg)' : tone === 'red' ? 'var(--color-icon-danger-bg)' : tone === 'blue' ? 'var(--color-icon-info-bg)' : tone === 'purple' ? 'var(--color-icon-purple-bg)' : 'var(--color-icon-neutral-bg)';
+  const iconColor = tone === 'green' ? 'var(--color-icon-success)' : tone === 'amber' ? 'var(--color-icon-warning)' : tone === 'red' ? 'var(--color-icon-danger)' : tone === 'blue' ? 'var(--color-icon-info)' : tone === 'purple' ? 'var(--color-icon-purple)' : 'var(--color-text-secondary)';
   return (
-    <div className="metricCard hover-card">
-      <p>{label}</p>
-      <strong>{isNumber ? <AnimatedNumber value={value} /> : value}</strong>
-      {hint ? <span>{hint}</span> : null}
+    <div className="stat-card hover-card">
+      {Icon && (
+        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: iconContainerColor, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
+          <Icon style={{ width: '18px', height: '18px', color: iconColor }} />
+        </div>
+      )}
+      <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-tertiary)', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
+      <strong style={{ fontSize: '26px', fontWeight: 900, letterSpacing: '-0.03em', display: 'block', marginBottom: hint ? '4px' : 0 }}>{isNumber ? <AnimatedNumber value={value} /> : value}</strong>
+      {hint ? <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>{hint}</span> : null}
     </div>
   );
 }
