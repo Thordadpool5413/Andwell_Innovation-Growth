@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Badge, TrustPanel } from '../Shared';
+import { Badge, TrustPanel, Panel, Stat } from '../Shared';
+import { DollarSign, Rocket, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { generateDecisions, riskTone, urgencyOrder } from '../../../lib/decision-queue';
 import { buildReportTrustMetadata } from '../../../lib/trust-metadata';
 import { money, whole } from '../../../lib/command-center/utils';
@@ -62,12 +63,6 @@ const workflow = [
   { step: '4', title: 'Field', body: 'Turn intelligence into referral plays, battlecards, coaching plans, and safe wording.', view: 'battlecards' as View },
 ];
 
-function reviewTone(count: number) {
-  if (count === 0) return 'green';
-  if (count < 10) return 'amber';
-  return 'red';
-}
-
 export function Home({
   roleView = 'Executive',
   setView,
@@ -104,7 +99,7 @@ export function Home({
 
   return (
     <div className="guidedHome">
-      <section className="guidedHero">
+      <Panel variant="hero" title="">
         <div className="guidedHeroCopy">
           <div className="homeStatusLine">
             <Badge tone={currentReport ? 'green' : 'amber'}>{currentReport ? 'Competitive scan loaded' : 'No scan loaded'}</Badge>
@@ -112,8 +107,20 @@ export function Home({
             <Badge tone="blue">{SOURCE_LIBRARY_GEOGRAPHY}</Badge>
             {urgentDecisionCount > 0 ? <Badge tone="amber">{urgentDecisionCount} urgent decisions</Badge> : null}
           </div>
-          <h1>{role.title}</h1>
-          <p>{role.focus}</p>
+          <h1 style={{
+            fontSize: '46px',
+            lineHeight: 1.02,
+            letterSpacing: '-0.055em',
+            margin: 0,
+            maxWidth: '900px',
+            background: 'linear-gradient(135deg, #f8fafc, #cbd5e1)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            {role.title}
+          </h1>
+          <p style={{ fontSize: '17px', lineHeight: 1.5, color: 'var(--color-text-secondary)', maxWidth: '700px', margin: '16px 0 24px' }}>{role.focus}</p>
           <div className="guidedHeroActions">
             <button className="btn primary" onClick={() => setView?.(role.primary)}>Open primary view</button>
             <button className="btn" onClick={() => setView?.(role.secondary)}>Open supporting view</button>
@@ -133,32 +140,14 @@ export function Home({
             <div><span>Review</span><strong>{reviewItems || 'Clear'}</strong></div>
           </div>
         </aside>
-      </section>
+      </Panel>
 
-      <section className="homeExecutiveDashboard">
-        <article className="homeExecutiveCard action">
-          <span>Recommended action</span>
-          <h2>{leadDecision?.title || 'Run the Maine competitor scan'}</h2>
-          <p>{leadDecision?.recommendedAction || 'Use the preloaded source library to build the first evidence-backed competitor report, then review the decision board.'}</p>
-          <button className="btn btn-sm" onClick={() => setView?.(leadDecision ? 'decisions' : 'intake')}>{leadDecision ? 'Open decision' : 'Open source library'}</button>
-        </article>
-        <article className="homeExecutiveCard">
-          <span>Growth impact</span>
-          <h2>{money(totalRevenue)}</h2>
-          <p>Three-year modeled revenue. Year 1 is {money(yearOneRevenue)} across {whole(yearOneStarts)} starts{topCounty ? `, led by ${topCounty.county} ${topCounty.service}` : ''}.</p>
-        </article>
-        <article className="homeExecutiveCard">
-          <span>Evidence confidence</span>
-          <h2>{trustMetadata?.confidence || 'Pending scan'}</h2>
-          <p>{trustMetadata ? `${trustMetadata.publicEvidenceCount} public evidence sources and ${trustMetadata.aiInterpretationCount} AI interpretations.` : 'The source library is ready, but evidence has not been scanned into a report yet.'}</p>
-        </article>
-        <article className="homeExecutiveCard">
-          <span>Risk / review</span>
-          <h2>{highRisk} high risk</h2>
-          <p>{reviewItems ? `${reviewItems} items need review or manager attention before broad field use.` : 'No report-level review burden is active.'}</p>
-          <Badge tone={highRisk ? 'red' : reviewTone(reviewItems)}>{highRisk ? 'Review now' : reviewItems ? 'Review needed' : 'Ready'}</Badge>
-        </article>
-      </section>
+      <div className="metric-grid-4" style={{ marginTop: '24px' }}>
+        <Stat label="Recommended action" value={leadDecision?.title || 'Run Maine scan'} hint={leadDecision?.recommendedAction || 'Use preloaded sources to build first report'} icon={Rocket} tone="blue" />
+        <Stat label="Growth impact" value={money(totalRevenue)} hint={`Year 1: ${money(yearOneRevenue)} across ${whole(yearOneStarts)} starts${topCounty ? `, led by ${topCounty.county}` : ''}`} icon={DollarSign} tone="green" />
+        <Stat label="Evidence confidence" value={trustMetadata?.confidence || 'Pending scan'} hint={trustMetadata ? `${trustMetadata.publicEvidenceCount} public sources, ${trustMetadata.aiInterpretationCount} AI interpretations` : 'Source library ready, no scan yet'} icon={ShieldCheck} tone="purple" />
+        <Stat label="Risk / review" value={highRisk ? `${highRisk} high risk` : reviewItems ? `${reviewItems} items` : 'Ready'} hint={reviewItems ? 'Items need review before field use' : 'No review burden active'} icon={AlertTriangle} tone={highRisk ? 'red' : reviewItems ? 'amber' : 'green'} />
+      </div>
 
       <section className="homeEducationBand">
         <div>
@@ -168,7 +157,7 @@ export function Home({
         </div>
         <div className="homeWorkflowCards">
           {workflow.map((item) => (
-            <button className="homeWorkflowCard" key={item.title} onClick={() => setView?.(item.view)}>
+            <button className="homeWorkflowCard card-interactive" key={item.title} onClick={() => setView?.(item.view)} style={{ transition: 'all 200ms ease', cursor: 'pointer' }}>
               <span>{item.step}</span>
               <strong>{item.title}</strong>
               <p>{item.body}</p>
@@ -177,14 +166,14 @@ export function Home({
         </div>
       </section>
 
-      <section className="homeDecisionLayout">
-        <div className="homeDecisionStack">
+      <section className="homeDecisionLayout" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '24px', marginTop: '32px' }}>
+        <Panel variant="elevated" title="">
           <div className="section-group-header">
             <h3>What needs attention now</h3>
             <button className="btn btn-sm" onClick={() => setView?.('decisions')}>Open board</button>
           </div>
           {rankedDecisions.map((item, index) => (
-            <article className="decisionStackItem homeDecisionItem" key={item.id}>
+            <article className="decisionStackItem homeDecisionItem" key={item.id} style={{ marginTop: index === 0 ? '16px' : '12px' }}>
               <div className="decisionRank">{index + 1}</div>
               <div>
                 <div className="row" style={{ gap: '6px', flexWrap: 'wrap', marginBottom: '6px' }}>
@@ -198,7 +187,7 @@ export function Home({
               </div>
             </article>
           ))}
-        </div>
+        </Panel>
         <TrustPanel metadata={trustMetadata} />
       </section>
     </div>
