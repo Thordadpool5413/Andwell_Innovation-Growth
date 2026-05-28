@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Badge, ConfidenceBadge, Panel, Stat, TrustPanel } from '../Shared';
+import { Target, FileCheck, Sparkles, FileText } from 'lucide-react';
 import { buildReportTrustMetadata } from '../../../lib/trust-metadata';
 import { computeConfidenceDetails } from '../../../lib/smart-ranking';
 import type { MatrixFilter } from '../../../lib/command-center/types';
@@ -47,13 +48,38 @@ function MatrixScoreBlock({ score }: { score?: MatrixScore }) {
     ['Andwell diff.', score.andwellDifferentiation],
     ['Review risk', score.reviewRisk]
   ] as const;
-  return <div className="matrixScoreBlock">
-    {metrics.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
+  return <div style={{
+    display: 'grid',
+    gridTemplateColumns: 'repeat(5, 1fr)',
+    gap: '12px',
+    marginTop: '14px',
+  }}>
+    {metrics.map(([label, value]) => {
+      const tone = value >= 75 ? 'green' : value >= 55 ? 'amber' : 'blue';
+      return <div key={label} style={{
+        padding: '12px',
+        borderRadius: '12px',
+        background: 'rgba(2,6,23,0.36)',
+        border: '1px solid rgba(148,163,184,0.16)',
+      }}>
+        <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '6px' }}>{label}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <strong style={{ fontSize: '20px', fontWeight: 900 }}>{value}</strong>
+          <div className="progress-bar-container" style={{ flex: 1, height: '4px' }}>
+            <div className={`progress-bar-fill progress-bar-${tone}`} style={{ width: `${value}%` }} />
+          </div>
+        </div>
+      </div>;
+    })}
   </div>;
 }
 
 function ExpandedFinding({ finding }: { finding: Finding }) {
   const sources = safeSources(finding);
+  const hasAndwellAdvantage = finding.andwellAdvantage && finding.andwellAdvantage !== 'No specific advantage documented';
+  const hasCompetitorAdvantage = finding.competitorAdvantage && finding.competitorAdvantage !== 'No documented advantage';
+  const hasAvoidSaying = finding.avoidSaying && finding.avoidSaying !== 'No specific avoid-saying documented';
+
   return <tr className="matrixDetailRow"><td colSpan={8}>
     <div className="matrixDetailGrid">
       <div>
@@ -66,9 +92,24 @@ function ExpandedFinding({ finding }: { finding: Finding }) {
       </div>
       <div>
         <h3>Andwell Comparison</h3>
-        <p><strong>Andwell advantage:</strong> {finding.andwellAdvantage}</p>
-        <p><strong>Competitor advantage:</strong> {finding.competitorAdvantage}</p>
-        <p><strong>Avoid saying:</strong> {finding.avoidSaying}</p>
+        {hasAndwellAdvantage && (
+          <div className="notice-success" style={{ marginBottom: '10px' }}>
+            <strong>Andwell advantage</strong><br />{finding.andwellAdvantage}
+          </div>
+        )}
+        {hasCompetitorAdvantage && (
+          <div className="notice-warning" style={{ marginBottom: '10px' }}>
+            <strong>Competitor advantage</strong><br />{finding.competitorAdvantage}
+          </div>
+        )}
+        {hasAvoidSaying && (
+          <div className="notice-danger" style={{ marginBottom: '10px' }}>
+            <strong>Avoid saying</strong><br />{finding.avoidSaying}
+          </div>
+        )}
+        {!hasAndwellAdvantage && !hasCompetitorAdvantage && !hasAvoidSaying && (
+          <p className="muted">No specific comparison points documented.</p>
+        )}
         <div className="provenance" style={{marginTop:8}}>Safe language &amp; advantages derived from Andwell catalog + claim governance review.</div>
       </div>
     </div>
@@ -136,18 +177,27 @@ export function Matrix({ currentReport, matrixFilter, setMatrixFilter, matrixSea
   return <>
     <section className="section"><div><h1>Evidence Matrix</h1><p className="text-body">Scrubs competitor websites, compares each finding to Andwell's service taxonomy, scores evidence quality, and keeps field language tied to citations. Each row links to original sources and reviewed evidence.</p></div><Badge>{filtered.length} visible</Badge></section>
     {!currentReport ? <Panel title="No report loaded"><p className="text-body">Run a competitive scan to populate the evidence matrix with scored, sourced competitive findings across every service line.</p>{onRunScan && <button className="btn primary" style={{ marginTop: '12px' }} onClick={onRunScan}>Run Competitive Scan →</button>}</Panel> : <>
-      <div className="grid cols4">
-        <Stat label="Matrix score" value={stats.averageScore || 'N/A'} hint="Average scored finding" />
-        <Stat label="Sourced rows" value={`${stats.sourced}/${findings.length}`} hint="Rows with captured evidence" />
-        <Stat label="AI enhanced" value={stats.aiEnhanced} hint="Competitor sites with AI extraction" />
-        <Stat label="Pages reviewed" value={currentReport.pagesReviewed} hint="Website pages scrubbed" />
+      <div className="metric-grid-4">
+        <Stat label="Matrix score" value={stats.averageScore || 'N/A'} hint="Average scored finding" icon={Target} tone="purple" />
+        <Stat label="Sourced rows" value={`${stats.sourced}/${findings.length}`} hint="Rows with captured evidence" icon={FileCheck} tone="green" />
+        <Stat label="AI enhanced" value={stats.aiEnhanced} hint="Competitor sites with AI extraction" icon={Sparkles} tone="blue" />
+        <Stat label="Pages reviewed" value={currentReport.pagesReviewed} hint="Website pages scrubbed" icon={FileText} tone="amber" />
       </div>
       <div className="matrixTrustLayout">
-        <Panel title="Comparison language">
-          <div className="legendGrid">
-            <div><Badge tone="green">Clearly offered</Badge><p>Competitor public evidence supports a visible capability.</p></div>
-            <div><Badge tone="blue">Not found publicly</Badge><p>Visibility gap only. This is not the same as saying the competitor does not offer it.</p></div>
-            <div><Badge tone="amber">Needs review</Badge><p>Use only after a manager confirms wording, source quality, and field context.</p></div>
+        <Panel title="Comparison language" variant="elevated">
+          <div style={{ display: 'grid', gap: '10px' }}>
+            <div style={{ padding: '12px', borderRadius: '10px', background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+              <Badge tone="green">Clearly offered</Badge>
+              <p style={{ margin: '8px 0 0', fontSize: '13px', color: 'var(--color-text-secondary)' }}>Competitor public evidence supports a visible capability.</p>
+            </div>
+            <div style={{ padding: '12px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+              <Badge tone="blue">Not found publicly</Badge>
+              <p style={{ margin: '8px 0 0', fontSize: '13px', color: 'var(--color-text-secondary)' }}>Visibility gap only. This is not the same as saying the competitor does not offer it.</p>
+            </div>
+            <div style={{ padding: '12px', borderRadius: '10px', background: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+              <Badge tone="amber">Needs review</Badge>
+              <p style={{ margin: '8px 0 0', fontSize: '13px', color: 'var(--color-text-secondary)' }}>Use only after a manager confirms wording, source quality, and field context.</p>
+            </div>
           </div>
         </Panel>
         <TrustPanel metadata={currentReport.trustMetadata || buildReportTrustMetadata(currentReport)} />
