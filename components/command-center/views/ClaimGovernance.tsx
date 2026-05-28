@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
-import { Badge, Panel, SectionGroup } from '../Shared';
+import { Badge, Panel, SectionGroup, EmptyState } from '../Shared';
 import { categorizeAllClaims, claimStatusTone, claimId } from '../../../lib/claim-governance';
 import { appendAuditEvent } from '../../../lib/audit-log';
 import type { IntelligenceReport, ClaimStatus } from '../../../lib/types';
@@ -107,7 +107,14 @@ export function ClaimGovernance({ currentReport, onRunScan }: { currentReport: I
   }, [allClaims]);
 
   if (!currentReport) {
-    return <Panel title="No report loaded"><p className="text-body">Run a competitive scan to review and categorize competitive claims by safety level — Safe, Needs Review, Do Not Use, and High Risk.</p>{onRunScan && <button className="btn primary" style={{ marginTop: '12px' }} onClick={onRunScan}>Run Competitive Scan →</button>}</Panel>;
+    return (
+      <EmptyState
+        icon="✅"
+        title="No claims to review yet"
+        description="Run a competitive scan to extract and review competitor claims. Each claim is categorized by safety level — Safe, Needs Review, Do Not Use, and High Risk — so your field team knows what's approved."
+        action={onRunScan && <button className="btn primary" onClick={onRunScan}>Run Competitive Scan →</button>}
+      />
+    );
   }
 
   return <>

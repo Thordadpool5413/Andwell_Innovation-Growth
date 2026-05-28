@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Badge, Panel, SectionGroup } from '../Shared';
+import { Badge, Panel, SectionGroup, EmptyState } from '../Shared';
 import { buildBattlecard, getBuilderOptions } from '../../../lib/battlecard-builder';
 import type { IntelligenceReport, BattlecardTemplate } from '../../../lib/types';
 
@@ -36,7 +36,14 @@ export function BattlecardBuilder({ currentReport, onRunScan }: { currentReport:
       </div>
     </section>
     {!hasCompetitors
-      ? <Panel title="No competitors loaded"><p className="text-body">Run a competitive scan to populate competitor data, then return here to generate dynamic sales battlecards by competitor, county, service line, and audience.</p>{onRunScan && <button className="btn primary" style={{ marginTop: '12px' }} onClick={onRunScan}>Run Competitive Scan →</button>}</Panel>
+      ? (
+        <EmptyState
+          icon="🛠️"
+          title="No competitor data available"
+          description="Build custom battlecards by selecting a competitor, county, service line, and audience. First, run a competitive scan to populate competitor intelligence."
+          action={onRunScan && <button className="btn primary" onClick={onRunScan}>Run Competitive Scan →</button>}
+        />
+      )
       : <><Panel title="Battlecard parameters">
         <div style={{ display: 'grid', gap: '12px' }}>
           <label className="text-small" style={{ fontWeight: 600 }}>Competitor

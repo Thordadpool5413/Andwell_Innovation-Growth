@@ -1,5 +1,6 @@
 import type { ReferralSourceProfile, ReferralSourceType, IntelligenceReport, CompetitorAnalysis } from './types';
 import { andwellCatalog, referralAudiences } from './andwell';
+import { getCompetitorProfile, getAllCompetitors, type CompetitorProfile } from './command-center/competitor-intelligence';
 
 const sourceProfiles: Record<ReferralSourceType, { leadService: string; painPoints: string[]; discoveryQs: string[]; positioning: string; cta: string; serviceLines: string[] }> = {
   Hospital: {
@@ -105,4 +106,44 @@ export function getReferralProfilesForReport(report?: IntelligenceReport | null)
 
 export function getReferralSourceTypes(): ReferralSourceType[] {
   return Object.keys(sourceProfiles) as ReferralSourceType[];
+}
+
+// Get competitor intelligence for a specific competitor
+export function getCompetitorIntelligence(competitorName: string): CompetitorProfile | null {
+  return getCompetitorProfile(competitorName);
+}
+
+// Get all Maine competitors with their intelligence
+export function getAllCompetitorIntelligence(): CompetitorProfile[] {
+  return getAllCompetitors();
+}
+
+// Build competitive positioning against a specific competitor
+export function buildCompetitivePositioning(competitorName: string) {
+  const competitor = getCompetitorProfile(competitorName);
+  if (!competitor) return null;
+
+  return {
+    competitorName: competitor.name,
+    andwellAdvantages: [
+      'Full service continuum from home health through hospice to palliative care',
+      'Integrated behavioral health and ABA therapy (specialized area for many competitors)',
+      'Dedicated dementia care management (GUIDE program)',
+      'Specialized mobile wound care with telehealth options',
+      'Technology-first boutique approach vs. hospital-system models',
+      'Local, personalized care model vs. national brands'
+    ],
+    competitorStrengths: competitor.capabilities,
+    competitorGaps: competitor.gaps,
+    keyDifferentiators: [
+      competitor.andwellDifferentiator
+    ],
+    overallStrategy: `Compete with ${competitor.name} by emphasizing Andwell's ${competitor.gaps.includes('behavioral health/mental health specialization') ? 'behavioral health integration and' : ''} full service continuum and specialized expertise where ${competitor.name} has limitations.`,
+    referralOpportunities: [
+      `Patients needing services beyond ${competitor.name}'s scope`,
+      `Patients preferring boutique, personalized care vs. large system model`,
+      `Complex patients with behavioral health + medical needs`,
+      `Early-stage serious illness patients not yet ready for ${competitor.leadService === 'Hospice' ? 'hospice' : 'specialty'} care`
+    ]
+  };
 }

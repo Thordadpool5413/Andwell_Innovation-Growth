@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, memo } from 'react';
 import { Badge, MetricGrid, Panel, SectionGroup, Stat } from '../Shared';
 import { roleGuidance } from '../../../lib/command-center/data';
 import { toneForStatus } from '../../../lib/command-center/utils';
@@ -17,7 +17,7 @@ const INSIGHT_ICON: Record<string, { icon: string; iconColor: string; cssClass: 
   tip:         { icon: '→', iconColor: 'var(--color-accent)',   cssClass: 'insight-card insight-card--tip' },
 };
 
-function InsightsBar({ rows, totals, setView, refreshKey }: { rows: GrowthRow[]; totals: GrowthTotals; setView: (v: View) => void; refreshKey?: number }) {
+const InsightsBar = memo(function InsightsBar({ rows, totals, setView, refreshKey }: { rows: GrowthRow[]; totals: GrowthTotals; setView: (v: View) => void; refreshKey?: number }) {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -64,13 +64,13 @@ function InsightsBar({ rows, totals, setView, refreshKey }: { rows: GrowthRow[];
   if (!insights.length) return null;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }} role="region" aria-label="Insights">
       {insights.map((ins) => {
         const s = INSIGHT_ICON[ins.type] ?? INSIGHT_ICON.tip;
         return (
-          <div key={ins.id} className={`${s.cssClass} hover-card`}>
+          <article key={ins.id} className={`${s.cssClass} hover-card`}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{
+              <span aria-hidden="true" style={{
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 width: '18px', height: '18px', borderRadius: '50%',
                 color: s.iconColor, fontSize: '11px', fontWeight: 900, flexShrink: 0,
@@ -83,16 +83,17 @@ function InsightsBar({ rows, totals, setView, refreshKey }: { rows: GrowthRow[];
                 className="btn btn-sm"
                 style={{ alignSelf: 'start', marginTop: '2px' }}
                 onClick={() => setView(ins.actionView as View)}
+                aria-label={`${ins.action} - ${ins.title}`}
               >
                 {ins.action} →
               </button>
             )}
-          </div>
+          </article>
         );
       })}
     </div>
   );
-}
+});
 
 function toneForPriority(priority: ExpertAction['priority']) {
   if (priority === 'Critical') return 'red';
@@ -101,12 +102,12 @@ function toneForPriority(priority: ExpertAction['priority']) {
   return 'green';
 }
 
-function ActionCard({ action, setView }: { action: ExpertAction; setView: (view: View) => void }) {
+const ActionCard = memo(function ActionCard({ action, setView }: { action: ExpertAction; setView: (view: View) => void }) {
   const destination: View = action.owner === 'Growth' ? 'growth' : action.owner === 'Field' ? 'battlecards' : action.owner === 'Admin' ? 'governance' : action.owner === 'Clinical' ? 'launch' : 'decisions';
-  return <div className="battleCard hover-card" style={{ display: 'grid', gap: '12px' }}>
+  return <article className="battleCard hover-card" style={{ display: 'grid', gap: '12px' }}>
     <div className="row spread" style={{ alignItems: 'flex-start' }}>
       <div>
-        <div className="row" style={{ gap: '6px', marginBottom: '8px' }}>
+        <div className="row" style={{ gap: '6px', marginBottom: '8px' }} role="group" aria-label={`Priority: ${action.priority}, Owner: ${action.owner}`}>
           <Badge tone={toneForPriority(action.priority)}>{action.priority}</Badge>
           <Badge>{action.owner}</Badge>
           {action.reviewRequired ? <Badge tone="amber">Review required</Badge> : <Badge tone="green">Field safe</Badge>}
@@ -116,24 +117,24 @@ function ActionCard({ action, setView }: { action: ExpertAction; setView: (view:
     </div>
     <p className="text-body" style={{ margin: 0 }}>{action.recommendation}</p>
     <div className="notice" style={{ margin: 0, fontSize: '13px' }}><strong>Why this matters</strong><br />{action.why}</div>
-    {action.evidence.length ? <div className="briefList" style={{ margin: 0 }}>{action.evidence.map((item) => <div className="briefItem" key={item} style={{ padding: '10px' }}><span>{item}</span></div>)}</div> : null}
+    {action.evidence.length ? <div className="briefList" style={{ margin: 0 }} role="list">{action.evidence.map((item) => <div className="briefItem" key={item} style={{ padding: '10px' }} role="listitem"><span>{item}</span></div>)}</div> : null}
     <div className="promptBlock output" style={{ marginTop: 0 }}><strong>Safe language</strong><span>{action.safeLanguage}</span></div>
     <div className="row spread">
       <p className="text-small" style={{ margin: 0, color: 'var(--color-text-secondary)' }}><strong>Next:</strong> {action.nextStep}</p>
-      <button className="btn" onClick={() => setView(destination)}>Open workspace</button>
+      <button className="btn" onClick={() => setView(destination)} aria-label={`Open ${destination} workspace for ${action.title}`}>Open workspace</button>
     </div>
-  </div>;
-}
+  </article>;
+});
 
-function RiskMeter({ label, value, tone }: { label: string; value: number; tone: 'green' | 'amber' | 'red' | 'blue' }) {
+const RiskMeter = memo(function RiskMeter({ label, value, tone }: { label: string; value: number; tone: 'green' | 'amber' | 'red' | 'blue' }) {
   const color = tone === 'green' ? 'var(--color-success)' : tone === 'amber' ? 'var(--color-warning)' : tone === 'red' ? 'var(--color-danger)' : 'var(--color-info)';
-  return <div className="scoreCard" style={{ padding: '14px' }}>
+  return <div className="scoreCard" style={{ padding: '14px' }} role="img" aria-label={`${label}: ${value}% ${tone}`}>
     <div className="row spread"><strong className="text-small">{label}</strong><Badge tone={tone}>{value}%</Badge></div>
-    <div className="meter"><i style={{ width: `${Math.max(4, Math.min(100, value))}%`, background: color }} /></div>
+    <div className="meter" aria-hidden="true"><i style={{ width: `${Math.max(4, Math.min(100, value))}%`, background: color }} /></div>
   </div>;
-}
+});
 
-function DecisionPath({ action }: { action: ExpertAction }) {
+const DecisionPath = memo(function DecisionPath({ action }: { action: ExpertAction }) {
   const steps = [
     { label: 'Signal', value: action.evidence[0] || 'Expert signal available' },
     { label: 'Meaning', value: action.why },
@@ -147,7 +148,7 @@ function DecisionPath({ action }: { action: ExpertAction }) {
       <p className="text-small" style={{ margin: 0, color: 'var(--color-text-secondary)' }}>{step.value}</p>
     </div>)}
   </div>;
-}
+});
 
 function ScoreModal({ score, onClose }: { score: CompetitorScore; onClose: () => void }) {
   const bars: { label: string; value: number; tone: 'green' | 'amber' | 'red' | 'blue' }[] = [
@@ -159,14 +160,14 @@ function ScoreModal({ score, onClose }: { score: CompetitorScore; onClose: () =>
     { label: 'Review risk', value: score.reviewRiskScore, tone: score.reviewRiskScore >= 60 ? 'red' : 'green' },
   ];
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }} onClick={onClose}>
-      <div style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', padding: '24px', maxWidth: '560px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+    <div role="dialog" aria-modal="true" aria-labelledby={`modal-title-${score.competitorName}`} className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }} onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+      <div className="modal-content" style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', padding: '24px', maxWidth: '560px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
         <div className="row spread" style={{ marginBottom: '16px' }}>
           <div>
-            <h3 style={{ margin: '0 0 4px' }}>{score.competitorName}</h3>
+            <h3 id={`modal-title-${score.competitorName}`} style={{ margin: '0 0 4px' }}>{score.competitorName}</h3>
             <Badge tone={toneForStatus(score.threatLevel)}>{score.threatLevel}</Badge>
           </div>
-          <button className="btn btn-sm" onClick={onClose}>Close</button>
+          <button className="btn btn-sm" onClick={onClose} aria-label="Close competitor analysis modal">Close</button>
         </div>
         <p className="text-small" style={{ color: 'var(--color-text-secondary)', margin: '0 0 16px' }}>{score.executiveReadout}</p>
         <div style={{ display: 'grid', gap: '10px', marginBottom: '16px' }}>
@@ -198,7 +199,7 @@ function ScoreModal({ score, onClose }: { score: CompetitorScore; onClose: () =>
   );
 }
 
-function OpportunityTile({ row }: { row: AndwellExpertBrief['priorityMarkets'][number] }) {
+const OpportunityTile = memo(function OpportunityTile({ row }: { row: AndwellExpertBrief['priorityMarkets'][number] }) {
   return <div className="countyRow hover-card" style={{ gridTemplateColumns: '1fr auto' }}>
     <div>
       <Badge tone={row.launchGroup === 'Priority 1' ? 'green' : 'blue'}>{row.launchGroup}</Badge>
@@ -212,14 +213,14 @@ function OpportunityTile({ row }: { row: AndwellExpertBrief['priorityMarkets'][n
       <small>{row.totalRevenue >= 1000000 ? `$${(row.totalRevenue / 1000000).toFixed(1)}M` : `$${Math.round(row.totalRevenue / 1000)}K`} 3-year revenue</small>
     </div>
   </div>;
-}
+});
 
-function PlainEnglishBlock({ title, body, tone = 'blue' }: { title: string; body: string; tone?: 'blue' | 'green' | 'amber' }) {
+const PlainEnglishBlock = memo(function PlainEnglishBlock({ title, body, tone = 'blue' }: { title: string; body: string; tone?: 'blue' | 'green' | 'amber' }) {
   return <div className="notice" style={{ margin: 0, fontSize: '13px' }}>
     <Badge tone={tone}>{title}</Badge>
     <p className="text-body" style={{ margin: '10px 0 0' }}>{body}</p>
   </div>;
-}
+});
 
 const roleActionOwners: Record<RoleView, string[]> = {
   'Executive': ['Growth', 'Field', 'Admin', 'Clinical'],

@@ -1,136 +1,249 @@
 'use client';
 
 import React from 'react';
-import type { View } from '../../../lib/command-center/types';
+import { Badge, Panel } from '../Shared';
+import type { View, RoleView as ViewRole } from '../../../lib/command-center/types';
 import type { CompetitorInput, IntelligenceReport } from '../../../lib/types';
 
-type RoleView = string;
+const rolePathways: Record<string, { headline: string; actions: { label: string; view: View; icon: string }[] }> = {
+  Executive: {
+    headline: 'Leadership Ready Intelligence',
+    actions: [
+      { label: 'Market Overview', view: 'dashboard', icon: '📊' },
+      { label: 'Strategic Brief', view: 'expert', icon: '🎯' },
+      { label: 'Executive Report', view: 'board-packet', icon: '📋' },
+    ]
+  },
+  'Growth Leader': {
+    headline: 'Growth Strategy Focus',
+    actions: [
+      { label: 'Growth Map', view: 'heatmap', icon: '🗺️' },
+      { label: 'Growth Strategy', view: 'growth', icon: '📈' },
+      { label: 'Territory Plans', view: 'county-plan', icon: '🎯' },
+    ]
+  },
+  'Sales Leader': {
+    headline: 'Field Guidance & Coaching',
+    actions: [
+      { label: 'Field Guidance', view: 'battlecards', icon: '💬' },
+      { label: 'Advantage Matrix', view: 'matrix', icon: '🎯' },
+      { label: 'Coaching Plans', view: 'coaching', icon: '📝' },
+    ]
+  },
+  'Sales Rep': {
+    headline: 'Call Preparation & Field Talk',
+    actions: [
+      { label: 'Referral Sources', view: 'referrals', icon: '📱' },
+      { label: 'Field Guidance', view: 'battlecards', icon: '💬' },
+      { label: 'Ask the Expert', view: 'ask', icon: '❓' },
+    ]
+  },
+  Board: {
+    headline: 'Leadership & Strategic Reporting',
+    actions: [
+      { label: 'Board Report', view: 'board-report', icon: '📊' },
+      { label: 'Executive Narrative', view: 'narrative', icon: '📖' },
+      { label: 'Decision Support', view: 'decisions', icon: '✅' },
+    ]
+  },
+  Admin: {
+    headline: 'Intelligence Management',
+    actions: [
+      { label: 'Source Library', view: 'intake', icon: '📚' },
+      { label: 'Reports', view: 'reports', icon: '📁' },
+      { label: 'System Health', view: 'diagnostics', icon: '🔧' },
+    ]
+  }
+};
 
-const innovationStatement = 'Innovation and Growth is where Andwell Health Partners turns vision into infrastructure. We are building the future of high acuity community care, creating post acute partnerships that make us essential to Maine, connecting complex services through technology, and developing the value based contracting model that allows us to take risk, deliver better outcomes, save payers money, and grow because we are built for the complexity others cannot manage.';
+const roleGuidance: Record<string, { description: string; nextStep: string }> = {
+  Executive: { description: 'Strategic oversight and board-ready analysis', nextStep: 'Start with a market overview' },
+  'Growth Leader': { description: 'Growth strategy and expansion planning', nextStep: 'Build your growth map' },
+  'Sales Leader': { description: 'Field enablement and sales coaching', nextStep: 'Create battle cards' },
+  'Sales Rep': { description: 'Referral source intelligence and call prep', nextStep: 'Review referral sources' },
+  Board: { description: 'Strategic reporting and decision support', nextStep: 'Review board report' },
+  Admin: { description: 'Intelligence management and system operations', nextStep: 'Build competitor library' }
+};
 
-const intelligenceCards: { title: string; desc: string; view: View; eyebrow: string }[] = [
-  { title: 'Advantage Matrix', eyebrow: 'Capability Comparison', desc: 'Compare Andwell capabilities against public competitor evidence with safe positioning language.', view: 'matrix' },
-  { title: 'Growth Map', eyebrow: 'Market Opportunity', desc: 'Understand where growth potential, saturation, partnership value, and field focus intersect.', view: 'heatmap' },
-  { title: 'Strategy', eyebrow: 'Growth Plays', desc: 'Translate market evidence into referral source angles, payer value positioning, and next moves.', view: 'growth' },
-  { title: 'Executive Report', eyebrow: 'Leadership Output', desc: 'Turn source based intelligence into a polished leadership ready report package.', view: 'board-packet' },
-];
-
-const focusAreas = [
-  { title: 'Capability intelligence', body: 'The system organizes Andwell service strengths and compares them against public competitor evidence.' },
-  { title: 'Market intelligence', body: 'The Growth Map connects capability differences to geography, saturation, and field focus priorities.' },
-  { title: 'Field execution', body: 'Field Guidance turns intelligence into safe talk tracks, questions, and what not to say.' },
-  { title: 'Leadership output', body: 'The Executive Report packages market signals, strategy, payer value, and recommended actions.' },
-];
-
-export function Home({ setView }: {
-  roleView?: RoleView;
+export function Home({ roleView = 'Executive', setView, currentReport, competitors, busy, onRefresh }: {
+  roleView?: ViewRole;
   setView?: (view: View) => void;
   currentReport?: IntelligenceReport | null;
   competitors?: CompetitorInput[];
   busy?: boolean;
   onRefresh?: () => void;
 }) {
+  const pathway = rolePathways[roleView] || rolePathways.Executive;
+  const guidance = roleGuidance[roleView] || roleGuidance.Executive;
+  const expertBrief = currentReport?.expertBrief;
+  const hasReport = Boolean(currentReport);
+
   return (
     <div style={{ maxWidth: '1180px', padding: '36px 32px 88px' }}>
-      <section style={{
-        background: 'var(--color-bg-primary)',
-        border: '1px solid var(--color-border)',
-        borderRadius: '28px',
-        padding: '44px',
-        marginBottom: '22px',
-        boxShadow: 'var(--color-shadow)'
-      }}>
-        <p style={{ margin: '0 0 14px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--color-info)' }}>
-          Andwell Innovation and Growth
-        </p>
-        <h1 style={{ margin: 0, maxWidth: '900px', fontSize: 'clamp(36px, 5.2vw, 64px)', letterSpacing: '-0.065em', lineHeight: 0.98 }}>
-          Intelligence for capability, market, field, and leadership decisions.
-        </h1>
-        <p style={{ margin: '22px 0 0', maxWidth: '880px', fontSize: '16px', color: 'var(--color-text-secondary)', lineHeight: 1.78 }}>
-          {innovationStatement}
-        </p>
-      </section>
-
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(235px, 1fr))', gap: '14px', marginBottom: '22px' }}>
-        {intelligenceCards.map((card) => (
-          <button
-            key={card.view}
-            onClick={() => setView?.(card.view)}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              minHeight: '210px',
-              width: '100%',
-              padding: '24px',
-              textAlign: 'left',
-              cursor: 'pointer',
-              background: 'var(--color-bg-primary)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '24px',
-              transition: 'border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease'
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-info)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--color-shadow)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-          >
-            <span style={{ marginBottom: '18px', fontSize: '10px', fontWeight: 900, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>{card.eyebrow}</span>
-            <span style={{ display: 'block' }}>
-              <strong style={{ display: 'block', fontSize: '22px', letterSpacing: '-0.04em', color: 'var(--color-text-primary)' }}>{card.title}</strong>
-              <span style={{ display: 'block', marginTop: '12px', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.65 }}>{card.desc}</span>
-            </span>
-          </button>
-        ))}
-      </section>
-
-      <section style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 0.95fr) minmax(320px, 1.05fr)',
-        gap: '18px',
-        marginBottom: '22px'
-      }} className="homeHeroGrid">
-        <div style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '28px' }}>
-          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>
-            Leadership view
-          </p>
-          <h2 style={{ margin: 0, fontSize: '28px', letterSpacing: '-0.05em', lineHeight: 1.08 }}>
-            A clear view of market position, growth signals, and strategic next actions.
-          </h2>
-          <p style={{ margin: '16px 0 0', fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.75 }}>
-            Leadership can move from public market evidence to strategic implications without reading through raw findings, review queues, or operational diagnostics.
-          </p>
+      <section style={{ marginBottom: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '24px', marginBottom: '20px' }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--color-info)' }}>
+              Andwell Intelligence Platform
+            </p>
+            <h1 style={{ margin: 0, fontSize: '36px', letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: '8px' }}>
+              {pathway.headline}
+            </h1>
+            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+              {guidance.description}
+            </p>
+          </div>
+          {hasReport && <Badge tone="green">Intelligence Loaded</Badge>}
         </div>
-        <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '28px' }}>
-          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>
-            Current intelligence focus
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px' }}>
-            {focusAreas.map((item) => (
-              <div key={item.title} style={{ border: '1px solid var(--color-border)', borderRadius: '18px', padding: '16px', background: 'var(--color-bg-secondary)' }}>
-                <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 900, color: 'var(--color-text-primary)' }}>{item.title}</p>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>{item.body}</p>
-              </div>
-            ))}
+      </section>
+
+      <div style={{ marginBottom: '24px' }}>
+        <Panel title="Primary Workflow">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflowX: 'auto', paddingBottom: '8px', fontSize: '13px' }}>
+          <div style={{ flex: '0 0 auto', padding: '12px 14px', background: 'var(--color-bg-secondary)', borderRadius: '6px', textAlign: 'center', minWidth: '90px' }}>
+            <div style={{ fontWeight: 700, marginBottom: '4px' }}>1️⃣ Intake</div>
+            <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>Add URLs</div>
+          </div>
+          <div style={{ flex: '0 0 auto', color: 'var(--color-text-tertiary)' }}>→</div>
+          <div style={{ flex: '0 0 auto', padding: '12px 14px', background: 'var(--color-bg-secondary)', borderRadius: '6px', textAlign: 'center', minWidth: '90px' }}>
+            <div style={{ fontWeight: 700, marginBottom: '4px' }}>2️⃣ Scan</div>
+            <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>Crawl & AI</div>
+          </div>
+          <div style={{ flex: '0 0 auto', color: 'var(--color-text-tertiary)' }}>→</div>
+          <div style={{ flex: '0 0 auto', padding: '12px 14px', background: 'var(--color-bg-secondary)', borderRadius: '6px', textAlign: 'center', minWidth: '90px' }}>
+            <div style={{ fontWeight: 700, marginBottom: '4px' }}>3️⃣ Report</div>
+            <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>Load Results</div>
+          </div>
+          <div style={{ flex: '0 0 auto', color: 'var(--color-text-tertiary)' }}>→</div>
+          <div style={{ flex: '0 0 auto', padding: '12px 14px', background: 'var(--color-bg-secondary)', borderRadius: '6px', textAlign: 'center', minWidth: '90px' }}>
+            <div style={{ fontWeight: 700, marginBottom: '4px' }}>4️⃣ Brief</div>
+            <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>Key Insights</div>
+          </div>
+          <div style={{ flex: '0 0 auto', color: 'var(--color-text-tertiary)' }}>→</div>
+          <div style={{ flex: '0 0 auto', padding: '12px 14px', background: 'var(--color-bg-secondary)', borderRadius: '6px', textAlign: 'center', minWidth: '90px' }}>
+            <div style={{ fontWeight: 700, marginBottom: '4px' }}>5️⃣ Strategy</div>
+            <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>Act on It</div>
           </div>
         </div>
-      </section>
+        </Panel>
+      </div>
 
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
-        <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '26px' }}>
-          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Field use</p>
-          <h3 style={{ margin: 0, fontSize: '22px', letterSpacing: '-0.04em' }}>Safe language for real referral conversations.</h3>
-          <p style={{ margin: '14px 0 0', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>Field teams get practical language, questions to ask, and boundaries that prevent unsupported competitor claims.</p>
+      {!hasReport ? (
+        <>
+          <Panel title="🚀 Quick Start">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+              <div style={{ padding: '16px', background: 'var(--color-bg-secondary)', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                <div style={{ fontSize: '20px', marginBottom: '8px' }}>📋</div>
+                <p style={{ margin: '0 0 8px', fontWeight: 600, fontSize: '13px' }}>1. Build Your Library</p>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>Add 3–25 competitor websites to analyze</p>
+              </div>
+              <div style={{ padding: '16px', background: 'var(--color-bg-secondary)', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                <div style={{ fontSize: '20px', marginBottom: '8px' }}>🔍</div>
+                <p style={{ margin: '0 0 8px', fontWeight: 600, fontSize: '13px' }}>2. Run the Scan</p>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>System crawls sites and applies AI analysis</p>
+              </div>
+              <div style={{ padding: '16px', background: 'var(--color-bg-secondary)', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                <div style={{ fontSize: '20px', marginBottom: '8px' }}>💡</div>
+                <p style={{ margin: '0 0 8px', fontWeight: 600, fontSize: '13px' }}>3. Review Results</p>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>Access intelligence through your role's views</p>
+              </div>
+            </div>
+            <button className="btn primary" style={{ width: '100%' }} onClick={() => setView?.('intake')}>
+              Start: Build Competitor Library →
+            </button>
+          </Panel>
+          <Panel title="What You Can Do">
+            <p style={{ margin: '0 0 12px', color: 'var(--color-text-secondary)' }}>
+              Once you load competitive intelligence, you'll unlock:
+            </p>
+            <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+              <li><strong>Evidence Matrix:</strong> Scored competitive findings with source citations</li>
+              <li><strong>Field Battlecards:</strong> Sales-ready talking points and competitive positioning</li>
+              <li><strong>Expert Brief:</strong> AI-powered market analysis and strategic recommendations</li>
+              <li><strong>Leadership Reports:</strong> Board-ready intelligence and decision support</li>
+            </ul>
+          </Panel>
+        </>
+      ) : (
+        <>
+          {expertBrief && (
+            <div style={{ marginBottom: '24px' }}>
+              <Panel title="Strategic Brief">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+                <div>
+                  <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Market Posture</p>
+                  <p style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>{expertBrief.marketPosture}</p>
+                </div>
+                <div>
+                  <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Fastest Move</p>
+                  <p style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>{expertBrief.fastestFieldMove}</p>
+                </div>
+                <div>
+                  <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Priority</p>
+                  <p style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>{expertBrief.salesCoachingPriority}</p>
+                </div>
+              </div>
+              <p style={{ margin: '16px 0 0', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>{expertBrief.expertSummary}</p>
+              <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+                <button className="btn" onClick={() => setView?.('expert')} style={{ fontSize: '13px', padding: '8px 14px' }}>
+                  Full Brief →
+                </button>
+              </div>
+              </Panel>
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+            {expertBrief?.strongestThreats && expertBrief.strongestThreats.length > 0 && (
+              <Panel title="Key Risks">
+                <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                  {expertBrief.strongestThreats.slice(0, 3).map((threat, i) => (
+                    <li key={i} style={{ marginBottom: '6px' }}>{threat}</li>
+                  ))}
+                </ul>
+              </Panel>
+            )}
+            {expertBrief?.bestOpportunities && expertBrief.bestOpportunities.length > 0 && (
+              <Panel title="Growth Opportunities">
+                <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                  {expertBrief.bestOpportunities.slice(0, 3).map((opp, i) => (
+                    <li key={i} style={{ marginBottom: '6px' }}>{opp}</li>
+                  ))}
+                </ul>
+              </Panel>
+            )}
+          </div>
+        </>
+      )}
+
+      <Panel title="Next Steps for Your Role">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+          {pathway.actions.map((action) => (
+            <button
+              key={action.view}
+              onClick={() => setView?.(action.view)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                padding: '16px',
+                background: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                transition: 'all 150ms ease',
+                minHeight: '80px',
+                justifyContent: 'space-between'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-info)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              <span style={{ fontSize: '20px', marginBottom: '6px' }}>{action.icon}</span>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-primary)' }}>{action.label}</span>
+            </button>
+          ))}
         </div>
-        <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '26px' }}>
-          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Market opportunity</p>
-          <h3 style={{ margin: 0, fontSize: '22px', letterSpacing: '-0.04em' }}>Where capability advantage meets geography.</h3>
-          <p style={{ margin: '14px 0 0', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>The Growth Map turns source evidence into area based opportunity, saturation, partnership, and payer value signals.</p>
-        </div>
-        <div style={{ background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '24px', padding: '26px' }}>
-          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-tertiary)' }}>Evidence discipline</p>
-          <h3 style={{ margin: 0, fontSize: '22px', letterSpacing: '-0.04em' }}>Useful intelligence without overclaiming.</h3>
-          <p style={{ margin: '14px 0 0', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>Outputs stay tied to public source evidence, confidence, safe positioning, and what not to say.</p>
-        </div>
-      </section>
+      </Panel>
     </div>
   );
 }
