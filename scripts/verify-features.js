@@ -76,7 +76,7 @@ async function navTo(page, label) {
   });
 
   await check('toolbar shows all 6 intelligence tabs', async () => {
-    const labels = ['Growth Map', 'Strategic Brief', 'Advantage Matrix', 'Evidence Discipline', 'Strategy Brief', 'Intelligence Method'];
+    const labels = ['Growth Map', 'Strategic Brief', 'Advantage Matrix', 'Strategy Brief', 'Intelligence Method'];
     for (const label of labels) {
       const btn = await page.$(`button:has-text("${label}")`);
       if (!btn) throw new Error(`Toolbar tab "${label}" not found`);

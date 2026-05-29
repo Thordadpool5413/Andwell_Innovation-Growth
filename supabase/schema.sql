@@ -25,21 +25,41 @@ create table if not exists public.cih_catalog_overrides (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.cih_claim_approvals (
+  claim_id text primary key,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.cih_audit_events (
+  id text primary key,
+  type text not null,
+  timestamp timestamptz not null,
+  actor text not null,
+  payload jsonb not null
+);
+
 alter table public.cih_competitors enable row level security;
 alter table public.cih_reports enable row level security;
 alter table public.cih_reviews enable row level security;
 alter table public.cih_catalog_overrides enable row level security;
+alter table public.cih_claim_approvals enable row level security;
+alter table public.cih_audit_events enable row level security;
 
 revoke all on table public.cih_competitors from anon, authenticated;
 revoke all on table public.cih_reports from anon, authenticated;
 revoke all on table public.cih_reviews from anon, authenticated;
 revoke all on table public.cih_catalog_overrides from anon, authenticated;
+revoke all on table public.cih_claim_approvals from anon, authenticated;
+revoke all on table public.cih_audit_events from anon, authenticated;
 
 grant select, insert, update, delete on table public.cih_competitors to service_role;
 grant select, insert, update, delete on table public.cih_reports to service_role;
 grant select, insert, update, delete on table public.cih_reviews to service_role;
 grant select, insert, update, delete on table public.cih_catalog_overrides to service_role;
+grant select, insert, update, delete on table public.cih_claim_approvals to service_role;
+grant select, insert, update, delete on table public.cih_audit_events to service_role;
 
 create index if not exists cih_competitors_name_idx on public.cih_competitors (name);
 create index if not exists cih_reports_generated_at_idx on public.cih_reports (generated_at desc);
 create index if not exists cih_reviews_updated_at_idx on public.cih_reviews (updated_at desc);
+create index if not exists cih_audit_events_timestamp_idx on public.cih_audit_events (timestamp desc);

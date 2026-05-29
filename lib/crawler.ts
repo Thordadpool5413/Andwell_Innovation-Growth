@@ -220,13 +220,13 @@ function pageFromHtml(url: string, html: string): CrawledPage {
   return { url, title, siteName, organizationName, text, excerpt: body.slice(0, 900), ...classifyPage(url, title, text) };
 }
 
-function linksFromHtml(root: string, html: string) {
+function linksFromHtml(root: string, html: string, base = root) {
   const $ = cheerio.load(html);
   const links = new Set<string>();
   $('a[href]').each((_, el) => {
     const href = $(el).attr('href');
     if (!href) return;
-    const full = normalize(href, root);
+    const full = normalize(href, base);
     if (!full || !sameHost(full, root)) return;
     if (full.includes('mailto:') || full.includes('tel:')) return;
     if (!isSafePublicTarget(full)) return;
@@ -235,25 +235,36 @@ function linksFromHtml(root: string, html: string) {
   return [...links].sort((a, b) => scoreUrl(b) - scoreUrl(a));
 }
 
-async function fetchPagesConcurrent(urls: string[]): Promise<CrawledPage[]> {
+type PageBundle = { page: CrawledPage; links: string[] };
+
+async function fetchPageBundle(url: string, root: string): Promise<PageBundle | null> {
+  const html = await fetchHtml(url);
+  if (!html) return null;
+  const page = pageFromHtml(url, html);
+  if (page.text.length <= 160 || page.pageType === 'Low value') return null;
+  return {
+    page,
+    links: linksFromHtml(root, html, url).filter((link) => scoreUrl(link) >= -2)
+  };
+}
+
+async function fetchPageBundlesConcurrent(urls: string[], root: string): Promise<PageBundle[]> {
   const concurrency = Math.max(1, Math.min(4, Number(process.env.CRAWL_PAGE_CONCURRENCY || 4)));
-  const pages: CrawledPage[] = [];
+  const bundles: PageBundle[] = [];
   let nextIndex = 0;
 
   async function processNext() {
     while (nextIndex < urls.length) {
       const url = urls[nextIndex++];
       try {
-        const html = await fetchHtml(url);
-        if (!html) continue;
-        const page = pageFromHtml(url, html);
-        if (page.text.length > 160 && page.pageType !== 'Low value') pages.push(page);
+        const bundle = await fetchPageBundle(url, root);
+        if (bundle) bundles.push(bundle);
       } catch {}
     }
   }
 
   await Promise.all(Array.from({ length: Math.min(concurrency, urls.length) }, processNext));
-  return pages;
+  return bundles;
 }
 
 export async function crawlSite(startUrl: string, maxPages = 24): Promise<CrawledPage[]> {
@@ -266,17 +277,27 @@ export async function crawlSite(startUrl: string, maxPages = 24): Promise<Crawle
   if (!html) throw new Error('The website did not return readable public HTML.');
   const rootPage = pageFromHtml(root, html);
   const seen = new Set<string>([root]);
-  const links = linksFromHtml(root, html).filter((url) => scoreUrl(url) >= -2).slice(0, maxPages * 3);
+  const frontier = linksFromHtml(root, html).filter((url) => scoreUrl(url) >= -2).slice(0, maxPages * 5);
+  const pages = [rootPage];
 
-  const toFetch: string[] = [];
-  for (const url of links) {
-    if (toFetch.length >= maxPages - 1) break;
-    if (seen.has(url)) continue;
-    seen.add(url);
-    toFetch.push(url);
+  while (frontier.length > 0 && pages.length < maxPages) {
+    frontier.sort((a, b) => scoreUrl(b) - scoreUrl(a));
+    const nextBatch: string[] = [];
+    while (frontier.length > 0 && nextBatch.length < Math.min(8, maxPages - pages.length)) {
+      const url = frontier.shift()!;
+      if (seen.has(url)) continue;
+      seen.add(url);
+      nextBatch.push(url);
+    }
+    if (!nextBatch.length) break;
+    const bundles = await fetchPageBundlesConcurrent(nextBatch, root);
+    for (const bundle of bundles) {
+      if (pages.length >= maxPages) break;
+      pages.push(bundle.page);
+      for (const link of bundle.links) {
+        if (!seen.has(link) && frontier.length < maxPages * 8) frontier.push(link);
+      }
+    }
   }
-
-  const additionalPages = await fetchPagesConcurrent(toFetch);
-  const pages = [rootPage, ...additionalPages];
   return pages.sort((a, b) => (b.intelligenceScore || 0) - (a.intelligenceScore || 0));
 }

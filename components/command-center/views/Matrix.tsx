@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import { Badge, ConfidenceBadge, Panel, Stat, TrustPanel } from '../Shared';
+import { buildReportTrustMetadata } from '../../../lib/trust-metadata';
 import { Database } from 'lucide-react';
 import { Badge, ConfidenceBadge, Panel, Stat, SkeletonLoader, SkeletonTable, EmptyState } from '../Shared';
 import { computeConfidenceDetails } from '../../../lib/smart-ranking';
@@ -190,6 +192,17 @@ export function Matrix({ currentReport, matrixFilter, setMatrixFilter, matrixSea
           </>
         )}
       </div>
+      <div className="matrixTrustLayout">
+        <Panel title="Comparison language">
+          <div className="legendGrid">
+            <div><Badge tone="green">Clearly offered</Badge><p>Competitor public evidence supports a visible capability.</p></div>
+            <div><Badge tone="blue">Not found publicly</Badge><p>Visibility gap only. This is not the same as saying the competitor does not offer it.</p></div>
+            <div><Badge tone="amber">Needs review</Badge><p>Use only after a manager confirms wording, source quality, and field context.</p></div>
+          </div>
+        </Panel>
+        <TrustPanel metadata={currentReport.trustMetadata || buildReportTrustMetadata(currentReport)} />
+      </div>
+      <Panel title="Matrix controls" action={<button className="btn btn-sm" onClick={exportCsv}>Export CSV</button>}>
       <Panel title="Matrix controls" action={<button className={`btn btn-sm ${exporting ? 'btn-loading' : ''}`} onClick={exportCsv} disabled={exporting} aria-label="Export evidence matrix to CSV file">{exporting ? 'Exporting...' : 'Export CSV'}</button>}>
         <div className="row" style={{ gap: '8px', flexWrap: 'wrap' }}>
           <input
@@ -221,11 +234,12 @@ export function Matrix({ currentReport, matrixFilter, setMatrixFilter, matrixSea
       {filtered.length > 0 && <div className="tableWrap proTable evidenceMatrixTable" role="region" aria-label="Evidence matrix findings"><table className="table-compact" role="grid" aria-label="Competitive findings scored and sourced across Andwell service lines"><thead><tr><th>Competitor</th><th>Andwell service</th><th>Status</th><th>Matrix score</th><th>Sources</th><th>Depth</th><th>Review</th><th>Safe field wording</th></tr></thead><tbody>{filtered.map((finding) => {
         const details = computeConfidenceDetails({ status: finding.competitorStatus, sourceCount: sourceCount(finding), hasFreshSource: sourceCount(finding) > 0, hasCmsSupport: false, hasInternalValidation: finding.reviewStatus === 'Approved for sales use', competitorOverlap: finding.competitorStatus === 'Clearly offered' ? 'High' : finding.competitorStatus === 'Not found publicly' ? 'Low' : 'Moderate', humanReviewed: finding.reviewStatus === 'Approved for sales use' || finding.reviewStatus === 'Rejected' });
         const isExpanded = expandedRows.has(finding.id);
+        const isNotFound = finding.competitorStatus === 'Not found publicly';
         return <React.Fragment key={finding.id}>
           <tr onClick={() => toggleRow(finding.id)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleRow(finding.id)} role="button" tabIndex={0} aria-expanded={isExpanded} aria-label={`${competitorLocationMap[finding.competitorName] || finding.competitorName} - ${finding.serviceLine} - ${finding.competitorStatus}, matrix score ${finding.matrixScore?.overall || 'unscored'}`} style={{ cursor: 'pointer' }}>
             <td><strong>{competitorLocationMap[finding.competitorName] || finding.competitorName}</strong><small aria-hidden="true">{isExpanded ? 'Hide evidence' : 'Open evidence'}</small></td>
             <td><strong>{finding.serviceLine}</strong><small>{finding.clearlyMatchedSubservices}/{finding.totalSubservices} subservices matched</small></td>
-            <td><Badge tone={finding.competitorStatus === 'Clearly offered' ? 'green' : finding.competitorStatus === 'Not found publicly' ? 'blue' : 'amber'}>{finding.competitorStatus}</Badge></td>
+            <td className={isNotFound ? 'notFoundStatusCell' : ''}><Badge tone={finding.competitorStatus === 'Clearly offered' ? 'green' : isNotFound ? 'blue' : 'amber'}>{finding.competitorStatus}</Badge>{isNotFound ? <small>Public visibility gap, not proof of absence</small> : null}</td>
             <td><Badge tone={scoreTone(finding.matrixScore?.overall || 0)}>{scoreLabel(finding.matrixScore)}</Badge><small>{finding.matrixScore ? `${finding.matrixScore.evidenceStrength} evidence` : 'Legacy row'}</small></td>
             <td><strong>{sourceCount(finding)}</strong><small>{safeSources(finding)[0]?.pageType || 'No page type'}</small></td>
             <td><strong>{finding.subserviceDepthScore}%</strong><small>subservice depth</small></td>

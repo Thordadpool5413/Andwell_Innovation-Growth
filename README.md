@@ -13,7 +13,8 @@ Andwell Innovation Command Center combines two products into one Hostinger-ready
 - Launch Plan with staffing model, 90-day execution timeline, and priority account plays
 - Competitor Intake for up to 25 public URLs
 - Evidence Matrix, Battlecards, Reports, Ask the Hub, Andwell Catalog, and System Check
-- Server-side APIs for analysis, competitors, reports, reviews, catalog, diagnostics, health, and version checks
+- Command Brief, Trust Panel metadata, report comparison, decision board, and server-side audit trail
+- Server-side APIs for analysis, competitors, reports, reviews, catalog, audit events, runtime, diagnostics, health, and version checks
 - Supabase, MongoDB, or local JSON persistence fallback
 - Patched standalone Next.js bootstrap for Hostinger Node deployments
 
@@ -73,7 +74,7 @@ Let Hostinger manage `PORT`. Do not set `HOST` to the public domain.
 
 ## GitHub To Hostinger
 
-1. In Hostinger, connect the website to `Thordadpool5413/Andwell_Innovation`.
+1. In Hostinger, connect the website to `Thordadpool5413/Andwell_Innovation-Growth`.
 2. Use branch `main`.
 3. Use Node.js 20.x.
 4. Use `npm run build` as the build command.
@@ -88,6 +89,7 @@ After deployment, check:
 /api/version
 /api/diagnostics
 /api/runtime
+/api/audit-events
 ```
 
 The API routes should return JSON. If an API route returns HTML, the site is not running as the Node.js Next server.

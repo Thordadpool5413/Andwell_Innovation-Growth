@@ -1,11 +1,13 @@
 import { NextRequest } from 'next/server';
 import { crawlSite } from '../../../lib/crawler';
-import { analyzeCompetitor, buildReport, buildScore } from '../../../lib/analysis';
+import { analyzeCompetitor, buildReport } from '../../../lib/analysis';
 import { extractCompetitorIntelligence, isAIExtractionConfigured } from '../../../lib/ai-extractor';
 import { saveReport } from '../../../lib/store';
 import { normalizeCompetitorInput } from '../../../lib/provider-identity';
-import { categorizeClaims } from '../../../lib/claim-governance';
-import type { CompetitorAnalysis, CompetitorInput, Confidence, CrawledPage, ReviewStatus, Status, SubserviceFinding } from '../../../lib/types';
+import { buildReportTrustMetadata } from '../../../lib/trust-metadata';
+import { applyAIEnhancement } from '../../../lib/analysis-enhancement';
+import { ANDWELL_BASELINE_SOURCES, FULL_SCAN_MAX_PAGES_PER_SITE, SOURCE_LIBRARY_GEOGRAPHY, SOURCE_LIBRARY_MODE } from '../../../lib/preloaded-competitors';
+import type { CompetitorAnalysis, CompetitorInput, CrawledPage } from '../../../lib/types';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -56,70 +58,6 @@ function sanitizeCompetitorInput(item: CompetitorInput): CompetitorInput | null 
   return { ...normalizeCompetitorInput(item), url: safeUrl };
 }
 
-// ── AI enhancement (mirrors analyze route) ──────────────────────────────────
-
-function confidenceFromEvidence(value?: string): Confidence {
-  if (value === 'Strong') return 'High';
-  if (value === 'Moderate') return 'Moderate';
-  if (value === 'Weak') return 'Low';
-  if (value === 'Not found') return 'Not found';
-  return 'Needs review';
-}
-
-function computeReviewStatus(st: Status, conf: Confidence): ReviewStatus {
-  if (st === 'Clearly offered' && conf === 'High') return 'Sales usable with evidence';
-  if (st === 'Not found publicly' || st === 'Unclear' || st === 'Needs human review') return 'Needs human review';
-  return 'Manager review suggested';
-}
-
-function statusFromDepth(depthScore: number, fallback: Status): Status {
-  if (depthScore >= 60) return 'Clearly offered';
-  if (depthScore >= 35) return 'Mentioned only';
-  if (depthScore >= 15) return 'Related but not equivalent';
-  return fallback;
-}
-
-function matrixWithAI<T extends { matrixScore?: NonNullable<SubserviceFinding['matrixScore']> }>(item: T, params: { sourceCount?: number; rationale?: string; evidenceStrength?: string; status?: Status; confidence?: Confidence; matchStrength?: number }) {
-  if (!item.matrixScore) return item.matrixScore;
-  const sourceCount = Math.max(item.matrixScore.sourceCount, params.sourceCount || 0);
-  const evidenceStrength = params.evidenceStrength === 'Strong' ? 92 : params.evidenceStrength === 'Moderate' ? 68 : params.evidenceStrength === 'Weak' ? 38 : params.evidenceStrength === 'Not found' ? 8 : item.matrixScore.evidenceStrength;
-  const matchStrength = params.matchStrength ?? item.matrixScore.matchStrength;
-  const reviewRisk = params.status === 'Clearly offered' && params.confidence === 'High' ? 10 : params.status === 'Not found publicly' ? 72 : item.matrixScore.reviewRisk;
-  const andwellDifferentiation = params.status === 'Clearly offered' ? Math.max(0, 100 - matchStrength) : params.status === 'Not found publicly' ? 94 : item.matrixScore.andwellDifferentiation;
-  const overall = Math.round((evidenceStrength * 0.34) + (item.matrixScore.sourceQuality * 0.14) + (matchStrength * 0.22) + (andwellDifferentiation * 0.18) + ((100 - reviewRisk) * 0.12));
-  return { ...item.matrixScore, overall: Math.max(0, Math.min(100, overall)), evidenceStrength, sourceCount, matchStrength, andwellDifferentiation, reviewRisk, rationale: [...new Set([...(item.matrixScore.rationale || []), params.rationale || 'AI reviewed website evidence against Andwell taxonomy.'].filter(Boolean))].slice(0, 6) };
-}
-
-function applyAIEnhancement(analysis: CompetitorAnalysis, aiExtraction: NonNullable<CompetitorAnalysis['aiExtraction']>): CompetitorAnalysis {
-  const enhanceSub = (f: SubserviceFinding): SubserviceFinding => {
-    const aiSub = aiExtraction.subserviceDepth.find(s => s.serviceLine.toLowerCase() === f.serviceLine.toLowerCase() && s.subservice.toLowerCase() === f.subservice.toLowerCase());
-    if (!aiSub) return f;
-    const confidence = aiSub.confidence || confidenceFromEvidence(aiSub.evidenceStrength);
-    return { ...f, competitorStatus: aiSub.status, confidence, evidenceExcerpt: aiSub.evidenceExcerpt || f.evidenceExcerpt, sourceUrl: aiSub.sourceUrl || f.sourceUrl, aiInterpretation: `${f.aiInterpretation} AI: ${aiSub.matchRationale || `classified as ${aiSub.status}`}.`, safeSalesWording: aiSub.safeSalesLanguage || f.safeSalesWording, avoidSaying: aiSub.doNotSayLanguage || f.avoidSaying, reviewStatus: computeReviewStatus(aiSub.status, confidence), matrixScore: matrixWithAI(f, { sourceCount: aiSub.sourceCount, rationale: aiSub.matchRationale, evidenceStrength: aiSub.evidenceStrength, status: aiSub.status, confidence, matchStrength: aiSub.status === 'Clearly offered' ? 100 : aiSub.status === 'Not found publicly' ? 0 : f.matrixScore?.matchStrength }) };
-  };
-  const findings = analysis.findings.map(f => {
-    const aiService = aiExtraction.serviceLineDepth.find(s => s.serviceLine.toLowerCase() === f.serviceLine.toLowerCase());
-    const subserviceFindings = f.subserviceFindings.map(enhanceSub);
-    if (!aiService) return { ...f, subserviceFindings };
-    const competitorStatus = aiService.status || statusFromDepth(aiService.depthScore, f.competitorStatus);
-    const confidence = confidenceFromEvidence(aiService.evidenceStrength) === 'Needs review' ? f.confidence : confidenceFromEvidence(aiService.evidenceStrength);
-    const clearlyMatchedSubservices = subserviceFindings.filter(s => s.competitorStatus === 'Clearly offered').length;
-    const subserviceDepthScore = Math.max(f.subserviceDepthScore, aiService.depthScore, Math.round((clearlyMatchedSubservices / Math.max(subserviceFindings.length, 1)) * 100));
-    return { ...f, competitorStatus, confidence, aiInterpretation: `${f.aiInterpretation} AI: ${aiService.matchRationale || aiService.summary}`, andwellAdvantage: aiService.andwellAdvantages.length ? aiService.andwellAdvantages.join(' ') : f.andwellAdvantage, competitorAdvantage: aiService.competitorAdvantages.length ? aiService.competitorAdvantages.join(' ') : f.competitorAdvantage, safeSalesWording: aiExtraction.safeSalesLanguage[0] || f.safeSalesWording, avoidSaying: aiExtraction.doNotSayLanguage[0] || f.avoidSaying, reviewStatus: computeReviewStatus(competitorStatus, confidence), subserviceFindings, clearlyMatchedSubservices, subserviceDepthScore, matrixScore: matrixWithAI(f, { sourceCount: aiService.sourceCount, rationale: aiService.matchRationale, evidenceStrength: aiService.evidenceStrength, status: competitorStatus, confidence, matchStrength: subserviceDepthScore }) };
-  });
-  const subserviceFindings = findings.flatMap(f => f.subserviceFindings);
-  const next = { ...analysis, findings, subserviceFindings, aiExtraction, aiEnhanced: true };
-  const enhancedWithScore = { ...next, score: buildScore(next) };
-
-  // Pull in full claim-governance categorization so AI-enhanced results automatically
-  // benefit from High-risk / Do-not-use / Safe / Needs-review logic (better evidence quality & sales safety).
-  try {
-    (enhancedWithScore as any).categorizedClaims = categorizeClaims(enhancedWithScore);
-  } catch {}
-
-  return enhancedWithScore;
-}
-
 // ── Concurrency helpers ──────────────────────────────────────────────────────
 
 function analyzeConcurrency(ai: boolean) {
@@ -129,8 +67,8 @@ function analyzeConcurrency(ai: boolean) {
 }
 
 function crawlMaxPagesLimit() {
-  const v = Number(process.env.CRAWL_MAX_PAGES_PER_SITE || 8);
-  return Math.max(4, Math.min(35, Number.isFinite(v) ? Math.floor(v) : 8));
+  const v = Number(process.env.CRAWL_MAX_PAGES_PER_SITE || FULL_SCAN_MAX_PAGES_PER_SITE);
+  return Math.max(4, Math.min(60, Number.isFinite(v) ? Math.floor(v) : FULL_SCAN_MAX_PAGES_PER_SITE));
 }
 
 function perCompetitorTimeoutMs() {
@@ -359,12 +297,16 @@ export async function POST(req: NextRequest) {
           ...report,
           aiEnabled: shouldUseAI,
           aiModel: process.env.OPENAI_MODEL || 'gpt-4.1-nano',
+          sourceLibraryMode: SOURCE_LIBRARY_MODE,
+          geography: SOURCE_LIBRARY_GEOGRAPHY,
+          andwellBaselineSources: ANDWELL_BASELINE_SOURCES,
           analysisConcurrency: concurrency,
           crawlMaxPagesPerSite: maxPages,
           aiLeadershipSummary: aiSummaries.length ? aiSummaries.join('\n\n') : undefined,
           executiveSummary: aiSummaries.length ? `${report.executiveSummary}\n\nAI leadership summary: ${aiSummaries.join(' ')}` : report.executiveSummary,
           scanSummary
         };
+        enhancedReport.trustMetadata = buildReportTrustMetadata(enhancedReport);
 
         if (body.save !== false) await saveReport(enhancedReport);
 

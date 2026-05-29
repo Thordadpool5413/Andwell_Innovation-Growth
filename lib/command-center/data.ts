@@ -74,6 +74,7 @@ export const nav: { key: View; label: string; note: string }[] = [
   { key: 'launch-timeline', label: 'Launch Timeline', note: 'Execution Sequence' },
   { key: 'board-report', label: 'Board Report', note: 'Print Ready' },
   { key: 'launch-checklist', label: 'Launch Checklist', note: 'Execution Tasks' },
+  { key: 'governance', label: 'Claims Review', note: 'Admin Safe Language' },
   { key: 'builder', label: 'Guidance Builder', note: 'Field Language' },
   { key: 'referrals', label: 'Referral Sources', note: 'Account Views' },
   { key: 'reports', label: 'Intelligence Library', note: 'Built Outputs' },

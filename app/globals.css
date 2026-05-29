@@ -2058,6 +2058,375 @@ td {
   height: 100%;
   background: linear-gradient(90deg, var(--color-success), var(--color-warning), var(--color-danger));
 }
+.trustPanel {
+  align-self: start;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius);
+  padding: 16px;
+  min-width: 280px;
+}
+.trustGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.trustGrid div {
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+.trustGrid span,
+.trustSplit span {
+  display: block;
+  color: var(--color-text-tertiary);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.trustGrid strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text-primary);
+  font-size: 16px;
+}
+.trustSplit {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+}
+.trustWarnings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.commandBrief {
+  max-width: 1320px;
+  padding: 28px 28px 88px;
+}
+.briefHeader,
+.roleBrief {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius);
+  padding: 22px;
+  margin-bottom: 16px;
+}
+.briefHeader h1 {
+  margin: 0;
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.02;
+}
+.briefActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.briefLayout,
+.askAnswerLayout,
+.reportSummaryLayout,
+.matrixTrustLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: 16px;
+  align-items: start;
+}
+.briefMain {
+  display: grid;
+  gap: 16px;
+}
+.briefTopGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.decisionTile,
+.answerBlock,
+.layerCard,
+.countyTile,
+.decisionCard,
+.reportSummaryCards article {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius);
+}
+.decisionTile {
+  min-height: 210px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.decisionTileAction {
+  border-color: rgba(14, 165, 233, 0.35);
+  background: linear-gradient(180deg, rgba(14, 165, 233, 0.08), var(--color-bg-secondary));
+}
+.decisionTile span,
+.reportSummaryCards span {
+  color: var(--color-text-tertiary);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.decisionTile h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.12;
+}
+.decisionTile p,
+.roleBrief p,
+.layerCard p,
+.countyTile p,
+.answerBlock p,
+.decisionCard p,
+.reportSummaryCards p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.58;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.roleBrief {
+  align-items: center;
+  margin: 0;
+}
+.roleBrief h2 {
+  margin: 4px 0 8px;
+  font-size: 22px;
+}
+.decisionStack {
+  display: grid;
+  gap: 8px;
+}
+.decisionStack.compact {
+  margin-top: 0;
+}
+.decisionStackItem {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.decisionRank {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  font-weight: 900;
+}
+.decisionStackItem h3,
+.decisionCard h4 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+.decisionStackItem p {
+  margin: 5px 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+}
+.layerGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.layerCard,
+.countyTile {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  padding: 14px;
+  transition: border-color 150ms ease, transform 150ms ease;
+}
+.layerCard:hover,
+.countyTile:hover {
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+}
+.askAnswerMain {
+  display: grid;
+  gap: 12px;
+}
+.answerBlock {
+  padding: 16px;
+}
+.answerBlock.direct p {
+  font-size: 16px;
+}
+.askSections {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.answerBlock h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.guardrail,
+.danger-soft {
+  border-color: rgba(239, 68, 68, 0.28) !important;
+  background: rgba(239, 68, 68, 0.06) !important;
+}
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 10px;
+}
+.filterGrid label {
+  display: grid;
+  gap: 5px;
+}
+.filterGrid span {
+  color: var(--color-text-tertiary);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.countyTileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+.countyTile h3 {
+  margin: 12px 0 8px;
+  font-size: 21px;
+}
+.heatScale {
+  height: 8px;
+  background: var(--color-border-light);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.heatScale i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-info), var(--color-success), var(--color-warning));
+}
+.countyTileStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.countyTileStats span {
+  display: block;
+  padding: 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
+  background: var(--color-bg-primary);
+}
+.countyTileStats strong,
+.countyTileStats small {
+  display: block;
+}
+.countyTileStats small {
+  color: var(--color-text-tertiary);
+  font-size: 10px;
+  margin-top: 2px;
+}
+.legendGrid,
+.reportDiffGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.legendGrid div {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
+  background: var(--color-bg-secondary);
+  padding: 12px;
+}
+.legendGrid p {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+.notFoundStatusCell {
+  border-left: 3px solid var(--color-info);
+}
+.notFoundStatusCell small {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text-tertiary);
+  line-height: 1.35;
+}
+.decisionBoard {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(230px, 1fr));
+  gap: 10px;
+  align-items: start;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.decisionColumn {
+  min-width: 230px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+.decisionColumnHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.decisionColumnHeader h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.decisionColumnHeader p {
+  margin: 3px 0 0;
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.decisionColumnList {
+  display: grid;
+  gap: 8px;
+}
+.decisionCard {
+  padding: 12px;
+}
+.decisionActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.reportSummaryCards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.reportSummaryCards article {
+  padding: 14px;
+}
+.reportSummaryCards strong {
+  display: block;
+  margin: 5px 0;
+  font-size: 22px;
+}
+.reportDiffGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 10px;
+}
 .boardSheet {
   background: var(--color-bg-elevated);
 }
@@ -3061,6 +3430,24 @@ td {
     text-align: left;
     grid-column: 2;
   }
+  .briefLayout,
+  .askAnswerLayout,
+  .reportSummaryLayout,
+  .matrixTrustLayout {
+    grid-template-columns: 1fr;
+  }
+  .briefTopGrid,
+  .reportSummaryCards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .askSections,
+  .layerGrid,
+  .legendGrid {
+    grid-template-columns: 1fr;
+  }
+  .filterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* Badge and card hover enhancements for interactive feedback */
@@ -3251,6 +3638,37 @@ td {
   .connectLowerRight {
     height: 122px;
   }
+  .commandBrief {
+    padding: 18px 14px 64px;
+  }
+  .briefHeader,
+  .roleBrief {
+    flex-direction: column;
+    padding: 16px;
+  }
+  .briefActions {
+    width: 100%;
+    justify-content: stretch;
+  }
+  .briefActions .btn {
+    flex: 1 1 auto;
+  }
+  .briefTopGrid,
+  .reportSummaryCards,
+  .filterGrid,
+  .countyTileStats {
+    grid-template-columns: 1fr;
+  }
+  .decisionBoard {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+  .decisionColumn {
+    min-width: 0;
+  }
+  .reportDiffGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* View transitions */
@@ -3398,4 +3816,483 @@ td {
   .decision-urgent { box-shadow: none !important; }
   /* page setup */
   @page { margin: 1.2cm 1.5cm; }
+}
+
+/* UX repair pass: guided home, admin source library, working account/coaching tools */
+.guidedHome {
+  max-width: 1380px;
+  padding: 28px 28px 88px;
+  display: grid;
+  gap: 18px;
+}
+.guidedHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: 18px;
+  align-items: stretch;
+  min-height: 360px;
+}
+.guidedHeroCopy,
+.guidedReadinessPanel,
+.homeExecutiveDashboard,
+.homeEducationBand,
+.homeDecisionLayout,
+.sourceLibraryHero,
+.askPromptLibrary,
+.coachingCommandBar {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background:
+    linear-gradient(180deg, rgba(17, 24, 39, 0.86), rgba(15, 23, 42, 0.56));
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+}
+.guidedHeroCopy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(28px, 4vw, 48px);
+}
+.homeStatusLine,
+.guidedHeroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.guidedHeroCopy h1 {
+  max-width: 820px;
+  margin: 18px 0 14px;
+  color: var(--color-text-primary);
+  font-size: clamp(40px, 4.6vw, 68px);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+}
+.guidedHeroCopy p {
+  max-width: 760px;
+  margin: 0 0 22px;
+  color: var(--color-text-secondary);
+  font-size: 17px;
+  line-height: 1.65;
+}
+.guidedReadinessPanel {
+  display: grid;
+  align-content: space-between;
+  gap: 18px;
+  padding: 26px;
+}
+.readinessMeter strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--color-text-primary);
+  font-size: 34px;
+  line-height: 1.05;
+  letter-spacing: -0.05em;
+}
+.readinessMeter p,
+.homeExecutiveCard p,
+.homeEducationBand p,
+.homeWorkflowCard p,
+.sourceLibraryHero p,
+.accountPlayPrimary p,
+.coachingCommandBar p,
+.savedActionRow p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.58;
+}
+.readinessFacts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.readinessFacts div,
+.homeExecutiveCard,
+.homeWorkflowCard,
+.askPromptGrid article,
+.accountPlayGrid > article,
+.coachingSide,
+.sourceLibraryRow {
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(2, 6, 23, 0.26);
+  border-radius: 12px;
+}
+.readinessFacts div {
+  padding: 12px;
+}
+.readinessFacts span,
+.homeExecutiveCard span,
+.sourceLibraryHero span,
+.sourceLibraryRow label span,
+.accountFormGrid label span,
+.coachingFormGrid label span,
+.fullWidthLabel span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--color-text-tertiary);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.readinessFacts strong {
+  display: block;
+  color: var(--color-text-primary);
+  font-size: 15px;
+  line-height: 1.2;
+}
+.homeExecutiveDashboard {
+  display: grid;
+  grid-template-columns: 1.25fr repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  padding: 1px;
+  background: rgba(148, 163, 184, 0.16);
+}
+.homeExecutiveCard {
+  min-height: 230px;
+  padding: 22px;
+  border: 0;
+  border-radius: 0;
+  background: rgba(15, 23, 42, 0.82);
+}
+.homeExecutiveCard.action {
+  background: linear-gradient(180deg, rgba(29, 78, 216, 0.26), rgba(15, 23, 42, 0.82));
+}
+.homeExecutiveCard h2 {
+  margin: 0 0 10px;
+  color: var(--color-text-primary);
+  font-size: clamp(24px, 2.2vw, 34px);
+  line-height: 1.04;
+  letter-spacing: -0.05em;
+}
+.homeExecutiveCard .btn {
+  margin-top: 18px;
+}
+.homeEducationBand {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+  gap: 26px;
+  padding: 28px;
+}
+.homeEducationBand h2 {
+  max-width: 620px;
+  margin: 8px 0 10px;
+  font-size: clamp(28px, 3vw, 44px);
+  line-height: 1.04;
+  letter-spacing: -0.055em;
+}
+.homeWorkflowCards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.homeWorkflowCard {
+  display: grid;
+  gap: 10px;
+  min-height: 170px;
+  padding: 18px;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.homeWorkflowCard:hover,
+.sourceLibraryRow:hover,
+.askPromptButton:hover {
+  border-color: rgba(59, 130, 246, 0.7);
+}
+.homeWorkflowCard span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(56, 189, 248, 0.13);
+  color: #67e8f9;
+  font-weight: 900;
+}
+.homeWorkflowCard strong {
+  color: var(--color-text-primary);
+  font-size: 20px;
+}
+.homeDecisionLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  gap: 16px;
+  padding: 18px;
+}
+.homeDecisionStack {
+  display: grid;
+  gap: 10px;
+}
+.homeDecisionItem {
+  background: rgba(2, 6, 23, 0.2);
+}
+.sourceLibraryHero {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  padding: 1px;
+  background: rgba(148, 163, 184, 0.16);
+}
+.sourceLibraryHero article {
+  padding: 22px;
+  background: rgba(15, 23, 42, 0.84);
+}
+.sourceLibraryHero strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--color-text-primary);
+  font-size: 38px;
+  letter-spacing: -0.05em;
+}
+.sourceLibraryList {
+  display: grid;
+  gap: 10px;
+}
+.sourceLibraryList.compact {
+  gap: 8px;
+}
+.sourceLibraryRow {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(280px, 1.2fr) minmax(190px, 0.8fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 14px;
+}
+.sourceLibraryActions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.adminSourceDetails summary {
+  cursor: pointer;
+  color: var(--color-text-primary);
+  font-weight: 800;
+}
+.askPromptLibrary {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.65fr) minmax(0, 1.35fr);
+  gap: 18px;
+  padding: 22px;
+  margin-bottom: 16px;
+}
+.askPromptLibrary h2 {
+  margin: 6px 0 8px;
+  font-size: 28px;
+  letter-spacing: -0.05em;
+}
+.askPromptGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.askPromptGrid article {
+  padding: 14px;
+}
+.askPromptGrid h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+.askPromptGrid article > div {
+  display: grid;
+  gap: 8px;
+}
+.askPromptButton {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.72);
+  color: var(--color-text-secondary);
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.accountCommandLayout,
+.coachingLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+.accountFormGrid,
+.coachingFormGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.coachingFormGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.accountPlayGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr);
+  gap: 16px;
+}
+.accountPlayGrid > article {
+  padding: 18px;
+}
+.accountPlayPrimary {
+  display: grid;
+  gap: 12px;
+}
+.accountPlayPrimary h3,
+.savedActionRow h3,
+.coachingCommandBar h2 {
+  margin: 0;
+}
+.talkTrackPreview {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.savedActionRow {
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1fr) minmax(140px, auto);
+  align-items: start;
+}
+.savedActionRow small {
+  color: var(--color-text-tertiary);
+}
+.coachingCommandBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.coachingMain {
+  min-width: 0;
+}
+.coachingSide {
+  position: sticky;
+  top: 128px;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+.fullWidthLabel {
+  display: block;
+  margin-top: 10px;
+}
+.decisionBoard {
+  grid-template-columns: repeat(5, minmax(290px, 1fr));
+  gap: 14px;
+}
+.decisionColumn {
+  min-width: 290px;
+  padding: 12px;
+}
+.decisionCard {
+  padding: 14px;
+}
+
+.light .guidedHeroCopy,
+.light .guidedReadinessPanel,
+.light .homeEducationBand,
+.light .homeDecisionLayout,
+.light .askPromptLibrary,
+.light .coachingCommandBar {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+.light .homeExecutiveDashboard,
+.light .sourceLibraryHero {
+  background: #cbd5e1;
+}
+.light .homeExecutiveCard,
+.light .sourceLibraryHero article,
+.light .readinessFacts div,
+.light .homeWorkflowCard,
+.light .askPromptGrid article,
+.light .accountPlayGrid > article,
+.light .coachingSide,
+.light .sourceLibraryRow {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+.light .homeWorkflowCard span {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.light .askPromptButton {
+  background: #f8fafc;
+  border-color: #dbe4ef;
+  color: #334155;
+}
+.light .askPromptButton:hover {
+  background: #eff6ff;
+  color: #0f172a;
+}
+.light .guidedHeroCopy p,
+.light .readinessMeter p,
+.light .homeExecutiveCard p,
+.light .homeEducationBand p,
+.light .homeWorkflowCard p,
+.light .sourceLibraryHero p,
+.light .coachingCommandBar p,
+.light .savedActionRow p {
+  color: #475569;
+}
+
+@media (max-width: 1200px) {
+  .guidedHero,
+  .homeEducationBand,
+  .homeDecisionLayout,
+  .askPromptLibrary,
+  .accountCommandLayout,
+  .coachingLayout,
+  .accountPlayGrid {
+    grid-template-columns: 1fr;
+  }
+  .homeExecutiveDashboard,
+  .sourceLibraryHero {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .sourceLibraryRow,
+  .savedActionRow {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+  .sourceLibraryActions {
+    justify-content: flex-start;
+  }
+  .coachingSide {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .guidedHome {
+    padding: 14px 12px 64px;
+  }
+  .guidedHeroCopy,
+  .guidedReadinessPanel,
+  .homeEducationBand,
+  .homeDecisionLayout,
+  .askPromptLibrary {
+    padding: 18px;
+  }
+  .guidedHeroCopy h1 {
+    font-size: clamp(34px, 11vw, 48px);
+  }
+  .homeExecutiveDashboard,
+  .sourceLibraryHero,
+  .homeWorkflowCards,
+  .askPromptGrid,
+  .accountFormGrid,
+  .coachingFormGrid,
+  .readinessFacts {
+    grid-template-columns: 1fr;
+  }
+  .homeExecutiveCard {
+    min-height: auto;
+  }
 }

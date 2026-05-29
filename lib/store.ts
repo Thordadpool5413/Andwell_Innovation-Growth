@@ -4,6 +4,8 @@ import type { Collection } from 'mongodb';
 import { getMongoDb, isMongoConfigured } from './mongodb';
 import { getSupabaseClient, isSupabaseConfigured } from './supabase';
 import type { CompetitorInput, IntelligenceReport, ReviewStatus } from './types';
+import type { AuditEvent } from './audit-log';
+import { mergeMaineCompetitorLibrary } from './preloaded-competitors';
 
 export type StoredReview = {
   id: string;
@@ -31,6 +33,7 @@ export type HubStore = {
   reports: IntelligenceReport[];
   reviews: StoredReview[];
   catalogOverrides: CatalogOverride[];
+  auditEvents: AuditEvent[];
 };
 
 function cleanEnvValue(value?: string) {
@@ -48,13 +51,21 @@ let mongoUnavailable = false;
 let supabaseUnavailable = false;
 
 const emptyStore = (): HubStore => ({
-  version: 3,
+  version: 5,
   updatedAt: new Date().toISOString(),
-  competitors: [],
+  competitors: mergeMaineCompetitorLibrary(),
   reports: [],
   reviews: [],
-  catalogOverrides: []
+  catalogOverrides: [],
+  auditEvents: []
 });
+
+function withPreloadedLibrary(store: HubStore): HubStore {
+  return {
+    ...store,
+    competitors: mergeMaineCompetitorLibrary(store.competitors),
+  };
+}
 
 async function ensureDataDir(): Promise<{ dataDir: string; storeFile: string }> {
   if (resolvedDataDir && resolvedStoreFile) return { dataDir: resolvedDataDir, storeFile: resolvedStoreFile };
@@ -77,20 +88,22 @@ async function collection<T extends object>(name: string): Promise<Collection<T>
 }
 
 async function mongoReadStore(): Promise<HubStore> {
-  const [competitors, reports, reviews, catalogOverrides] = await Promise.all([
+  const [competitors, reports, reviews, catalogOverrides, auditEvents] = await Promise.all([
     collection<CompetitorInput>('competitors').then((col) => col.find({}, { projection: { _id: 0 } }).sort({ name: 1 }).toArray()),
     collection<IntelligenceReport>('reports').then((col) => col.find({}, { projection: { _id: 0 } }).sort({ generatedAt: -1 }).limit(100).toArray()),
     collection<StoredReview>('reviews').then((col) => col.find({}, { projection: { _id: 0 } }).sort({ updatedAt: -1 }).limit(10000).toArray()),
-    collection<CatalogOverride>('catalogOverrides').then((col) => col.find({}, { projection: { _id: 0 } }).sort({ serviceLine: 1 }).toArray())
+    collection<CatalogOverride>('catalogOverrides').then((col) => col.find({}, { projection: { _id: 0 } }).sort({ serviceLine: 1 }).toArray()),
+    collection<AuditEvent>('auditEvents').then((col) => col.find({}, { projection: { _id: 0 } }).sort({ timestamp: -1 }).limit(500).toArray())
   ]);
 
   return {
     ...emptyStore(),
     updatedAt: new Date().toISOString(),
-    competitors,
+    competitors: mergeMaineCompetitorLibrary(competitors),
     reports,
     reviews,
-    catalogOverrides
+    catalogOverrides,
+    auditEvents
   };
 }
 
@@ -100,25 +113,28 @@ function assertSupabase(action: string, error: { message: string } | null) {
 
 async function supabaseReadStore(): Promise<HubStore> {
   const supabase = getSupabaseClient();
-  const [competitorsResult, reportsResult, reviewsResult, catalogResult] = await Promise.all([
+  const [competitorsResult, reportsResult, reviewsResult, catalogResult, auditResult] = await Promise.all([
     supabase.from('cih_competitors').select('payload').order('name', { ascending: true }).limit(500),
     supabase.from('cih_reports').select('payload').order('generated_at', { ascending: false }).limit(100),
     supabase.from('cih_reviews').select('payload').order('updated_at', { ascending: false }).limit(10000),
-    supabase.from('cih_catalog_overrides').select('payload').order('service_line', { ascending: true })
+    supabase.from('cih_catalog_overrides').select('payload').order('service_line', { ascending: true }),
+    supabase.from('cih_audit_events').select('payload').order('timestamp', { ascending: false }).limit(500)
   ]);
 
   assertSupabase('read competitors', competitorsResult.error);
   assertSupabase('read reports', reportsResult.error);
   assertSupabase('read reviews', reviewsResult.error);
   assertSupabase('read catalog overrides', catalogResult.error);
+  assertSupabase('read audit events', auditResult.error);
 
   return {
     ...emptyStore(),
     updatedAt: new Date().toISOString(),
-    competitors: (competitorsResult.data || []).map((row) => row.payload as CompetitorInput),
+    competitors: mergeMaineCompetitorLibrary((competitorsResult.data || []).map((row) => row.payload as CompetitorInput)),
     reports: (reportsResult.data || []).map((row) => row.payload as IntelligenceReport),
     reviews: (reviewsResult.data || []).map((row) => row.payload as StoredReview),
-    catalogOverrides: (catalogResult.data || []).map((row) => row.payload as CatalogOverride)
+    catalogOverrides: (catalogResult.data || []).map((row) => row.payload as CatalogOverride),
+    auditEvents: (auditResult.data || []).map((row) => row.payload as AuditEvent)
   };
 }
 
@@ -127,12 +143,16 @@ async function jsonReadStore(): Promise<HubStore> {
   try {
     const raw = await readFile(storeFile, 'utf8');
     const parsed = JSON.parse(raw) as Partial<HubStore>;
-    return {
+    return withPreloadedLibrary({
       ...emptyStore(),
       ...parsed,
       competitors: parsed.competitors || [],
       reports: parsed.reports || [],
       reviews: parsed.reviews || [],
+      catalogOverrides: parsed.catalogOverrides || [],
+      auditEvents: parsed.auditEvents || []
+    });
+  } catch {
       catalogOverrides: parsed.catalogOverrides || []
     };
   } catch (err) {
@@ -145,7 +165,7 @@ async function jsonReadStore(): Promise<HubStore> {
 
 async function jsonWriteStore(store: HubStore) {
   const { storeFile } = await ensureDataDir();
-  const next = { ...store, updatedAt: new Date().toISOString() };
+  const next = withPreloadedLibrary({ ...store, updatedAt: new Date().toISOString() });
   await writeFile(storeFile, JSON.stringify(next, null, 2), 'utf8');
   return next;
 }
@@ -180,7 +200,7 @@ export async function writeStore(store: HubStore) {
   if (isSupabaseConfigured() && !supabaseUnavailable) {
     try {
       const supabase = getSupabaseClient();
-      const [competitorsResult, reportsResult, reviewsResult, catalogResult] = await Promise.all([
+      const [competitorsResult, reportsResult, reviewsResult, catalogResult, auditResult] = await Promise.all([
         store.competitors.length
           ? supabase.from('cih_competitors').upsert(store.competitors.filter((c) => c.url).map(competitorRow), { onConflict: 'url' })
           : Promise.resolve({ error: null }),
@@ -192,6 +212,9 @@ export async function writeStore(store: HubStore) {
           : Promise.resolve({ error: null }),
         store.catalogOverrides.length
           ? supabase.from('cih_catalog_overrides').upsert(store.catalogOverrides.map(catalogOverrideRow), { onConflict: 'service_line' })
+          : Promise.resolve({ error: null }),
+        store.auditEvents.length
+          ? supabase.from('cih_audit_events').upsert(store.auditEvents.map(auditEventRow), { onConflict: 'id' })
           : Promise.resolve({ error: null })
       ]);
 
@@ -199,6 +222,7 @@ export async function writeStore(store: HubStore) {
       assertSupabase('upsert reports', reportsResult.error);
       assertSupabase('upsert reviews', reviewsResult.error);
       assertSupabase('upsert catalog overrides', catalogResult.error);
+      assertSupabase('upsert audit events', auditResult.error);
 
       return { ...store, updatedAt: new Date().toISOString() };
     } catch (error) {
@@ -211,25 +235,28 @@ export async function writeStore(store: HubStore) {
   if (!isMongoConfigured() || mongoUnavailable) return jsonWriteStore(store);
 
   try {
-    const [competitorsCol, reportsCol, reviewsCol, catalogCol] = await Promise.all([
+    const [competitorsCol, reportsCol, reviewsCol, catalogCol, auditCol] = await Promise.all([
       collection<CompetitorInput>('competitors'),
       collection<IntelligenceReport>('reports'),
       collection<StoredReview>('reviews'),
-      collection<CatalogOverride>('catalogOverrides')
+      collection<CatalogOverride>('catalogOverrides'),
+      collection<AuditEvent>('auditEvents')
     ]);
 
     await Promise.all([
       competitorsCol.deleteMany({}),
       reportsCol.deleteMany({}),
       reviewsCol.deleteMany({}),
-      catalogCol.deleteMany({})
+      catalogCol.deleteMany({}),
+      auditCol.deleteMany({})
     ]);
 
     await Promise.all([
       store.competitors.length ? competitorsCol.insertMany(store.competitors) : Promise.resolve(),
       store.reports.length ? reportsCol.insertMany(store.reports) : Promise.resolve(),
       store.reviews.length ? reviewsCol.insertMany(store.reviews) : Promise.resolve(),
-      store.catalogOverrides.length ? catalogCol.insertMany(store.catalogOverrides) : Promise.resolve()
+      store.catalogOverrides.length ? catalogCol.insertMany(store.catalogOverrides) : Promise.resolve(),
+      store.auditEvents.length ? auditCol.insertMany(store.auditEvents) : Promise.resolve()
     ]);
 
     return { ...store, updatedAt: new Date().toISOString() };
@@ -275,11 +302,22 @@ function catalogOverrideRow(override: CatalogOverride) {
   };
 }
 
+function auditEventRow(event: AuditEvent) {
+  return {
+    id: event.id,
+    type: event.type,
+    timestamp: event.timestamp,
+    actor: event.actor,
+    payload: event
+  };
+}
+
 export async function saveCompetitors(competitors: CompetitorInput[]) {
+  const normalizedCompetitors = mergeMaineCompetitorLibrary(competitors);
   if (isSupabaseConfigured() && !supabaseUnavailable) {
     try {
       const supabase = getSupabaseClient();
-      const normalized = competitors.filter((competitor) => competitor.url);
+      const normalized = normalizedCompetitors.filter((competitor) => competitor.url);
       if (normalized.length) {
         const result = await supabase.from('cih_competitors').upsert(normalized.map(competitorRow), { onConflict: 'url' });
         assertSupabase('upsert competitors', result.error);
@@ -294,7 +332,7 @@ export async function saveCompetitors(competitors: CompetitorInput[]) {
   if (isMongoConfigured() && !mongoUnavailable) {
     try {
       const col = await collection<CompetitorInput>('competitors');
-      const normalized = competitors.filter((competitor) => competitor.url);
+      const normalized = normalizedCompetitors.filter((competitor) => competitor.url);
       await Promise.all(normalized.map((competitor) => col.updateOne({ url: competitor.url }, { $set: competitor }, { upsert: true })));
       return readStore();
     } catch (error) {
@@ -305,7 +343,7 @@ export async function saveCompetitors(competitors: CompetitorInput[]) {
 
   const store = await readStore();
   const byUrl = new Map<string, CompetitorInput>();
-  [...store.competitors, ...competitors].forEach((competitor) => {
+  [...store.competitors, ...normalizedCompetitors].forEach((competitor) => {
     if (competitor.url) byUrl.set(competitor.url, competitor);
   });
   store.competitors = [...byUrl.values()].slice(0, 500);
@@ -474,4 +512,66 @@ export async function deleteReport(id: string) {
   const store = await readStore();
   store.reports = store.reports.filter((r) => r.id !== id);
   return writeStore(store);
+}
+
+export async function listAuditEvents() {
+  const store = await readStore();
+  return [...store.auditEvents].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 500);
+}
+
+export async function appendStoredAuditEvent(event: AuditEvent) {
+  if (isSupabaseConfigured() && !supabaseUnavailable) {
+    try {
+      const result = await getSupabaseClient().from('cih_audit_events').upsert(auditEventRow(event), { onConflict: 'id' });
+      assertSupabase('upsert audit event', result.error);
+      return event;
+    } catch (error) {
+      supabaseUnavailable = true;
+      logPersistenceFallback('Supabase', error);
+    }
+  }
+
+  if (isMongoConfigured() && !mongoUnavailable) {
+    try {
+      const col = await collection<AuditEvent>('auditEvents');
+      await col.updateOne({ id: event.id }, { $set: event }, { upsert: true });
+      return event;
+    } catch (error) {
+      mongoUnavailable = true;
+      logPersistenceFallback('MongoDB', error);
+    }
+  }
+
+  const store = await readStore();
+  store.auditEvents = [event, ...store.auditEvents.filter((item) => item.id !== event.id)].slice(0, 500);
+  await writeStore(store);
+  return event;
+}
+
+export async function clearStoredAuditEvents() {
+  if (isSupabaseConfigured() && !supabaseUnavailable) {
+    try {
+      const result = await getSupabaseClient().from('cih_audit_events').delete().neq('id', '');
+      assertSupabase('clear audit events', result.error);
+      return;
+    } catch (error) {
+      supabaseUnavailable = true;
+      logPersistenceFallback('Supabase', error);
+    }
+  }
+
+  if (isMongoConfigured() && !mongoUnavailable) {
+    try {
+      const col = await collection<AuditEvent>('auditEvents');
+      await col.deleteMany({});
+      return;
+    } catch (error) {
+      mongoUnavailable = true;
+      logPersistenceFallback('MongoDB', error);
+    }
+  }
+
+  const store = await readStore();
+  store.auditEvents = [];
+  await writeStore(store);
 }
