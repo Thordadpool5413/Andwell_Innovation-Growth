@@ -1,0 +1,500 @@
+[
+  {
+    "name": "Northern Light Health",
+    "services": [
+      "home health",
+      "hospice",
+      "palliative care",
+      "behavioral health",
+      "dementia care",
+      "nursing home care",
+      "rehabilitation",
+      "public health nursing"
+    ],
+    "geography": [
+      "Entire Maine statewide",
+      "South Portland to Fort Kent",
+      "Cumberland County",
+      "York County",
+      "Penobscot County",
+      "Aroostook County"
+    ],
+    "positioning": "Maine's largest integrated health system with comprehensive home care and hospice serving entire state since 1912; emphasis on personalized in-home care with extensive clinical support",
+    "painPoints": [
+      "Managing serious illness at home",
+      "Complex behavioral/mental health needs",
+      "Dementia and Alzheimer's management",
+      "Post-surgical recovery",
+      "End-of-life comfort care"
+    ],
+    "capabilities": [
+      "State-wide network integration",
+      "Behavioral health home programs",
+      "Telepsychiatry network",
+      "Memory care clinics",
+      "Mood and Memory program for geriatric care",
+      "Integrated behavioral healthcare in primary care",
+      "24/7 on-call nursing",
+      "8 nursing facilities with dementia units"
+    ],
+    "gaps": [
+      "Limited specialized wound care prominence",
+      "No explicit ABA therapy for behavioral children",
+      "Limited mention of telehealth-specific programs"
+    ],
+    "strength": "Scale and integration - largest statewide system with deep roots; comprehensive behavioral health infrastructure; dementia expertise through dedicated programs",
+    "andwellComparison": "Northern Light competes across most of Andwell's service lines. Andwell differentiates through: specialized wound care focus, integrated behavioral health with ABA/pediatric focus, technology-first approach, and boutique service model vs. Northern Light's hospital-system dominance. Andwell can compete on personalization and specialized programs where Northern Light focuses on scale."
+  },
+  {
+    "name": "MaineHealth Home Health",
+    "services": [
+      "home health",
+      "hospice",
+      "palliative care",
+      "nursing care",
+      "rehabilitation therapies",
+      "social work",
+      "wound care",
+      "diabetes management",
+      "post-operative joint replacement",
+      "telehealth",
+      "nutritional counseling"
+    ],
+    "geography": [
+      "York County",
+      "Cumberland County",
+      "Southern Oxford County",
+      "Knox County",
+      "Waldo County",
+      "Lincoln County",
+      "Sagadahoc County"
+    ],
+    "positioning": "Major regional home health provider with 24/7 nursing; emphasis on comprehensive post-acute care and chronic condition management with evidence-based treatments",
+    "painPoints": [
+      "Recovery from surgery/illness/injury",
+      "Chronic disease management",
+      "Wound care and healing",
+      "Post-partum recovery",
+      "Diabetes and metabolic disease",
+      "Joint replacement recovery"
+    ],
+    "capabilities": [
+      "24/7 on-call nursing",
+      "7 days per week service",
+      "Telehealth services",
+      "Specialized rehab therapies (PT/OT)",
+      "Wound care programs",
+      "Sussman House inpatient hospice facility in Rockport",
+      "Respite hospice care",
+      "Hyperbaric oxygen therapy access through MaineHealth system",
+      "Coordinated care with MaineHealth hospitals"
+    ],
+    "gaps": [
+      "Limited behavioral health/mental health focus",
+      "No explicit ABA therapy",
+      "No dementia-specific programs mentioned",
+      "No private duty services"
+    ],
+    "strength": "Comprehensive post-acute medical care with strong wound care program; integrated hospice with dedicated facilities; 24/7 availability; strong wound healing emphasis through hyperbaric and advanced treatments",
+    "andwellComparison": "MaineHealth competes directly on home health, hospice, and wound care. Andwell differentiates through: behavioral health and ABA integration, dementia care programs, more personalized boutique approach, and non-hospital-system independence. Both serve similar geographies but Andwell can differentiate on specialized behavioral/pediatric services MaineHealth lacks."
+  },
+  {
+    "name": "Beacon Hospice (Amedisys)",
+    "services": [
+      "hospice",
+      "palliative care",
+      "home health",
+      "nursing care",
+      "pain/symptom management",
+      "emotional and spiritual support",
+      "hospice aides",
+      "durable medical equipment"
+    ],
+    "geography": [
+      "Bangor (Penobscot County)",
+      "South Portland (Cumberland County)",
+      "Augusta (Kennebec County)",
+      "Auburn (Androscoggin County)",
+      "Multi-state: CT, MA, ME, NH, RI"
+    ],
+    "positioning": "National hospice and palliative care leader with local presence; focus on whole-person end-of-life care with pain management and emotional/spiritual support",
+    "painPoints": [
+      "End-of-life care planning",
+      "Pain and symptom management",
+      "Emotional and spiritual support for families",
+      "Transitioning to comfort-focused care",
+      "Caregiver support and respite"
+    ],
+    "capabilities": [
+      "Medicare and Medicaid certified",
+      "Integrated palliative + hospice model",
+      "24/7 availability",
+      "Multi-disciplinary teams",
+      "Bereavement services",
+      "National Amedisys infrastructure",
+      "Insurance coverage (Medicare, Medicaid, commercial)",
+      "Multiple Maine locations coordinated regionally"
+    ],
+    "gaps": [
+      "Limited home health beyond hospice scope",
+      "No rehabilitation or therapy services mentioned",
+      "No behavioral health/mental health specialization",
+      "No ABA or pediatric services",
+      "No wound care programs",
+      "Primarily end-of-life focused (not early-stage palliative)"
+    ],
+    "strength": "Focused hospice expertise with multi-state scaling; strong end-of-life pain management; established palliative care model integrated with hospice",
+    "andwellComparison": "Beacon competes narrowly on hospice and end-of-life palliative care. Andwell differentiates significantly through: full service continuum from home health through palliative to hospice, behavioral health and ABA integration, dementia programs, wound care, and early-to-advanced palliative model. Andwell offers ecosystem vs. Beacon's focused hospice approach."
+  },
+  {
+    "name": "Bristol Hospice",
+    "services": [
+      "hospice",
+      "nursing care",
+      "physicians",
+      "hospice aides",
+      "spiritual support",
+      "therapy services",
+      "dietary services",
+      "counseling",
+      "volunteer services",
+      "durable medical equipment",
+      "bereavement services"
+    ],
+    "geography": [
+      "Piscataquis County",
+      "Penobscot County",
+      "Hancock County",
+      "Waldo County",
+      "Somerset County",
+      "Kennebec County",
+      "Bangor headquarters"
+    ],
+    "positioning": "Compassionate end-of-life specialist serving multiple Maine counties; emphasis on dignity, respect, and quality care at end of life",
+    "painPoints": [
+      "End-of-life comfort and dignity",
+      "Family and emotional support",
+      "Pain and symptom management at end of life",
+      "Spiritual care during dying process",
+      "Bereavement support"
+    ],
+    "capabilities": [
+      "24/7/365 availability",
+      "Multi-disciplinary hospice teams",
+      "Bereavement counseling",
+      "Volunteer support",
+      "Clinical on-call 24/7",
+      "Serving 6 Maine counties",
+      "Regional specialist focus"
+    ],
+    "gaps": [
+      "Hospice-only focus (no home health, palliative care earlier stages)",
+      "No rehabilitation or therapy services",
+      "No behavioral health services",
+      "No wound care",
+      "No ABA or pediatric services",
+      "Limited to end-of-life stage of care",
+      "No telehealth mentioned"
+    ],
+    "strength": "Regional hospice specialist with 24/7 dedicated focus on end-of-life compassionate care; serves rural Maine counties effectively",
+    "andwellComparison": "Bristol competes narrowly on hospice services in central Maine counties. Andwell differentiates through: full continuum beyond hospice, behavioral health and ABA integration, dementia programs, home health, wound care, and technology. Andwell offers comprehensive solution where Bristol is hospice-only. Bristol's strength in rural counties like Piscataquis/Somerset."
+  },
+  {
+    "name": "Constellation Health Services",
+    "services": [
+      "home health",
+      "hospice",
+      "palliative care",
+      "private duty care",
+      "ABA therapy (behavioral)",
+      "school-based OT/PT/ABA"
+    ],
+    "geography": [
+      "Lewiston (Androscoggin County)",
+      "Brewer (Penobscot County)",
+      "Kennebunk (York County)",
+      "Augusta (Kennebec County)",
+      "Serves 50+ Maine cities",
+      "Multi-state: CT, MA, NH, NY, PA, TX"
+    ],
+    "positioning": "Complete care solution combining technology, coordinated care teams, and home-based model; emphasis on affordable alternative to institutional care; ABA therapy specialist",
+    "painPoints": [
+      "Keeping elderly/disabled at home vs. facilities",
+      "Behavioral health for children with autism/developmental delays",
+      "Coordinating complex care from home",
+      "Affordable long-term care solutions",
+      "School and community-based behavioral support"
+    ],
+    "capabilities": [
+      "Integrated home health + hospice model",
+      "ABA therapy for autism and developmental delays",
+      "School-based therapy services",
+      "Private duty care",
+      "Technology-enabled care coordination",
+      "Multi-state insurance partnerships",
+      "Behavioral health specialization"
+    ],
+    "gaps": [
+      "Limited emphasis on specialized wound care",
+      "No dementia-specific programs mentioned",
+      "No telepsychiatry or behavioral health for adults",
+      "Limited palliative care focus",
+      "No rehabilitation therapy emphasis",
+      "Fewer locations than larger health systems"
+    ],
+    "strength": "Unique integrated ABA therapy with home health/hospice; behavioral health specialization for children; technology-enabled care; affordable alternatives to institutional care",
+    "andwellComparison": "Constellation overlaps on home health, palliative, and behavioral health. Andwell differentiates through: broader service integration, stronger palliative programming, deeper dementia expertise, fuller service continuum including wound care. Both compete on integrated model; Constellation leads in ABA/pediatric behavioral, Andwell likely offers more clinical depth in traditional home health."
+  },
+  {
+    "name": "Martin's Point HealthCare",
+    "services": [
+      "primary care",
+      "palliative care",
+      "specialty care",
+      "telehealth",
+      "Medicare and Medicaid plans"
+    ],
+    "geography": [
+      "Scarborough (Cumberland County)",
+      "Brunswick (Cumberland County)",
+      "Biddeford (York County)",
+      "Portland (Cumberland County)",
+      "Multiple primary care centers throughout Maine",
+      "Part of MaineHealth"
+    ],
+    "positioning": "Health plan + integrated care provider offering palliative care to serious illness patients; emphasis on comfort, emotional/spiritual support, and coordination with multiple providers",
+    "painPoints": [
+      "Serious illness management",
+      "Pain and symptom control",
+      "Goals-of-care conversations",
+      "Quality of life focus for chronically ill",
+      "Coordination across providers"
+    ],
+    "capabilities": [
+      "Palliative care team (doctors, nurses, social workers)",
+      "In-person and telehealth palliative services",
+      "Integration with MaineHealth providers",
+      "Insurance options (Medicare, Medicaid, Generations Advantage)",
+      "Integrated primary care + palliative",
+      "Multi-location presence"
+    ],
+    "gaps": [
+      "Palliative-only focus (no hospice, home health, behavioral health standalone)",
+      "No wound care specialization",
+      "No ABA therapy",
+      "No dementia-specific programs",
+      "No home health services",
+      "No rehabilitation or therapy services outside primary care"
+    ],
+    "strength": "Integrated palliative care within health plan/primary care model; coordination advantage; telehealth palliative option; strong insurance integration",
+    "andwellComparison": "Martin's Point competes narrowly on palliative care integrated with primary care. Andwell differentiates through: specialized standalone palliative programs, full continuum (home health, hospice, behavioral), dementia programs, wound care, ABA. Different business model: health plan/integrated vs. specialized home-based services company."
+  },
+  {
+    "name": "St. Joseph Healthcare",
+    "services": [
+      "acute hospital care",
+      "emergency department",
+      "primary care",
+      "specialty care",
+      "orthopedics",
+      "cardiology",
+      "wound care",
+      "inpatient therapy (PT/OT)",
+      "surgery",
+      "women's health",
+      "pediatrics"
+    ],
+    "geography": [
+      "Bangor (Penobscot County)",
+      "Northern Maine",
+      "Multiple primary care locations in Bangor region",
+      "30+ departments across system"
+    ],
+    "positioning": "112-bed acute care community hospital with personalized medicine focus; modern accredited facility with comprehensive specialty support",
+    "painPoints": [
+      "Acute illness requiring hospitalization",
+      "Emergency care access",
+      "Surgical and orthopedic conditions",
+      "Skin and wound healing",
+      "Post-acute recovery"
+    ],
+    "capabilities": [
+      "112-bed acute care hospital",
+      "24/7 emergency department",
+      "Skin and Wound Healing Center",
+      "Inpatient physical and occupational therapy",
+      "Cardiopulmonary care",
+      "Hyperbaric medicine",
+      "1,080+ employees",
+      "30+ departments",
+      "Part of Covenant Health Catholic system"
+    ],
+    "gaps": [
+      "No home health services",
+      "No hospice or palliative care",
+      "No behavioral health specialization",
+      "No ABA therapy",
+      "No dementia-specific programs",
+      "Acute hospital focus (not post-acute/home-based)",
+      "No dedicated rehabilitation facility"
+    ],
+    "strength": "Acute hospital and emergency care with solid wound care/healing center; accredited specialty services; regional acute care anchor",
+    "andwellComparison": "Minimal direct competition - different care settings (hospital vs. home-based). Potential complementary relationship: St. Joseph handles acute care; Andwell handles post-acute home recovery. Different market positioning. St. Joseph's wound care could be referral source for Andwell."
+  },
+  {
+    "name": "Covenant Health",
+    "services": [
+      "acute hospital care",
+      "emergency services",
+      "primary care",
+      "specialty care",
+      "behavioral and mental health",
+      "rehabilitation",
+      "skilled nursing",
+      "long-term care",
+      "memory care",
+      "wound care",
+      "urgent care"
+    ],
+    "geography": [
+      "Lewiston (Androscoggin County) - St. Mary's Health System",
+      "Bangor (Penobscot County) - St. Joseph Healthcare",
+      "Biddeford (York County) - St. Andre Health Care",
+      "Northern, central, and southern Maine"
+    ],
+    "positioning": "Innovative Catholic health care system emphasizing compassionate care; integrated hospital, primary care, specialty, and long-term care under shared mission",
+    "painPoints": [
+      "Acute medical illness",
+      "Mental health and behavioral issues",
+      "Long-term care and memory care",
+      "Senior care coordination",
+      "Post-acute rehabilitation",
+      "Wound care management"
+    ],
+    "capabilities": [
+      "3 major health facilities",
+      "233-bed St. Mary's with extensive behavioral health",
+      "112-bed St. Joseph with wound healing center",
+      "Behavioral health services integrated throughout",
+      "Memory care through d'Youville Pavilion",
+      "Rehabilitation center",
+      "Long-term skilled nursing",
+      "Employed primary care and specialty networks",
+      "Catholic mission-driven integration"
+    ],
+    "gaps": [
+      "No home health services mentioned",
+      "No hospice services mentioned",
+      "No palliative care focus",
+      "Hospital-system centric (not home-based)",
+      "No ABA therapy mentioned",
+      "No specialized dementia home programs",
+      "Limited telehealth emphasis"
+    ],
+    "strength": "Integrated health system with strong behavioral health and memory care focus; Catholic mission creates care philosophy; multi-facility regional presence",
+    "andwellComparison": "Minimal direct competition - hospital and facility-based care vs. home-based services. Potential complementary relationship: Covenant handles acute care and long-term facilities; Andwell handles home-based post-acute support. Different market entirely. Behavioral health is mutual strength but in different settings."
+  },
+  {
+    "name": "CenterWell Home Health",
+    "services": [
+      "home health nursing",
+      "physical therapy",
+      "occupational therapy",
+      "speech pathology",
+      "medical social services",
+      "home health aides",
+      "chronic disease management",
+      "post-illness/injury recovery"
+    ],
+    "geography": [
+      "South Portland (Cumberland County)",
+      "Bangor (Penobscot County)",
+      "Kennebunk (York County)",
+      "Portland (Cumberland County)",
+      "Multiple Maine locations",
+      "National brand with Maine presence"
+    ],
+    "positioning": "National home health brand emphasizing quick access and coordinated care teams; personalized care plans for chronic disease and recovery; 24-48 hour service availability",
+    "painPoints": [
+      "Chronic disease management at home",
+      "Post-surgery recovery",
+      "Post-hospitalization support",
+      "Post-injury rehabilitation",
+      "Coordinated therapy services at home"
+    ],
+    "capabilities": [
+      "National company infrastructure",
+      "Multiple Maine locations",
+      "PT, OT, speech pathology on staff",
+      "Medical social services",
+      "Home health aides available",
+      "24-48 hour service initiation",
+      "Personalized care plans",
+      "Therapy coordination model",
+      "Established referral networks"
+    ],
+    "gaps": [
+      "No hospice services",
+      "No palliative care focus",
+      "No behavioral health or ABA",
+      "No dementia-specific programs",
+      "No wound care specialization",
+      "No private duty care",
+      "Limited telehealth emphasis",
+      "National brand - less local/personal positioning"
+    ],
+    "strength": "National brand with local presence; reliable therapy-focused home health; quick service access (24-48 hours); coordinated multi-discipline teams",
+    "andwellComparison": "Direct competition on core home health services (nursing, PT/OT, social work). Andwell differentiates through: integrated palliative/hospice continuum, behavioral health and ABA specialization, dementia programs, wound care expertise, local/personalized boutique approach vs. national brand. Both serve similar geographies; Andwell offers broader ecosystem."
+  },
+  {
+    "name": "New England Cancer Specialists",
+    "services": [
+      "medical oncology",
+      "hematology",
+      "chemotherapy",
+      "radiation oncology",
+      "breast health",
+      "clinical trials",
+      "genetic counseling",
+      "cancer care coordination"
+    ],
+    "geography": [
+      "Scarborough (Cumberland County)",
+      "Kennebunk (York County)",
+      "Westbrook (Cumberland County) - Rock Row",
+      "Multiple Maine locations",
+      "Regional oncology specialist"
+    ],
+    "positioning": "18-physician comprehensive oncology and hematology practice (nearly 50% of Maine cancer specialists); innovative facility with advanced treatments and research; QOPI-certified quality focus",
+    "painPoints": [
+      "Cancer diagnosis and treatment planning",
+      "Chemotherapy administration",
+      "Radiation therapy access",
+      "Clinical trial participation",
+      "Hematologic disease management",
+      "Genetic counseling for cancer risk"
+    ],
+    "capabilities": [
+      "18 oncologists and hematologists",
+      "Medical and radiation oncology under one roof (Westbrook Rock Row)",
+      "Breast health programs",
+      "State-of-the-art chemotherapy",
+      "Clinical trials access",
+      "Genetic counseling services",
+      "QOPI-certified quality practices",
+      "Established since 1978",
+      "Comprehensive treatment and research facility"
+    ],
+    "gaps": [
+      "Oncology-focused (no home health, hospice, palliative care)",
+      "No behavioral health services",
+      "No ABA therapy",
+      "No dementia care",
+      "Wound care only as oncology side effect management",
+      "Limited home-based services",
+      "Hospital/clinic-based care model"
+    ],
+    "strength": "Comprehensive oncology and hematology expertise with largest specialist concentration in Maine; integrated medical + radiation oncology; clinical trial access; quality-certified",
+    "andwellComparison": "Minimal direct competition - different focus (cancer treatment vs. post-acute home services). Potential complementary relationship: NECS handles cancer treatment; Andwell could handle palliative/home support for cancer patients and post-treatment wound care. Different market positioning; possible referral relationship."
+  }
+]

@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { LayoutDashboard, TrendingUp, Presentation, Rocket, Brain, Cpu, FileText, Upload, Table, Swords, FileBarChart, MessageSquare, BookOpen, Activity, Shield, Hammer, Users, Map, CheckSquare, Sliders, Search, FileSpreadsheet, ScrollText, GraduationCap, Globe, MapPin, Phone, Crosshair, Layers, Database, DollarSign, Target, Clock, ListChecks, Home as HomeIcon, Menu, X, ClipboardList } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { LayoutDashboard, TrendingUp, Presentation, Rocket, Brain, Cpu, FileText, Upload, Table, Swords, FileBarChart, MessageSquare, BookOpen, Activity, Shield, Hammer, Users, Map, CheckSquare, Sliders, Search, FileSpreadsheet, ScrollText, GraduationCap, Globe, MapPin, Phone, Crosshair, Layers, Database, DollarSign, Target, Clock, ListChecks, Home as HomeIcon, Menu, X, ClipboardList, HelpCircle } from 'lucide-react';
 import { ThemeToggle } from '../components/command-center/ThemeToggle';
 import { ProgressRegion } from '../components/command-center/ProgressRegion';
 import { WorkspaceTools } from '../components/command-center/WorkspaceTools';
@@ -10,10 +10,11 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { andwellCatalog } from '../lib/andwell';
 import { buildGrowthRows, buildStaffingPlan, growthDefaultScenario, rollupGrowthByService, summarizeGrowth } from '../lib/growth-plan';
 import { generateAndwellExpertBrief } from '../lib/andwell-expert';
+import { getPreloadedCompetitors } from '../lib/preloaded-competitors';
 import type { CompetitorInput, IntelligenceReport } from '../lib/types';
 import type { GrowthScenario } from '../lib/growth-plan';
 import type { View, RoleView, MatrixFilter, ReportSummary, ApiCheck, AskResponse } from '../lib/command-center/types';
-import { nav, roleGuidance } from '../lib/command-center/data';
+import { nav, roleGuidance, viewHelp } from '../lib/command-center/data';
 import { api, parseCompetitorEntries } from '../lib/command-center/utils';
 import { Dashboard } from '../components/command-center/views/Dashboard';
 import { Home } from '../components/command-center/views/Home';
@@ -78,6 +79,55 @@ const navGroups: { label: string; keys: View[] }[] = [
   { label: 'Reports', keys: ['board-packet', 'reports', 'ask'] },
   { label: 'Admin', keys: ['intake', 'audit', 'diagnostics'] }
 ];
+const getNavGroups = (hasReport: boolean, roleView: RoleView = 'Executive'): { label: string; keys: View[] }[] => {
+  if (!hasReport) {
+    return [
+      { label: 'Getting Started', keys: ['home', 'intake'] },
+      { label: 'Data', keys: ['reports'] }
+    ];
+  }
+
+  const roleGroups: Record<RoleView, { label: string; keys: View[] }[]> = {
+    'Executive': [
+      { label: 'Home', keys: ['home', 'dashboard'] },
+      { label: 'Priority Views', keys: ['dashboard', 'expert', 'board-packet'] },
+      { label: 'Intelligence', keys: ['matrix', 'battlecards', 'ask'] },
+      { label: 'Operations', keys: ['intake', 'reports'] }
+    ],
+    'Growth Leader': [
+      { label: 'Home', keys: ['home'] },
+      { label: 'Priority Views', keys: ['heatmap', 'growth', 'county-plan'] },
+      { label: 'Intelligence', keys: ['matrix', 'expert'] },
+      { label: 'Operations', keys: ['reports', 'intake'] }
+    ],
+    'Sales Leader': [
+      { label: 'Home', keys: ['home'] },
+      { label: 'Priority Views', keys: ['battlecards', 'matrix', 'coaching'] },
+      { label: 'Intelligence', keys: ['expert', 'ask'] },
+      { label: 'Operations', keys: ['reports', 'intake'] }
+    ],
+    'Sales Rep': [
+      { label: 'Home', keys: ['home'] },
+      { label: 'Priority Views', keys: ['battlecards', 'referrals', 'ask'] },
+      { label: 'Intelligence', keys: ['matrix', 'expert'] },
+      { label: 'Operations', keys: ['reports'] }
+    ],
+    'Board': [
+      { label: 'Home', keys: ['home'] },
+      { label: 'Priority Views', keys: ['board-report', 'narrative', 'decisions'] },
+      { label: 'Intelligence', keys: ['expert', 'matrix'] },
+      { label: 'Operations', keys: ['reports'] }
+    ],
+    'Admin': [
+      { label: 'Home', keys: ['home'] },
+      { label: 'Priority Views', keys: ['intake', 'reports', 'diagnostics'] },
+      { label: 'Intelligence', keys: ['matrix', 'ask'] },
+      { label: 'Data', keys: ['reports'] }
+    ]
+  };
+
+  return roleGroups[roleView] || roleGroups['Executive'];
+};
 
 const workspaceTools: Partial<Record<View, { label: string; keys: View[] }>> = {
   heatmap: { label: 'Intelligence', keys: ['heatmap', 'expert', 'matrix', 'brief', 'prompt'] },
@@ -131,7 +181,7 @@ function PageContent() {
   const [roleView, setRoleView] = useState<RoleView>('Executive');
   const [matrixFilter, setMatrixFilter] = useState<MatrixFilter>('all');
   const [matrixSearch, setMatrixSearch] = useState('');
-  const [competitors, setCompetitors] = useState<CompetitorInput[]>([]);
+  const [competitors, setCompetitors] = useState<CompetitorInput[]>(getPreloadedCompetitors());
   const [urlInput, setUrlInput] = useState('');
   const [reports, setReports] = useState<ReportSummary[]>([]);
   const [currentReport, setCurrentReport] = useState<IntelligenceReport | null>(null);
@@ -143,8 +193,28 @@ function PageContent() {
   const [growthScenario, setGrowthScenario] = useState<GrowthScenario>(growthDefaultScenario);
   const [navOpen, setNavOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [progressItems, setProgressItems] = useState<{ name: string; status: 'queued' | 'crawling' | 'ai' | 'done' | 'error'; pages?: number; error?: string; errorType?: string }[]>([]);
   const dismissProgress = useCallback(() => setProgressItems([]), []);
+  const [matrixSearchDebouncing, setMatrixSearchDebouncing] = useState(false);
+  const matrixSearchDebounceRef = useRef<NodeJS.Timeout>();
+
+  const handleMatrixSearch = useCallback((value: string) => {
+    setMatrixSearchDebouncing(true);
+    if (matrixSearchDebounceRef.current) clearTimeout(matrixSearchDebounceRef.current);
+    setMatrixSearch(value);
+    matrixSearchDebounceRef.current = setTimeout(() => setMatrixSearchDebouncing(false), 300);
+  }, []);
+
+  useEffect(() => {
+    const hasSeenShortcuts = localStorage.getItem('andwell:shortcuts-hint');
+    if (!hasSeenShortcuts) {
+      setTimeout(() => {
+        showToast('💡 Tip: Press ? anytime to view keyboard shortcuts', 'info');
+        localStorage.setItem('andwell:shortcuts-hint', 'true');
+      }, 1500);
+    }
+  }, [showToast]);
 
   const aiAnalyses = currentReport?.analyses.filter((analysis) => Boolean(analysis.aiExtraction)) || [];
   const growthRows = useMemo(() => buildGrowthRows(growthScenario), [growthScenario]);
@@ -217,16 +287,12 @@ function PageContent() {
   useEffect(() => {
     // Restore persisted state after mount to avoid SSR/client hydration mismatch
     try {
-      const savedView = localStorage.getItem('andwell:view') as View;
-      if (savedView && nav.some(n => n.key === savedView)) setView(savedView);
-    } catch {}
-    try {
       const savedScenario = localStorage.getItem('andwell:growthScenario');
       if (savedScenario) setGrowthScenario(JSON.parse(savedScenario) as GrowthScenario);
     } catch {}
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async () => {
-      await refreshServerState();
+      const reportsList = await refreshServerState();
       try {
         const savedId = localStorage.getItem('andwell:reportId');
         if (savedId) {
@@ -234,6 +300,19 @@ function PageContent() {
           setPhase('Restore session');
           const response = await api<{ report: IntelligenceReport }>(`/api/reports?id=${encodeURIComponent(savedId)}`);
           setCurrentReport(response.report);
+          // Restore view only if a report was loaded
+          try {
+            const savedView = localStorage.getItem('andwell:view') as View;
+            if (savedView && nav.some(n => n.key === savedView)) setView(savedView);
+          } catch {}
+        } else if (reportsList && reportsList.length > 0) {
+          // Auto-load the most recent report if no saved session and reports exist
+          setBusy(true);
+          setPhase('Load latest report');
+          const latestReport = reportsList[0];
+          const response = await api<{ report: IntelligenceReport }>(`/api/reports?id=${encodeURIComponent(latestReport.id)}`);
+          setCurrentReport(response.report);
+          setView('dashboard');
         }
       } catch {}
       finally { setBusy(false); setPhase('Ready'); }
@@ -257,13 +336,19 @@ function PageContent() {
     setBusy(true);
     setPhase('Load data');
     try {
+      const preloaded = getPreloadedCompetitors();
       const competitorResponse = await api<{ competitors: CompetitorInput[] }>('/api/competitors');
+      const userAdded = (competitorResponse.competitors || []).filter(c => !(c as any).isPreloaded);
+      const merged = [...preloaded, ...userAdded];
       const reportResponse = await api<{ reports: ReportSummary[] }>('/api/reports');
-      setCompetitors(competitorResponse.competitors || []);
-      setReports(reportResponse.reports || []);
+      const reportsList = reportResponse.reports || [];
+      setCompetitors(merged);
+      setReports(reportsList);
       showToast('Server state loaded.', 'success');
+      return reportsList;
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Unable to load server state.', 'error');
+      return [];
     } finally {
       setBusy(false);
       setPhase('Ready');
@@ -279,8 +364,11 @@ function PageContent() {
   async function saveCompetitors() {
     setBusy(true); setPhase('Save library');
     try {
-      const response = await api<{ competitors: CompetitorInput[] }>('/api/competitors', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ competitors }) });
-      setCompetitors(response.competitors || []);
+      const userAdded = competitors.filter(c => !(c as any).isPreloaded);
+      const response = await api<{ competitors: CompetitorInput[] }>('/api/competitors', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ competitors: userAdded }) });
+      const preloaded = getPreloadedCompetitors();
+      const merged = [...preloaded, ...(response.competitors || [])];
+      setCompetitors(merged);
       showToast('Competitor library saved.', 'success');
     } catch (err) { showToast(err instanceof Error ? err.message : 'Unable to save competitors.', 'error'); } finally { setBusy(false); setPhase('Ready'); }
   }
@@ -532,30 +620,58 @@ function PageContent() {
           {(Object.keys(roleGuidance) as RoleView[]).map((role) => <option key={role} value={role}>{role}</option>)}
         </select>
       </div>
-      <nav className="nav proNav">{navGroups.map((group) => <div key={group.label} className="side-group"><div className="side-group-label">{group.label}</div>{group.keys.map((key) => { const item = nav.find((n) => n.key === key); if (!item) return null; const Icon = navIcons[item.key]; const badge = key === 'decisions' && urgentDecisionCount > 0 ? urgentDecisionCount : null; return <button key={item.key} className={view === item.key ? 'active' : ''} onClick={() => setView(item.key)}><Icon className="w-4 h-4 shrink-0" /><span><strong>{item.label}</strong><small>{item.note}</small></span>{badge !== null && <span className="nav-badge">{badge}</span>}</button>; })}</div>)}</nav>
+      <nav className="nav proNav">{getNavGroups(!!currentReport, roleView).map((group) => <div key={group.label} className="side-group"><div className="side-group-label">{group.label}</div>{group.keys.map((key) => { const item = nav.find((n) => n.key === key); if (!item) return null; const Icon = navIcons[item.key]; const badge = key === 'decisions' && urgentDecisionCount > 0 ? urgentDecisionCount : null; const needsData = ['matrix', 'battlecards', 'expert', 'board-packet', 'ask', 'governance', 'builder'].includes(key) && !currentReport; return <button key={item.key} className={`${view === item.key ? 'active' : ''}`} disabled={needsData} style={needsData ? { opacity: 0.5, cursor: 'not-allowed' } : {}} title={needsData ? 'Load a report first' : ''} onClick={() => !needsData && setView(item.key)}><Icon className="w-4 h-4 shrink-0" /><span><strong>{item.label}</strong><small>{item.note}</small></span>{badge !== null && <span className="nav-badge">{badge}</span>}</button>; })}</div>)}</nav>
     </aside>
     <main className={`main proMain ${view === 'home' ? 'homeMain' : ''}`}>
       <div className="sticky-top-group">
         {view !== 'home' && (
         <header className="head proHead">
           <div style={{ minWidth: 0, flex: '1 1 auto', overflow: 'hidden' }}>
-            <small style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nav.find((item) => item.key === view)?.note || ''}</small>
-            <h2 style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nav.find((item) => item.key === view)?.label || 'Andwell Innovation'}</h2>
+            {(() => {
+              const currentNav = nav.find((item) => item.key === view);
+              const workspaceKey = Object.entries(workspaceTools).find(([_, tools]) => tools.keys.includes(view))?.[0];
+              const workspaceLabel = workspaceKey ? nav.find(n => n.key === workspaceKey)?.label : null;
+              return (
+                <>
+                  <small style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px', color: 'var(--color-text-tertiary)' }}>
+                    {workspaceLabel ? `${workspaceLabel} / ${currentNav?.note || ''}` : (currentNav?.note || '')}
+                  </small>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                    <h2 style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentNav?.label || 'Andwell Innovation'}</h2>
+                  </div>
+                </>
+              );
+            })()}
           </div>
           <div className="row" style={{ gap: '8px', alignItems: 'center', flex: '0 1 auto', minWidth: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {currentReport ? <span className="badge green">Report loaded</span> : <span className="badge amber">No report</span>}
             {busy && <span className="badge amber">{phase}</span>}
             <button className="btn btn-sm no-print" onClick={() => setView('ask')}>Ask AI</button>
+            <button className="btn btn-sm no-print" onClick={() => setShowShortcuts(!showShortcuts)} title="Keyboard shortcuts (? key)" style={{ padding: '6px 8px' }}>?</button>
+            <div style={{ position: 'relative' }}>
+              <button className="btn btn-sm no-print" onClick={() => setShowHelp(!showHelp)} title="Help for this view" style={{ padding: '6px 8px' }}>
+                <HelpCircle size={16} />
+              </button>
+              {showHelp && (
+                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: '8px', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '12px 16px', width: '280px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', zIndex: 100 }}>
+                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
+                    {viewHelp[view] || 'No help available for this view.'}
+                  </p>
+                  <button className="btn btn-sm" onClick={() => setShowHelp(false)} style={{ marginTop: '8px', fontSize: '12px' }}>Close</button>
+                </div>
+              )}
+            </div>
             <ThemeToggle />
             <CommandSearch currentReport={currentReport} growthRows={growthRows} onNavigate={setView} />
           </div>
         </header>
       )}
-        <WorkspaceTools 
-          view={view} 
-          setView={setView} 
-          workspaceTools={workspaceTools} 
-          nav={nav} 
+        <WorkspaceTools
+          view={view}
+          setView={setView}
+          workspaceTools={workspaceTools}
+          nav={nav}
+          scenarioName="Base Case"
         />
       </div>
       <div className="content proContent">
@@ -590,13 +706,13 @@ function PageContent() {
         {view === 'ai' && <AIIntelligence currentReport={currentReport} aiAnalyses={aiAnalyses} onRunScan={() => setView('intake')} />}
         {view === 'prompt' && <PromptEngine />}
         {view === 'intake' && <Intake competitors={competitors} setCompetitors={setCompetitors} urlInput={urlInput} setUrlInput={setUrlInput} addUrls={addUrls} saveCompetitors={saveCompetitors} runAnalysis={runAnalysis} runSingleAnalysis={runSingleAnalysis} busy={busy} />}
-        {view === 'matrix' && <Matrix currentReport={currentReport} matrixFilter={matrixFilter} setMatrixFilter={setMatrixFilter} matrixSearch={matrixSearch} setMatrixSearch={setMatrixSearch} onRunScan={() => setView('intake')} />}
+        {view === 'matrix' && <Matrix currentReport={currentReport} matrixFilter={matrixFilter} setMatrixFilter={setMatrixFilter} matrixSearch={matrixSearch} setMatrixSearch={handleMatrixSearch} matrixSearchDebouncing={matrixSearchDebouncing} onRunScan={() => setView('intake')} />}
         {view === 'battlecards' && <Battlecards currentReport={currentReport} onRunScan={() => setView('intake')} />}
         {view === 'governance' && <ClaimGovernance currentReport={currentReport} onRunScan={() => setView('intake')} />}
         {view === 'builder' && <BattlecardBuilder currentReport={currentReport} onRunScan={() => setView('intake')} />}
-        {view === 'referrals' && <ReferralSources currentReport={currentReport} />}
+        {view === 'referrals' && <ReferralSources currentReport={currentReport} setView={setView} />}
         {view === 'reports' && <Reports reports={reports} currentReport={currentReport} loadReport={loadReport} exportJson={exportJson} refreshServerState={refreshServerState} deleteReports={deleteReports} busy={busy} />}
-        {view === 'ask' && <AskHub question={question} setQuestion={setQuestion} askHub={askHub} askResponse={askResponse} busy={busy} currentReport={currentReport} hasGrowthPlan={growthRows.length > 0} />}
+        {view === 'ask' && <AskHub question={question} setQuestion={setQuestion} askHub={askHub} askResponse={askResponse} busy={busy} currentReport={currentReport} hasGrowthPlan={growthRows.length > 0} roleView={roleView} />}
         {view === 'catalog' && <Catalog />}
         {view === 'audit' && <AuditLog />}
         {view === 'diagnostics' && <Diagnostics diagnostics={diagnostics} runDiagnostics={runDiagnostics} busy={busy} />}

@@ -91,16 +91,33 @@ export function buildBattlecard(params: {
   };
 }
 
+function extractLocationFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split('/').filter(Boolean);
+    if (pathParts.length >= 2) {
+      const location = pathParts[1];
+      return location.charAt(0).toUpperCase() + location.slice(1);
+    }
+  } catch {
+    return '';
+  }
+  return '';
+}
+
 export function getBuilderOptions(report?: IntelligenceReport | null) {
-  const competitorNames = report
-    ? report.analyses.map((a) => a.name)
+  const competitors = report
+    ? report.analyses.map((a) => {
+        const location = extractLocationFromUrl(a.url);
+        return location ? `${a.name} - ${location}` : a.name;
+      })
     : [];
   return {
     counties: countyList,
     audiences: audienceOptions,
     objections: objectionOptions,
     services: andwellCatalog.map((s) => s.serviceLine),
-    competitors: competitorNames
+    competitors
   };
 }
 

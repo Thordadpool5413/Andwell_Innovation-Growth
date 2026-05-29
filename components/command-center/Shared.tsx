@@ -50,8 +50,9 @@ export function Stat({ label, value, hint, icon: Icon, tone }: { label: string; 
 }
 
 export function StatMini({ label, value, tone }: { label: string; value: string | number; tone?: 'green' | 'amber' | 'red' | 'blue' | 'neutral' }) {
+  const isNumber = typeof value === 'number';
   const colorClass = tone === 'green' ? 'text-status-success' : tone === 'amber' ? 'text-status-warning' : tone === 'red' ? 'text-status-danger' : tone === 'blue' ? 'text-status-info' : '';
-  return <div className="hover-card" style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}><p className="text-xs text-overline" style={{ color: 'var(--color-text-tertiary)', margin: '0 0 4px' }}>{label}</p><strong className={colorClass} style={{ fontSize: '22px', letterSpacing: '-0.03em' }}>{value}</strong></div>;
+  return <div className="hover-card" style={{ padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}><p className="text-xs text-overline" style={{ color: 'var(--color-text-tertiary)', margin: '0 0 4px' }}>{label}</p><strong className={colorClass} style={{ fontSize: '22px', letterSpacing: '-0.03em' }}>{isNumber ? <AnimatedNumber value={value} /> : value}</strong></div>;
 }
 
 export function TagList({ items }: { items?: string[] }) {
@@ -125,4 +126,25 @@ export function TrustPanel({ metadata, title = 'Trust Panel' }: { metadata?: Tru
       ) : null}
     </aside>
   );
+export function SkeletonLoader({ height = '40px', className = '' }: { height?: string; className?: string }) {
+  return <div className={`skeleton ${className}`} style={{ height, borderRadius: 'var(--radius-md)' }} />;
+}
+
+export function SkeletonStat() {
+  return <div className="skeleton-stat" />;
+}
+
+export function SkeletonTable({ rows = 3 }: { rows?: number }) {
+  return <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    {Array.from({ length: rows }).map((_, i) => <SkeletonLoader key={i} height="32px" />)}
+  </div>;
+}
+
+export function EmptyState({ icon, title, description, action }: { icon?: string | React.ReactNode; title: string; description?: string; action?: React.ReactNode }) {
+  return <div style={{ textAlign: 'center', padding: '40px 32px', borderStyle: 'dashed', borderWidth: '2px', borderColor: 'var(--color-border)', borderRadius: 'var(--radius)' }}>
+    {icon && <div style={{ fontSize: typeof icon === 'string' ? '32px' : 'inherit', marginBottom: '12px', opacity: typeof icon === 'string' ? 1 : 0.4 }}>{icon}</div>}
+    <p style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 700 }}>{title}</p>
+    {description && <p className="text-small" style={{ color: 'var(--color-text-tertiary)', margin: '0 0 16px', maxWidth: '420px', marginInline: 'auto', lineHeight: 1.5 }}>{description}</p>}
+    {action && <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>{action}</div>}
+  </div>;
 }

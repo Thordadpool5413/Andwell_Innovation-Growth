@@ -55,7 +55,11 @@ export function CommandSearch({ currentReport, growthRows, onNavigate }: { curre
   };
 
   if (!open) {
-    return <button className="btn" onClick={() => setOpen(true)} title="Search (Ctrl+K)">Search</button>;
+    const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform);
+    return <button className="btn" onClick={() => setOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }} title="Search (Ctrl+K)">
+      <span>Search</span>
+      <kbd style={{ fontSize: '11px', padding: '2px 6px', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '3px', fontFamily: 'monospace', fontWeight: 500, color: 'var(--color-text-tertiary)' }}>{isMac ? '⌘K' : 'Ctrl+K'}</kbd>
+    </button>;
   }
 
   return <>
