@@ -1,0 +1,34 @@
+components/command-center/views/CoachingMode.tsx
+  s_72d76dd96670ec::t_5ef161af188933 235
+lib/battlecard-builder.ts
+  s_72d76dd96670ec::t_a0a215d8deae97 94-107,109-113,120
+components/command-center/views/ReferralSources.tsx
+  s_72d76dd96670ec::t_bc6fd47c78257f 169-176,178-184,186-196,198-202,206,208,210
+  s_72d76dd96670ec::t_3367a90f878e72 254-259,262,265
+  s_72d76dd96670ec::t_d03f391d6154dd 86,88,96,100,108,112
+  s_72d76dd96670ec::t_c1915b1984df2b 164-168
+  s_72d76dd96670ec::t_aea8e639db5a10 233-243,245-249,252
+  s_72d76dd96670ec::t_caf96716ea35db 212-228,231
+  s_72d76dd96670ec::t_2193806554f76c 177,185,197
+  s_72d76dd96670ec::t_ca6a147b34e3e4 267-271,273-274,276-277,280
+  s_72d76dd96670ec::t_74aa1567fc3d35 80-81,85,115-116,121,127,132-135,137-139,141,143,145-150,152-154,156,158,160-162,205,211
+components/command-center/views/Matrix.tsx
+  s_72d76dd96670ec::t_fc0e3f140f7a51 225-226
+  s_72d76dd96670ec::t_c78d09c15a5f49 96-109,115-122
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "dc0b074701e83d99581cddae7e5eea84041d28b0",
+  "prompts": {},
+  "sessions": {
+    "s_72d76dd96670ec": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8396b71a-99fc-45ab-9cc1-55f53c0803a1",
+        "model": "claude-haiku-4-5-20251001"
+      },
+      "human_author": "Nick Lynch <nick.lynch.coaching@outlook.com>"
+    }
+  }
+}
