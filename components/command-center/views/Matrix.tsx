@@ -93,11 +93,33 @@ function ExpandedFinding({ finding }: { finding: Finding }) {
   </td></tr>;
 }
 
+function extractLocationFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split('/').filter(Boolean);
+    if (pathParts.length >= 2) {
+      const location = pathParts[1];
+      return location.charAt(0).toUpperCase() + location.slice(1);
+    }
+  } catch {
+    return '';
+  }
+  return '';
+}
+
 export function Matrix({ currentReport, matrixFilter, setMatrixFilter, matrixSearch, setMatrixSearch, matrixSearchDebouncing, onRunScan }: { currentReport: IntelligenceReport | null; matrixFilter: MatrixFilter; setMatrixFilter: (filter: MatrixFilter) => void; matrixSearch: string; setMatrixSearch: (value: string) => void; matrixSearchDebouncing?: boolean; onRunScan?: () => void }) {
   const { showToast } = useToast();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
   const findings = currentReport?.allFindings || [];
+  const competitorLocationMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    currentReport?.analyses.forEach((analysis) => {
+      const location = extractLocationFromUrl(analysis.url);
+      map[analysis.name] = location ? `${analysis.name} - ${location}` : analysis.name;
+    });
+    return map;
+  }, [currentReport?.analyses]);
   const stats = useMemo(() => {
     const scored = findings.filter((finding) => finding.matrixScore);
     const averageScore = scored.length ? Math.round(scored.reduce((sum, finding) => sum + (finding.matrixScore?.overall || 0), 0) / scored.length) : 0;
@@ -200,8 +222,8 @@ export function Matrix({ currentReport, matrixFilter, setMatrixFilter, matrixSea
         const details = computeConfidenceDetails({ status: finding.competitorStatus, sourceCount: sourceCount(finding), hasFreshSource: sourceCount(finding) > 0, hasCmsSupport: false, hasInternalValidation: finding.reviewStatus === 'Approved for sales use', competitorOverlap: finding.competitorStatus === 'Clearly offered' ? 'High' : finding.competitorStatus === 'Not found publicly' ? 'Low' : 'Moderate', humanReviewed: finding.reviewStatus === 'Approved for sales use' || finding.reviewStatus === 'Rejected' });
         const isExpanded = expandedRows.has(finding.id);
         return <React.Fragment key={finding.id}>
-          <tr onClick={() => toggleRow(finding.id)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleRow(finding.id)} role="button" tabIndex={0} aria-expanded={isExpanded} aria-label={`${finding.competitorName} - ${finding.serviceLine} - ${finding.competitorStatus}, matrix score ${finding.matrixScore?.overall || 'unscored'}`} style={{ cursor: 'pointer' }}>
-            <td><strong>{finding.competitorName}</strong><small aria-hidden="true">{isExpanded ? 'Hide evidence' : 'Open evidence'}</small></td>
+          <tr onClick={() => toggleRow(finding.id)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleRow(finding.id)} role="button" tabIndex={0} aria-expanded={isExpanded} aria-label={`${competitorLocationMap[finding.competitorName] || finding.competitorName} - ${finding.serviceLine} - ${finding.competitorStatus}, matrix score ${finding.matrixScore?.overall || 'unscored'}`} style={{ cursor: 'pointer' }}>
+            <td><strong>{competitorLocationMap[finding.competitorName] || finding.competitorName}</strong><small aria-hidden="true">{isExpanded ? 'Hide evidence' : 'Open evidence'}</small></td>
             <td><strong>{finding.serviceLine}</strong><small>{finding.clearlyMatchedSubservices}/{finding.totalSubservices} subservices matched</small></td>
             <td><Badge tone={finding.competitorStatus === 'Clearly offered' ? 'green' : finding.competitorStatus === 'Not found publicly' ? 'blue' : 'amber'}>{finding.competitorStatus}</Badge></td>
             <td><Badge tone={scoreTone(finding.matrixScore?.overall || 0)}>{scoreLabel(finding.matrixScore)}</Badge><small>{finding.matrixScore ? `${finding.matrixScore.evidenceStrength} evidence` : 'Legacy row'}</small></td>

@@ -77,15 +77,15 @@ export function ReferralSources({ currentReport, setView }: {
   return <>
     <section className="section">
       <div>
-        <h1>Referral Source & Competitor Profiles</h1>
-        <p className="text-body">View positioning, pain points, and discovery questions for referral source types or specific Maine competitors.</p>
+        <h1>Referral Source & Competitor Intelligence</h1>
+        <p className="text-body">Build targeted conversations with referral sources and track competitive positioning across Maine.</p>
       </div>
     </section>
 
-    <Panel title="Your Information">
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+    <Panel title="Set Up Your Profile (Optional)">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '16px' }}>
         <label>
-          <span className="text-xs text-overline" style={{ color: 'var(--color-text-tertiary)' }}>Account name (optional)</span>
+          <span className="text-xs text-overline" style={{ color: 'var(--color-text-tertiary)', display: 'block', marginBottom: '6px' }}>Account name</span>
           <input
             type="text"
             className="input"
@@ -93,10 +93,11 @@ export function ReferralSources({ currentReport, setView }: {
             onChange={(e) => setAccountName(e.target.value)}
             placeholder="e.g., Northern Light Health"
             style={{ width: '100%' }}
+            aria-label="Account name"
           />
         </label>
         <label>
-          <span className="text-xs text-overline" style={{ color: 'var(--color-text-tertiary)' }}>Your name (optional)</span>
+          <span className="text-xs text-overline" style={{ color: 'var(--color-text-tertiary)', display: 'block', marginBottom: '6px' }}>Your name</span>
           <input
             type="text"
             className="input"
@@ -104,163 +105,179 @@ export function ReferralSources({ currentReport, setView }: {
             onChange={(e) => setRepName(e.target.value)}
             placeholder="e.g., Sarah Johnson"
             style={{ width: '100%' }}
+            aria-label="Your name"
           />
         </label>
       </div>
-      <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', margin: '0 0 8px' }}>💡 Fill these to customize outputs with your account and rep name. Saved to your browser only.</p>
+      <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', margin: 0 }}>Your info customizes all outputs and is saved locally.</p>
     </Panel>
 
-    <Panel title="Choose Your View">
-      <div style={{ marginBottom: '12px', padding: '12px 14px', background: 'var(--color-bg-secondary)', borderRadius: '8px', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-        {viewMode === 'referral-source'
-          ? '📋 Referral Source Templates are conversation frameworks for any healthcare provider type (Hospitals, SNFs, Primary Care, etc.)'
-          : '🏥 Competitive Intelligence shows real Maine competitors preloaded in the system. See their strengths, gaps, and positioning.'}
-      </div>
-      <div className="row" style={{ gap: '8px', marginBottom: '16px' }}>
+    <Panel title="Select Your Context">
+      <div className="row" style={{ gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <button
           className={`btn ${viewMode === 'referral-source' ? 'primary' : ''}`}
           onClick={() => { setViewMode('referral-source'); setSelectedCompetitor(''); }}
-          style={{ fontSize: '13px', padding: '8px 14px' }}
         >
-          Referral Source Templates
+          📋 Referral Source Types
         </button>
         <button
           className={`btn ${viewMode === 'competitor' ? 'primary' : ''}`}
           onClick={() => setViewMode('competitor')}
-          style={{ fontSize: '13px', padding: '8px 14px' }}
         >
-          Maine Competitors (Preloaded)
+          🏥 Maine Competitors
         </button>
       </div>
 
       {viewMode === 'referral-source' ? (
-        <div className="row" style={{ gap: '8px', flexWrap: 'wrap' }}>
-          {sourceTypes.map((type) =>
-            <button
-              key={type}
-              className={`btn ${selectedType === type ? 'primary' : ''}`}
-              onClick={() => setSelectedType(type)}
-              style={{ fontSize: '13px', padding: '8px 14px' }}
-            >
-              {type}
-            </button>
-          )}
-        </div>
+        <>
+          <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', margin: '0 0 12px' }}>Select a healthcare provider type to see Andwell's positioning framework:</p>
+          <div className="row" style={{ gap: '6px', flexWrap: 'wrap' }}>
+            {sourceTypes.map((type) =>
+              <button
+                key={type}
+                className={`btn btn-sm ${selectedType === type ? 'primary' : ''}`}
+                onClick={() => setSelectedType(type)}
+              >
+                {type}
+              </button>
+            )}
+          </div>
+        </>
       ) : (
-        <div className="row" style={{ gap: '8px', flexWrap: 'wrap' }}>
-          {competitors.map((comp) =>
-            <button
-              key={comp.name}
-              className={`btn ${selectedCompetitor === comp.name ? 'primary' : ''}`}
-              onClick={() => setSelectedCompetitor(comp.name)}
-              style={{ fontSize: '13px', padding: '8px 14px' }}
-            >
-              {comp.name}
-            </button>
-          )}
-        </div>
+        <>
+          <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', margin: '0 0 12px' }}>Select a competitor to analyze their positioning and gaps:</p>
+          <div className="row" style={{ gap: '6px', flexWrap: 'wrap' }}>
+            {competitors.map((comp) =>
+              <button
+                key={comp.name}
+                className={`btn btn-sm ${selectedCompetitor === comp.name ? 'primary' : ''}`}
+                onClick={() => setSelectedCompetitor(comp.name)}
+              >
+                {comp.name}
+              </button>
+            )}
+          </div>
+        </>
       )}
     </Panel>
 
-    {profile && <>
-      <SectionGroup title={`${profile.sourceType} Strategy`} action={
+    {!profile ? (
+      <div style={{ padding: '48px 24px', textAlign: 'center', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '8px', marginTop: '24px' }}>
+        <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', margin: 0 }}>Select a referral source type or competitor to view strategy details</p>
+      </div>
+    ) : <>
+      <div className="card" style={{ marginBottom: '24px', padding: '16px', borderRadius: '8px', backgroundColor: 'var(--color-bg-secondary)' }}>
+        <div className="row spread" style={{ marginBottom: '16px', alignItems: 'center' }}>
+          <div>
+            <h2 style={{ margin: '0 0 4px', fontSize: '24px' }}>{profile.sourceType}</h2>
+            <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-tertiary)' }}>Positioning & outreach strategy</p>
+          </div>
+          <Badge tone="green">Lead: {profile.leadService}</Badge>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+          <div>
+            <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase' }}>Positioning Language</p>
+            <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: 'var(--color-text-primary)' }}>{profile.positioningLanguage}</p>
+            <button
+              className="btn btn-sm"
+              onClick={() => copyToClipboard(profile.positioningLanguage, 'positioning')}
+              style={{ marginTop: '12px', fontSize: '12px' }}
+              aria-label={`Copy ${profile.sourceType} positioning language to clipboard`}
+            >
+              {copied === 'positioning' ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
+          <div>
+            <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase' }}>Call to Action</p>
+            <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: 'var(--color-text-primary)' }}>{profile.referralCta}</p>
+            <button
+              className="btn btn-sm"
+              onClick={() => copyToClipboard(profile.referralCta, 'cta')}
+              style={{ marginTop: '12px', fontSize: '12px' }}
+              aria-label={`Copy ${profile.sourceType} call-to-action to clipboard`}
+            >
+              {copied === 'cta' ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
+        </div>
         <button
           className="btn"
           onClick={() => copyToClipboard(`${profile.sourceType} Profile\n\nAccount: ${accountName || 'Unnamed'}\nRep: ${repName || 'Unnamed'}\n\nLead Service: ${profile.leadService}\n\n${profile.positioningLanguage}\n\n${profile.referralCta}`, 'profile')}
-          style={{ fontSize: '13px', padding: '8px 14px' }}
+          style={{ fontSize: '13px', padding: '8px 14px', marginTop: '16px', width: '100%' }}
         >
-          {copied === 'profile' ? '✓ Copied' : 'Copy Profile'}
+          {copied === 'profile' ? '✓ Full Profile Copied' : 'Copy Full Profile'}
         </button>
-      }>
-        <div className="card">
-          <div className="row spread" style={{ marginBottom: '12px' }}>
-            <h3 style={{ margin: 0 }}>{profile.sourceType}</h3>
-            <Badge tone="green">Lead: {profile.leadService}</Badge>
-          </div>
-          <div className="notice" style={{ fontSize: '13px', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
-              <strong className="text-small">Positioning Language</strong>
-              <button
-                className="btn btn-sm"
-                onClick={() => copyToClipboard(profile.positioningLanguage, 'positioning')}
-              >
-                {copied === 'positioning' ? '✓' : 'Copy'}
-              </button>
-            </div>
-            <p style={{ margin: '0 0 12px' }}>{profile.positioningLanguage}</p>
-          </div>
-          <div className="notice" style={{ fontSize: '13px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
-              <strong className="text-small">Call to Action</strong>
-              <button
-                className="btn btn-sm"
-                onClick={() => copyToClipboard(profile.referralCta, 'cta')}
-              >
-                {copied === 'cta' ? '✓' : 'Copy'}
-              </button>
-            </div>
-            <p style={{ margin: 0 }}>{profile.referralCta}</p>
-          </div>
+      </div>
+
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <h3 style={{ margin: 0, fontSize: '18px' }}>Key Pain Points</h3>
+          <button
+            className="btn btn-sm"
+            onClick={() => copyToClipboard(profile.painPoints.map((p, i) => `${i + 1}. ${p}`).join('\n'), 'pain-points')}
+            style={{ fontSize: '12px' }}
+          >
+            {copied === 'pain-points' ? '✓ Copied' : 'Copy All'}
+          </button>
         </div>
-      </SectionGroup>
-
-      <SectionGroup title="Pain Points" action={
-        <button
-          className="btn"
-          onClick={() => copyToClipboard(profile.painPoints.join('\n• '), 'pain-points')}
-          style={{ fontSize: '13px', padding: '8px 14px' }}
-        >
-          {copied === 'pain-points' ? '✓ Copied' : 'Copy All'}
-        </button>
-      }>
-        <div className="grid cols2">{profile.painPoints.map((pp, i) =>
-          <div key={i} className="list-card hover-card">
-            <p className="text-small" style={{ margin: 0, color: 'var(--color-text-primary)' }}>{pp}</p>
+        <div className="grid cols2" style={{ gap: '12px' }}>{profile.painPoints.map((pp, i) =>
+          <div key={i} className="list-card hover-card" style={{ padding: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-accent)', minWidth: '20px' }}>{i + 1}.</span>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-primary)', lineHeight: '1.4' }}>{pp}</p>
+            </div>
           </div>
         )}</div>
-      </SectionGroup>
+      </div>
 
-      <SectionGroup title="Discovery Questions" action={
-        <button
-          className="btn"
-          onClick={() => copyToClipboard(profile.discoveryQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n'), 'discovery-q')}
-          style={{ fontSize: '13px', padding: '8px 14px' }}
-        >
-          {copied === 'discovery-q' ? '✓ Copied' : 'Copy All'}
-        </button>
-      }>
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <h3 style={{ margin: 0, fontSize: '18px' }}>Discovery Questions</h3>
+          <button
+            className="btn btn-sm"
+            onClick={() => copyToClipboard(profile.discoveryQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n'), 'discovery-q')}
+            style={{ fontSize: '12px' }}
+          >
+            {copied === 'discovery-q' ? '✓ Copied' : 'Copy All'}
+          </button>
+        </div>
         <div className="list-grid">{profile.discoveryQuestions.map((q, i) =>
-          <div key={i} className="list-card hover-card">
-            <p className="text-small" style={{ margin: 0, color: 'var(--color-text-primary)' }}>{i + 1}. {q}</p>
+          <div key={i} className="list-card hover-card" style={{ padding: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-accent)', minWidth: '20px' }}>{i + 1}.</span>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-primary)', lineHeight: '1.4' }}>{q}</p>
+            </div>
           </div>
         )}</div>
-      </SectionGroup>
+      </div>
 
-      <SectionGroup title="Relevant Service Lines">
-        <div className="grid cols2">{profile.serviceLines.map((sl, i) =>
-          <div key={i} className="list-card hover-card">
-            <div className="row spread" style={{ marginBottom: '4px' }}>
-              <span className="text-small" style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{sl.name}</span>
+      <div style={{ marginBottom: '24px' }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: '18px' }}>Relevant Service Lines</h3>
+        <div className="grid cols2" style={{ gap: '12px' }}>{profile.serviceLines.map((sl, i) =>
+          <div key={i} className="list-card hover-card" style={{ padding: '12px' }}>
+            <div className="row spread" style={{ marginBottom: '8px', alignItems: 'flex-start' }}>
+              <span style={{ fontWeight: 600, color: 'var(--color-text-primary)', fontSize: '13px' }}>{sl.name}</span>
               <Badge tone={sl.relevance === 'High' ? 'green' : sl.relevance === 'Medium' ? 'amber' : 'blue'}>{sl.relevance}</Badge>
             </div>
-            <p className="text-xs" style={{ margin: 0, color: 'var(--color-text-tertiary)' }}>{sl.reason}</p>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-tertiary)', lineHeight: '1.4' }}>{sl.reason}</p>
           </div>
         )}</div>
-      </SectionGroup>
+      </div>
 
-      <Panel title="Next Steps">
-        <div className="row" style={{ gap: '8px', flexWrap: 'wrap' }}>
-          <button className="btn" onClick={() => setView?.('coaching')} style={{ fontSize: '13px', padding: '8px 14px' }}>
-            Create Coaching Plan →
+      <div style={{ marginTop: '32px', padding: '16px', borderRadius: '8px', backgroundColor: 'var(--color-bg-secondary)' }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: '18px' }}>Next Steps</h3>
+        <div className="row" style={{ gap: '12px', flexWrap: 'wrap' }}>
+          <button className="btn primary" onClick={() => setView?.('coaching')} style={{ fontSize: '13px', padding: '10px 16px', flex: '1', minWidth: '160px' }}>
+            📋 Create Coaching Plan
           </button>
-          <button className="btn" onClick={() => setView?.('battlecards')} style={{ fontSize: '13px', padding: '8px 14px' }}>
-            View Field Guidance →
+          <button className="btn" onClick={() => setView?.('battlecards')} style={{ fontSize: '13px', padding: '10px 16px', flex: '1', minWidth: '160px' }}>
+            ⚔️ View Field Guidance
           </button>
-          <button className="btn" onClick={() => setView?.('ask')} style={{ fontSize: '13px', padding: '8px 14px' }}>
-            Ask the System →
+          <button className="btn" onClick={() => setView?.('ask')} style={{ fontSize: '13px', padding: '10px 16px', flex: '1', minWidth: '160px' }}>
+            💬 Ask the System
           </button>
         </div>
-      </Panel>
+      </div>
     </>}
   </>;
 }

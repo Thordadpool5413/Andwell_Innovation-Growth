@@ -232,7 +232,7 @@ ${plan?.doNotSay.map((d: string) => `• ${d}`).join('\n') || 'None'}`;
         </label>
       </SectionGroup>
 
-      <div className="grid cols2" style={{ marginBottom: '16px' }}>
+      <div style={{ marginBottom: '16px' }}>
         <SectionGroup title="Competitor Warnings">
           <div className="list-grid">{plan.competitorWarnings.map((w: string, i: number) =>
             <div key={i} className="status-card status-card--warning">

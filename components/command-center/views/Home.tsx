@@ -166,6 +166,24 @@ export function Home({ roleView = 'Executive', setView, currentReport, competito
         </>
       ) : (
         <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+            <Panel title="Intelligence Coverage">
+              <div style={{ display: 'grid', gap: '8px', fontSize: '13px' }}>
+                <div><strong>{currentReport?.competitorsAnalyzed || 0}</strong> competitors analyzed</div>
+                <div><strong>{currentReport?.serviceLinesMapped || 0}</strong> service lines mapped</div>
+                <div><strong>{currentReport?.potentialAndwellAdvantages || 0}</strong> advantage opportunities</div>
+                <div><strong>{currentReport?.humanReviewItems || 0}</strong> review items pending</div>
+              </div>
+            </Panel>
+            <Panel title="Intelligence Quality">
+              <div style={{ display: 'grid', gap: '8px', fontSize: '13px' }}>
+                <div><strong>{currentReport?.pagesReviewed || 0}</strong> web pages crawled</div>
+                <div><strong>{currentReport?.subservicesMapped || 0}</strong> subservices matched</div>
+                <div><Badge tone={currentReport?.expertBrief ? 'green' : 'neutral'}>{currentReport?.expertBrief ? 'Expert analysis' : 'No expert brief'}</Badge></div>
+              </div>
+            </Panel>
+          </div>
+
           {expertBrief && (
             <div style={{ marginBottom: '24px' }}>
               <Panel title="Strategic Brief">
@@ -184,9 +202,15 @@ export function Home({ roleView = 'Executive', setView, currentReport, competito
                 </div>
               </div>
               <p style={{ margin: '16px 0 0', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>{expertBrief.expertSummary}</p>
-              <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+              <div style={{ marginTop: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <button className="btn" onClick={() => setView?.('expert')} style={{ fontSize: '13px', padding: '8px 14px' }}>
-                  Full Brief →
+                  Full Expert Brief →
+                </button>
+                <button className="btn" onClick={() => setView?.('matrix')} style={{ fontSize: '13px', padding: '8px 14px' }}>
+                  Evidence Matrix →
+                </button>
+                <button className="btn" onClick={() => setView?.('battlecards')} style={{ fontSize: '13px', padding: '8px 14px' }}>
+                  Battlecards →
                 </button>
               </div>
               </Panel>
@@ -195,21 +219,23 @@ export function Home({ roleView = 'Executive', setView, currentReport, competito
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px', marginBottom: '24px' }}>
             {expertBrief?.strongestThreats && expertBrief.strongestThreats.length > 0 && (
-              <Panel title="Key Risks">
+              <Panel title="⚠️ Key Threats">
                 <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
                   {expertBrief.strongestThreats.slice(0, 3).map((threat, i) => (
                     <li key={i} style={{ marginBottom: '6px' }}>{threat}</li>
                   ))}
                 </ul>
+                <button className="btn btn-sm" style={{ marginTop: '12px', width: '100%' }} onClick={() => setView?.('expert')}>Review threats</button>
               </Panel>
             )}
             {expertBrief?.bestOpportunities && expertBrief.bestOpportunities.length > 0 && (
-              <Panel title="Growth Opportunities">
+              <Panel title="💡 Growth Opportunities">
                 <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
                   {expertBrief.bestOpportunities.slice(0, 3).map((opp, i) => (
                     <li key={i} style={{ marginBottom: '6px' }}>{opp}</li>
                   ))}
                 </ul>
+                <button className="btn btn-sm" style={{ marginTop: '12px', width: '100%' }} onClick={() => setView?.('battlecards')}>Build battlecards</button>
               </Panel>
             )}
           </div>
