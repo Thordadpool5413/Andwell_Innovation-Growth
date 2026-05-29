@@ -153,6 +153,10 @@ async function jsonReadStore(): Promise<HubStore> {
       auditEvents: parsed.auditEvents || []
     });
   } catch {
+      catalogOverrides: parsed.catalogOverrides || []
+    };
+  } catch (err) {
+    console.warn(`Failed to read JSON store from ${storeFile}:`, err instanceof Error ? err.message : 'Unknown error');
     const initial = emptyStore();
     await jsonWriteStore(initial);
     return initial;

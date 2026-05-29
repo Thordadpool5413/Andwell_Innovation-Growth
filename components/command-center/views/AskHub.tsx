@@ -2,8 +2,12 @@
 
 import React from 'react';
 import { Badge, Panel, SectionGroup, TrustPanel } from '../Shared';
+import React, { useState, useMemo } from 'react';
+import { Badge, Panel, ConfidenceBadge, SectionGroup } from '../Shared';
 import { toneForStatus } from '../../../lib/command-center/utils';
+import { getAskTemplatesForRole, getCategories, getTemplatesByCategory } from '../../../lib/ask-hub-templates';
 import type { AskResponse } from '../../../lib/command-center/types';
+import type { RoleView } from '../../../lib/command-center/types';
 import type { IntelligenceReport } from '../../../lib/types';
 
 const questionBanks = [
@@ -42,6 +46,26 @@ const questionBanks = [
 ];
 
 export function AskHub({ question, setQuestion, askHub, askResponse, busy, currentReport, hasGrowthPlan }: { question: string; setQuestion: (value: string) => void; askHub: (questionOverride?: string) => void | Promise<void>; askResponse: AskResponse | null; busy: boolean; currentReport: IntelligenceReport | null; hasGrowthPlan?: boolean }) {
+export function AskHub({ question, setQuestion, askHub, askResponse, busy, currentReport, hasGrowthPlan, roleView = 'Executive' }: { question: string; setQuestion: (value: string) => void; askHub: () => void; askResponse: AskResponse | null; busy: boolean; currentReport: IntelligenceReport | null; hasGrowthPlan?: boolean; roleView?: RoleView }) {
+  const [showTemplates, setShowTemplates] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+
+  const templates = useMemo(() => getAskTemplatesForRole(roleView), [roleView]);
+  const categories = useMemo(() => getCategories(roleView), [roleView]);
+
+  if (!selectedCategory && categories.length > 0) {
+    setSelectedCategory(categories[0]);
+  }
+
+  const selectedTemplates = useMemo(() => {
+    return selectedCategory ? getTemplatesByCategory(roleView, selectedCategory) : templates;
+  }, [roleView, selectedCategory, templates]);
+
+  const applyTemplate = (templateQuestion: string) => {
+    setQuestion(templateQuestion);
+    setShowTemplates(false);
+  };
+
   return <>
     <section className="section">
       <div>
@@ -80,6 +104,44 @@ export function AskHub({ question, setQuestion, askHub, askResponse, busy, curre
         ))}
       </div>
     </section>
+    {showTemplates && (
+      <Panel title={`${roleView} Question Templates`}>
+        <div className="row" style={{ gap: '6px', flexWrap: 'wrap', marginBottom: '16px' }}>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              className={`btn ${selectedCategory === cat ? 'primary' : ''}`}
+              onClick={() => setSelectedCategory(cat)}
+              style={{ fontSize: '13px', padding: '6px 12px' }}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+        <div className="grid cols1" style={{ gap: '12px' }}>
+          {selectedTemplates.map((template, i) => (
+            <button
+              key={i}
+              onClick={() => applyTemplate(template.question)}
+              style={{
+                textAlign: 'left',
+                padding: '16px',
+                background: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 150ms ease'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-info)'; e.currentTarget.style.transform = 'translateX(4px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.transform = 'translateX(0)'; }}
+            >
+              <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)' }}>{template.question}</p>
+              {template.hint && <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-tertiary)' }}>💡 {template.hint}</p>}
+            </button>
+          ))}
+        </div>
+      </Panel>
+    )}
 
     <Panel title="Ask a competitive question">
       <textarea
@@ -92,6 +154,9 @@ export function AskHub({ question, setQuestion, askHub, askResponse, busy, curre
       <div className="row" style={{ marginTop: '8px', gap: '8px' }}>
         <button className="btn primary" disabled={busy || !question.trim()} onClick={() => askHub()}>
           {busy ? 'Thinking…' : 'Ask the Hub'}
+        </button>
+        <button className="btn" onClick={() => setShowTemplates(!showTemplates)} style={{ fontSize: '13px', padding: '8px 14px' }}>
+          {showTemplates ? 'Hide' : 'Show'} Templates
         </button>
         {!currentReport && <span className="text-small" style={{ color: 'var(--color-text-tertiary)', alignSelf: 'center' }}>Run a competitor scan first to load intelligence data.</span>}
       </div>
